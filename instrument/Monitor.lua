@@ -1,6 +1,6 @@
 --[[
 
-Copyright (c) 2011-2015 dualface#github
+Copyright (c) 2015 gameboxcloud.com 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,9 +39,9 @@ local io_popen = io.popen
 local os_execute = os.execute
 local os_time = os.time
 
-local _RESET_REDIS_CMD = [[_QUICK_SERVER_ROOT_/bin/redis/bin/redis-server _QUICK_SERVER_ROOT_/bin/redis/conf/redis.conf]]
-local _RESET_NGINX_CMD = [[nginx -p _QUICK_SERVER_ROOT_ -c _QUICK_SERVER_ROOT_/bin/openresty/nginx/conf/nginx.conf]]
-local _RESET_BEANSTALKD_CMD = [[_QUICK_SERVER_ROOT_/bin/beanstalkd/bin/beanstalkd > _QUICK_SERVER_ROOT_/logs/beanstalkd.log &]]
+local _RESET_REDIS_CMD = [[_GBC_CORE_ROOT_/bin/redis/bin/redis-server _GBC_CORE_ROOT_/bin/redis/conf/redis.conf]]
+local _RESET_NGINX_CMD = [[nginx -p _GBC_CORE_ROOT_ -c _GBC_CORE_ROOT_/bin/openresty/nginx/conf/nginx.conf]]
+local _RESET_BEANSTALKD_CMD = [[_GBC_CORE_ROOT_/bin/beanstalkd/bin/beanstalkd > _GBC_CORE_ROOT_/logs/beanstalkd.log &]]
 
 local _GET_MEM_INFO_CMD = [[cat /proc/meminfo | grep -E "Mem(Free|Total)"]]
 local _GET_DISK_INFO_CMD = [[df --total -k | grep "total"]]

@@ -1,6 +1,6 @@
 --[[
 
-Copyright (c) 2011-2015 dualface#github
+Copyright (c) 2015 gameboxcloud.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

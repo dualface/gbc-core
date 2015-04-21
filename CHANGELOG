@@ -2,19 +2,19 @@
 
 ### 0.5.1
 - FEATURE:
-    - Job Worker is finished as a module of Quick Server.
+    - Job Worker is finished as a module of GameBox Cloud Core.
     - Job Service package is offered. User can use it to add a job easily.
 
 - BUGFIX:
     - start/stop/status shells can exit normally, if some errors happend in progress.
-    - start/stop/status shells can get the config of Quick Server in any path.
+    - start/stop/status shells can get the config of GameBox Cloud Core in any path.
     - Monitor can show correct number of jobs in Beanstalkd.
 
 - IMPROVE:
     - In error messages, redundant paths can be stripped.
-    - Quick Server supports Mac OS now.
+    - GameBox Cloud Core supports Mac OS now.
     - start/stop/status use more colors for displaying.
-    - start/stop/status can show the version and mode of Quick Server.
+    - start/stop/status can show the version and mode of GameBox Cloud Core.
     - tools.sh can display the result better, even if the result is a lua table.
     - Support job worker module in shells.
     - Add lib luasec-0.5.0.
@@ -32,29 +32,29 @@
 - IMPROVE: offer all new wiki docs by Sphinx project in ".rst" format.
     - the new wiki can be outputed in many file formats, such as html, pdf, latex, etc.
     - it is easy to generated with make tools.
-    - the wiki docs in html format is released with Quick Server, in "docs/" dir.
+    - the wiki docs in html format is released with GameBox Cloud Core, in "docs/" dir.
 
-- CHNAGE: almost all Quick Server codes are refactored.
+- CHNAGE: almost all GameBox Cloud Core codes are refactored.
     - new architecture, all modules with "Server" in name are refactored to "Connect".
     - package mechanism, all functions is offerd as package.
     - Http and WebSocket modules are refactored, inheriting from "ConnectBase".
     - new broadcast mechanism.
     - adjust options in config.lua, more simple, more better.
     - new maintain and manager shells.
-    - monitor the processes of Quick Server at any time, and the status can be shown in web.
+    - monitor the processes of GameBox Cloud Core at any time, and the status can be shown in web.
 
 ### 0.4.0
 - UPGRADE: From Openresty 1.7.2.x to 1.7.7.x.
-- IMPROVE: make install_ubunutu.sh better in order that user can install Quick Server convenienty, and fix some bugs in it.
+- IMPROVE: make install_ubunutu.sh better in order that user can install GameBox Cloud Core convenienty, and fix some bugs in it.
     - create a symbol link for nginx, after Openresty installation.
     - Add option "--no-check-certificate" for each "wget" command.
-    - "status\_quick\_server.sh" shell file should be copied to installation directory while installation is finished.
+    - "status\_gbc\_core.sh" shell file should be copied to installation directory while installation is finished.
     - Change those shell tools director, move them from  "/opt" to installation path.
     - Add a new shell tool named "restart\_nginx\_only.sh" in order to restart nginx processes.
     - Add a parameter for install_ubuntu.sh for specifying installation path insted of absolute path.
-    - Quick Server configure files, including "redis.conf" and "nginx.conf", are modified automatically via "sed" tool.
+    - GameBox Cloud Core configure files, including "redis.conf" and "nginx.conf", are modified automatically via "sed" tool.
 - FEATURE: Support plugin mechanism.
-    - Add some methods into "cc" framework, "load" and "bind" etc, for package file(lua file).
+    - Add some methods into "cc" table, "load" and "bind" etc, for package file(lua file).
     - Give two plugin examples: "Ranklist" and "ChatRoom", converted from "RanklistAction" and "ChatAction".
     - Add simple functionality tests for above plugins.
 - IMPROVE: Add a demo action named "HelloworldAction"
@@ -63,9 +63,9 @@
     - Add "helloworld" client which supports both html and websocket.
 - CHANGE: delete install_mac.sh. The installation of mac env will be supported in next version.
 - OTHER MINOR CHANGES:
-    - IMPROVE: upgrade Quick Server wiki.
-    - BUGFIX: when deploying lua codes defined by user, the target directory in Quick Server shoule be created.
-    - IMPROVE: The target directory in Quick Server can be configured via "luaRepoPrefix" in config.lua for deploying lua codes defined by user.
+    - IMPROVE: upgrade GameBox Cloud Core wiki.
+    - BUGFIX: when deploying lua codes defined by user, the target directory in GameBox Cloud Core shoule be created.
+    - IMPROVE: The target directory in GameBox Cloud Core can be configured via "luaRepoPrefix" in config.lua for deploying lua codes defined by user.
     - CHANGE: obsolete the old interface of uploading user codes.
     - IMPROVE: Add two sql files: "base.sql" and "pre_condition.sql" in conf/sql for configuring MySql.
     - CHANGE: don't need to set "root" privilege in nginx conf file.
@@ -102,12 +102,12 @@
 ### 0.3.7
 
 - FEATURE: implement user login function through Cocochina platform.
-- FEATURE: when invoking the service of Quick Server via either http or WebSocket, to verify session ID is needed.
+- FEATURE: when invoking the service of GameBox Cloud Core via either http or WebSocket, to verify session ID is needed.
 - IMPROVE: implment user.uploadcodes action instead of "user/codes" web interface. The original http interface "user/codes" will be obsoleted in next release.
 - OTHER MINOR CHANGES:
    - BUGFIX: fix some bugs in http.lua and url.lua.
    - CHANGE: add a configuration into nginx.conf for DNS server.
-   - IMPROVE: Write a new shell named "status\_quick\_server.sh" to show the status of Quick Server processes.
+   - IMPROVE: Write a new shell named "status\_gbc\_core.sh" to show the status of GameBox Cloud Core processes.
    - IMPROVE: implement two functions to release mysql and redis connections.
    - IMPROVE: After installation, server/config.lua should not be compiled in order to be configured by user conveniently.
    - BUGFIX: fix a slight mistake in urlencodeChar() of functions.lua.
@@ -122,12 +122,12 @@
 - IMPROVE: support accessing user-defined codes via WebSocket besides HTTP.
 - BUGFIX: fix LUA_PATH of index-cleaner script.
 - DOCS: improve wiki in Chinese based on github wiki.
-- CHANGE:  Quick Server is released in bytecode generated by Luajit via Docker. And modify shell script in Ubuntu for some installation errors.
+- CHANGE:  GameBox Cloud Core is released in bytecode generated by Luajit via Docker. And modify shell script in Ubuntu for some installation errors.
 
 ### 0.3.5
 
 - IMPROVE: Adjust directory structure of project, make it more simpler and cleaner.
-- FEATURE: Integrate lua-resty-http with quick-server.
+- FEATURE: Integrate lua-resty-http with GameBox Cloud Core.
 - BUGFIX: Fix and mend some confinguration in nginx.conf.
 
 ### 0.3.1

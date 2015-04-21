@@ -3,7 +3,7 @@
 function getVersion()
 {
     LUABIN=$1/bin/openresty/luajit/bin/lua
-    CODE='_C=require("conf.config"); print("Quick Server " .. _QUICK_SERVER_VERSION);'
+    CODE='_C=require("conf.config"); print("GameBox Cloud Core " .. _GAMEBOX_CLOUD_CORE_VERSION);'
 
     $LUABIN -e "$CODE"
 }

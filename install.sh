@@ -4,13 +4,13 @@ function showHelp()
 {
     echo "Usage: [sudo] ./install.sh [--prefix=absolute_path] [OPTIONS]"
     echo "Options:"
-    echo -e "\t -a | --all \t\t install nginx(openresty) and Quick Server framework, redis and beanstalkd"
-    echo -e "\t -n | --nginx \t\t install nginx(openresty) and Quick Server framework"
+    echo -e "\t -a | --all \t\t install nginx(openresty) and GameBox Cloud Core, redis and beanstalkd"
+    echo -e "\t -n | --nginx \t\t install nginx(openresty) and GameBox Cloud Core"
     echo -e "\t -r | --redis \t\t install redis"
     echo -e "\t -b | --beanstalkd \t install beanstalkd"
     echo -e "\t -h | --help \t\t show this help"
     echo "if the option is not specified, default option is \"--all(-a)\"."
-    echo "if the \"--prefix\" is not specified, default path is \"/opt/quick_server\"."
+    echo "if the \"--prefix\" is not specified, default path is \"/opt/gbc_core\"."
 }
 
 function checkOSType()
@@ -45,8 +45,8 @@ fi
 
 OSTYPE=$(checkOSType)
 CUR_DIR=$(cd "$(dirname $0)" && pwd)
-BUILD_DIR=/tmp/install_quick_server
-DEST_DIR=/opt/quick_server
+BUILD_DIR=/tmp/install_gbc_core
+DEST_DIR=/opt/gbc_core
 
 declare -i ALL=0
 declare -i BEANS=0
@@ -63,11 +63,11 @@ if [ $OSTYPE == "MACOS" ]; then
     gcc -o $CUR_DIR/shells/getopt_long $CUR_DIR/shells/src/getopt_long.c
     ARGS=$($CUR_DIR/shells/getopt_long "$@")
 else
-    ARGS=$(getopt -o abrnh --long all,nginx,redis,beanstalkd,help,prefix: -n 'Install quick server' -- "$@")
+    ARGS=$(getopt -o abrnh --long all,nginx,redis,beanstalkd,help,prefix: -n 'Install GameBox Cloud Core' -- "$@")
 fi
 
 if [ $? != 0 ] ; then
-    echo "Install Quick Server Terminating..." >&2;
+    echo "Install GameBox Cloud Core Terminating..." >&2;
     exit 1;
 fi
 
@@ -172,7 +172,7 @@ mkdir -p $DEST_DIR/tmp
 mkdir -p $DEST_DIR/conf
 mkdir -p $DEST_DIR/db
 
-# install nginx and Quick Server framework
+# install nginx and GameBox Cloud Core
 if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     cd $BUILD_DIR
     tar zxf ngx_openresty-$OPENRESTY_VER.tar.gz
@@ -189,7 +189,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     make
     make install
 
-    # install quick server framework
+    # install GameBox Cloud Core source and tools
     ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-alpha $DEST_BIN_DIR/openresty/luajit/bin/lua
     cp -rf $CUR_DIR/src $DEST_DIR
     cp -rf $CUR_DIR/apps $DEST_DIR
@@ -198,7 +198,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
 
     # deploy tool script
     cd $CUR_DIR/shells/
-    cp -f start_quick_server.sh stop_quick_server.sh status_quick_server.sh $DEST_DIR
+    cp -f start_server.sh stop_server.sh check_server.sh $DEST_DIR
     mkdir -p $DEST_DIR/apps/welcome/tools/actions
     mkdir -p $DEST_DIR/apps/welcome/workers/actions
     cp -f tools.sh $DEST_DIR/apps/welcome/.
@@ -208,20 +208,20 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
         cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/tmp
     fi
 
-    # copy nginx and Quick Server framework conf file
+    # copy nginx and config.lua file
     cp -f $CUR_DIR/conf/nginx.conf $DEST_BIN_DIR/openresty/nginx/conf/.
-    $SED_BIN "s#_QUICK_SERVER_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/openresty/nginx/conf/nginx.conf
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/openresty/nginx/conf/nginx.conf
     rm -f $DEST_BIN_DIR/openresty/nginx/conf/nginx.conf--
 
     cp -f $CUR_DIR/conf/config.lua $DEST_DIR/conf
-    $SED_BIN "s#_QUICK_SERVER_ROOT_#$DEST_DIR#g" $DEST_DIR/conf/config.lua
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/conf/config.lua
     rm -f $DEST_DIR/conf/config.lua--
 
     # modify tools path
-    $SED_BIN "s#_QUICK_SERVER_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/welcome/tools.sh
-    $SED_BIN "s#_QUICK_SERVER_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/start_workers.sh
-    $SED_BIN "s#_QUICK_SERVER_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/Monitor.lua
-    $SED_BIN "s#_QUICK_SERVER_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/monitor.sh
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/welcome/tools.sh
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/start_workers.sh
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/Monitor.lua
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/monitor.sh
     rm -f $DEST_DIR/apps/welcome/tools.sh--
     rm -f $DEST_BIN_DIR/instrument/start_workers.sh--
     rm -f $DEST_BIN_DIR/instrument/Monitor.lua--
@@ -270,7 +270,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     tar zxf luainspect.tar.gz
     cp -f inspect.lua $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
 
-    echo "Install Openresty and Quick Server framework DONE"
+    echo "Install Openresty and GameBox Cloud Core DONE"
 fi
 
 #install redis
@@ -290,7 +290,7 @@ if [ $ALL -eq 1 ] || [ $REDIS -eq 1 ] ; then
 
     mkdir -p $DEST_BIN_DIR/redis/conf
     cp -f $CUR_DIR/conf/redis.conf $DEST_BIN_DIR/redis/conf/.
-    $SED_BIN "s#_QUICK_SERVER_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/redis/conf/redis.conf
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/redis/conf/redis.conf
     rm -f $DEST_BIN_DIR/redis/conf/redis.conf--
 
     echo "Install Redis DONE"

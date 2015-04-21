@@ -1,6 +1,6 @@
 --[[
 
-Copyright (c) 2011-2015 dualface#github
+Copyright (c) 2015 gameboxcloud.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 ]]
 
-_QUICK_SERVER_VERSION = "0.5.1"
+_GAMEBOX_CLOUD_CORE_VERSION = "0.5.1"
 
 _DBG_ERROR = 0
 _DBG_WARN  = 1
@@ -31,7 +31,7 @@ _DBG_DEBUG = 3
 
 local config = {
     -- user app
-    appRootPath = "_QUICK_SERVER_ROOT_/<USER_APP_ROOT>",
+    appRootPath = "_GBC_CORE_ROOT_/<USER_APP_ROOT>",
 
     numOfWorkers = 4,
 
@@ -40,8 +40,8 @@ local config = {
     appJobMessageFormat    = "json",
     appSessionExpiredTime  = 60 * 10, -- 10m
 
-    -- quick server
-    quickserverRootPath = "_QUICK_SERVER_ROOT_",
+    -- GameBox Cloud Core settings 
+    gbcCoreRootPath = "_GBC_CORE_ROOT_",
     port = 8088,
     welcomeEnabled = true,
     adminEnabled = true,
@@ -51,7 +51,7 @@ local config = {
 
     -- internal memory database
     redis = {
-        socket     = "unix:_QUICK_SERVER_ROOT_/tmp/redis.sock",
+        socket     = "unix:_GBC_CORE_ROOT_/tmp/redis.sock",
         -- host       = "127.0.0.1",
         -- port       = 6379,
         timeout    = 10 * 1000, -- 10 seconds

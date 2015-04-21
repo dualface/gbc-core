@@ -1,15 +1,13 @@
-# Configure Files for Quick Server and its Components
+# Configure Files for GameBox Cloud Core
 
 -   redis.conf
     used for redis server.
 
 -   nginx.conf
-    default configure file for nginx in Quick Server.
+    default configure file for nginx in GameBox Cloud Core.
 
--   sql/
-    -   base.sql
-        create basic tables for Quick Server.
+-   nginx.conf.optimized
+    an example of nginx.conf optimized.
 
-    -   pre_condition.sql
-        create a database for Quick Server.
-        set some privileges to mysql user.
+-   supervisord.conf / supervisord.conf.d
+    supervisor conf file for GameBox Cloud Core.
