@@ -270,9 +270,6 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     tar zxf luainspect.tar.gz
     cp -f inspect.lua $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
 
-    # install docs
-    cp -rf $CUR_DIR/docs/site $DEST_DIR/docs
-
     echo "Install Openresty and Quick Server framework DONE"
 fi
 
