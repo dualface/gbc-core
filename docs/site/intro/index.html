@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>介绍 - QuickServer Documents</title>
+  
+
+  <link rel="shortcut icon" href="../img/favicon.ico">
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="../css/highlight.css">
+
+  <script src="../js/jquery-2.1.1.min.js"></script>
+  <script src="../js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="../js/highlight.pack.js"></script>
+  <script src="../js/theme.js"></script> 
+
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../index.html" class="icon icon-home"> QuickServer Documents</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+      <ul class="current">
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../index.html">Home</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 current">
+                <a class="current" href="index.html">介绍</a>
+                
+                    <ul>
+                    
+                        <li class="toctree-l3"><a href="#quick-server">Quick Server 介绍</a></li>
+                        
+                            <li><a class="toctree-l4" href="#_1">项目地址</a></li>
+                        
+                            <li><a class="toctree-l4" href="#_2">支持</a></li>
+                        
+                    
+                    </ul>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../install/index.html">安装 Quick Server</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../config/index.html">配置 Quick Server</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../admin/index.html">管理接口</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../changelog/index.html">Change Log</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../license/index.html">License</a>
+                
+            </li>
+        
+
+    
+</ul>
+
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">QuickServer Documents</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+    
+    <li>介绍</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              <h1 id="quick-server">Quick Server 介绍</h1>
+<p>Quick Server 为开发者提供一个稳定可靠，可伸缩的服务端架构，让开发者可以使用 Lua 脚本语言快速完成服务端的功能开发。</p>
+<p>主要特征:</p>
+<ul>
+<li>
+<p>稳定可靠、经过验证的高性能游戏服务端架构</p>
+<p>基于 OpenResty_ 和 LuaJIT_ 架构，得到了包括 CloudFlare 等大型机构的应用，无论是稳定性还是性能都得到了验证。</p>
+<p>Quick Server 在 OpenResty 之上封装了一个 Lua Server Framework，为开发者创建游戏服务端功能提供了一个容易学习、容易扩展的基础架构。</p>
+<ul>
+<li><a href="http://openresty.org">OpenResty</a></li>
+<li><a href="http://luajit.org">LuaJIT</a></li>
+</ul>
+</li>
+<li>
+<p>使用 Lua 脚本语言开发服务端功能</p>
+<p>也许您认为在服务端使用 Lua 脚本显得有点不务正业，但 NodeJS 的流行却证明了合适的基础架构可以让一种语言突破原本的应用场景。更何况相比 NodeJS，OpenResty 提供的同步非阻塞编程模型，可以避免写出大量的嵌套 callback，不管是从开发效率还是维护成本上来说都更胜 NodeJS。</p>
+<p>用 Lua 脚本语言开发服务端功能还有一个巨大的好处，那就是可以和使用 Cocos2d-Lua（quick）的客户端共享大量代码。比如数据 Schema 定义、数据对象、游戏逻辑等等，都可以在客户端和服务端之间共享同一份代码。做过网络游戏的同学一定对如何保持客户端和服务端代码在数据接口上的一致头疼过。现在使用 Quick Server，这些问题统统消失不见。</p>
+</li>
+<li>
+<p>支持短连接和长连接，满足从异步网络到实时网络的各种需求</p>
+<p>Quick Server 支持 HTTP 和 WebSocket_ 两种连接方式，分别对应短连接和长连接，满足了异步和实时网络游戏的需求。</p>
+<blockquote>
+<p>WebSocket 是一种通讯协议。在连接时通过 HTTP 协议进行。在客户端和服务端连接成功后，则变成标准的 TCP Socket 通讯。</p>
+<p>而相比自己实现 TCP Socket，WebSocket 已经内部处理了数据包的拼合、拆分等问题，极大简化了服务端底层的复杂度。而在传输性能、带宽消耗上，WebSocket 相比传统 TCP Socket 没有任何区别。</p>
+</blockquote>
+<ul>
+<li><a href="https://tools.ietf.org/html/rfc6455">WebSocket RFC 文档</a></li>
+<li><a href="http://zh.wikipedia.org/wiki/WebSocket">WebSocket</a></li>
+</ul>
+</li>
+<li>
+<p>支持插件机制，使用第三方插件加快功能开发</p>
+<p>Quick Server 支持插件机制，开发者可以使用成熟的第三方插件来加快服务端功能开发。未来 Quick 团队也将提供插件仓库，让开发者可以分享各种有用的插件。</p>
+</li>
+</ul>
+<p><br /></p>
+<h2 id="_1">项目地址</h2>
+<p>目前 Quick Server 采用 Git 项目管理系统，并且托管在 GitHub 以及 OSChina 上。</p>
+<ul>
+<li>GitHub: <a href="https://github.com/dualface/quickserver">https://github.com/dualface/quickserver</a></li>
+</ul>
+<p><br /></p>
+<h2 id="_2">支持</h2>
+<p>QQ群: 424776815</p>
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../install/index.html" class="btn btn-neutral float-right" title="安装 Quick Server"/>Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../index.html" class="btn btn-neutral" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+    <!-- Copyright etc -->
+    </p>
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+	  
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+<div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        
+      <span><a href="../index.html" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      <span style="margin-left: 15px"><a href="../install/index.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    </span>
+</div>
+
+<!--
+MkDocs version  : 0.12.1
+Docs Build Date : 2015-04-19 02:55:50.820388
+-->
+</body>
+</html>

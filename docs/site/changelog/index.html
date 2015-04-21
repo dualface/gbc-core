@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Change Log - QuickServer Documents</title>
+  
+
+  <link rel="shortcut icon" href="../img/favicon.ico">
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="../css/highlight.css">
+
+  <script src="../js/jquery-2.1.1.min.js"></script>
+  <script src="../js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="../js/highlight.pack.js"></script>
+  <script src="../js/theme.js"></script> 
+
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../index.html" class="icon icon-home"> QuickServer Documents</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+      <ul class="current">
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../index.html">Home</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../intro/index.html">介绍</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../install/index.html">安装 Quick Server</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../config/index.html">配置 Quick Server</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../admin/index.html">管理接口</a>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 current">
+                <a class="current" href="index.html">Change Log</a>
+                
+                    <ul>
+                    
+                        <li class="toctree-l3"><a href="#change-log">Change Log</a></li>
+                        
+                            <li><a class="toctree-l4" href="#050">0.5.0</a></li>
+                        
+                            <li><a class="toctree-l4" href="#040">0.4.0</a></li>
+                        
+                            <li><a class="toctree-l4" href="#040-rc0">0.4.0-rc0</a></li>
+                        
+                            <li><a class="toctree-l4" href="#039">0.3.9</a></li>
+                        
+                            <li><a class="toctree-l4" href="#038">0.3.8</a></li>
+                        
+                            <li><a class="toctree-l4" href="#037">0.3.7</a></li>
+                        
+                            <li><a class="toctree-l4" href="#036">0.3.6</a></li>
+                        
+                            <li><a class="toctree-l4" href="#035">0.3.5</a></li>
+                        
+                            <li><a class="toctree-l4" href="#031">0.3.1</a></li>
+                        
+                            <li><a class="toctree-l4" href="#030">0.3.0</a></li>
+                        
+                            <li><a class="toctree-l4" href="#020">0.2.0</a></li>
+                        
+                            <li><a class="toctree-l4" href="#010">0.1.0</a></li>
+                        
+                    
+                    </ul>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../license/index.html">License</a>
+                
+            </li>
+        
+
+    
+</ul>
+
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">QuickServer Documents</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+    
+    <li>Change Log</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              <h1 id="change-log">Change Log</h1>
+<h3 id="050">0.5.0</h3>
+<ul>
+<li>
+<p>UPGRADE:</p>
+<ul>
+<li>upgrade luasocket to 3.0-rc1.</li>
+<li>add luainspect lib.</li>
+</ul>
+</li>
+<li>
+<p>IMPROVE: make installation better, improve installation shell.</p>
+<ul>
+<li>offer an unique install.sh instead of install_ubunutu.sh and install_centos.sh.</li>
+<li>except fundamental packages from linux distro, such as "git", "zip" and some building tools, all other packages can be installed without online. This can save much time.</li>
+<li>the install.sh supports parameters, ex. user can set the path of installation.</li>
+</ul>
+</li>
+<li>
+<p>IMPROVE: offer all new wiki docs by Sphinx project in ".rst" format.</p>
+<ul>
+<li>the new wiki can be outputed in many file formats, such as html, pdf, latex, etc.</li>
+<li>it is easy to generated with make tools.</li>
+<li>the wiki docs in html format is released with Quick Server, in "docs/" dir.</li>
+</ul>
+</li>
+<li>
+<p>CHNAGE: almost all Quick Server codes are refactored.</p>
+<ul>
+<li>new architecture, all modules with "Server" in name are refactored to "Connect".</li>
+<li>package mechanism, all functions is offerd as package.</li>
+<li>Http and WebSocket modules are refactored, inheriting from "ConnectBase".</li>
+<li>new broadcast mechanism.</li>
+<li>adjust options in config.lua, more simple, more better.</li>
+<li>new maintain and manager shells.</li>
+<li>monitor the processes of Quick Server at any time, and the status can be shown in web.</li>
+</ul>
+</li>
+</ul>
+<h3 id="040">0.4.0</h3>
+<ul>
+<li>UPGRADE: From Openresty 1.7.2.x to 1.7.7.x.</li>
+<li>IMPROVE: make install_ubunutu.sh better in order that user can install Quick Server convenienty, and fix some bugs in it.<ul>
+<li>create a symbol link for nginx, after Openresty installation.</li>
+<li>Add option "--no-check-certificate" for each "wget" command.</li>
+<li>"status_quick_server.sh" shell file should be copied to installation directory while installation is finished.</li>
+<li>Change those shell tools director, move them from  "/opt" to installation path.</li>
+<li>Add a new shell tool named "restart_nginx_only.sh" in order to restart nginx processes.</li>
+<li>Add a parameter for install_ubuntu.sh for specifying installation path insted of absolute path.</li>
+<li>Quick Server configure files, including "redis.conf" and "nginx.conf", are modified automatically via "sed" tool.</li>
+</ul>
+</li>
+<li>FEATURE: Support plugin mechanism.<ul>
+<li>Add some methods into "cc" framework, "load" and "bind" etc, for package file(lua file).</li>
+<li>Give two plugin examples: "Ranklist" and "ChatRoom", converted from "RanklistAction" and "ChatAction".</li>
+<li>Add simple functionality tests for above plugins.</li>
+</ul>
+</li>
+<li>IMPROVE: Add a demo action named "HelloworldAction"<ul>
+<li>include a simple method "/sayhello" to show "hello world".</li>
+<li>there are two other methods "addandcount" and "sayletters" to show how to write a function with plugins.</li>
+<li>Add "helloworld" client which supports both html and websocket.</li>
+</ul>
+</li>
+<li>CHANGE: delete install_mac.sh. The installation of mac env will be supported in next version.</li>
+<li>OTHER MINOR CHANGES:<ul>
+<li>IMPROVE: upgrade Quick Server wiki.</li>
+<li>BUGFIX: when deploying lua codes defined by user, the target directory in Quick Server shoule be created.</li>
+<li>IMPROVE: The target directory in Quick Server can be configured via "luaRepoPrefix" in config.lua for deploying lua codes defined by user.</li>
+<li>CHANGE: obsolete the old interface of uploading user codes.</li>
+<li>IMPROVE: Add two sql files: "base.sql" and "pre_condition.sql" in conf/sql for configuring MySql.</li>
+<li>CHANGE: don't need to set "root" privilege in nginx conf file.</li>
+<li>IMPROVE: Add README file for each sub-dir.</li>
+<li>CHANGE: change some shells which are used to encapsulate "nginx" command in "openresty/nginx".</li>
+</ul>
+</li>
+</ul>
+<h3 id="040-rc0">0.4.0-rc0</h3>
+<ul>
+<li>FEATURE: Add an new action "SessionAction" to generate <strong>session_id</strong> for user.</li>
+<li>FEATURE: adjust many interfaces in RanklistAction.<ul>
+<li>Each interface calling needs checking <strong>session_id</strong>.</li>
+<li>"Add" interface can generate a uid according to the <strong>nickname</strong> when user calls it first time.</li>
+<li>the format of uid is "nickname+numbers" in order to keep each uid unique.</li>
+<li>score, remove, getrank and getrevrank should get key from param "uid".</li>
+<li>"GetRevRank" also replies score.</li>
+<li>"GetRankAction" also return socre.</li>
+<li>"AddAction" can return a percent to indicate "rank/total", in other words, it's the user's positiono in a ranklist.</li>
+<li>Add some test cases for RanklistAction.</li>
+</ul>
+</li>
+<li>BUGFIX: if a redis command fails, it replies an int 0 not a string "0".</li>
+</ul>
+<h3 id="039">0.3.9</h3>
+<ul>
+<li>FEATURE: implement a ranklist with friendship based on social network platform.(only support Weibo now)</li>
+<li>FEATURE: Each interface calling needs checking <strong>session_id</strong>.</li>
+<li>FEATURE: ADD some test cases for FriendshipAction.</li>
+<li>BUGFIX: table.length() method in function.lua moduel.</li>
+</ul>
+<h3 id="038">0.3.8</h3>
+<ul>
+<li>FEATURE: implement chatting room, ChatAction module.<ul>
+<li>Add a new sub-table as the configuration for ChatAction in config.lua.</li>
+<li>assign an user to a channel automatically.</li>
+<li>Add some tests cases for ChatAction.</li>
+</ul>
+</li>
+<li>IMPROVE: remove BeginSession interface.</li>
+<li>IMPROVE: optimize some lua codes in the initialization of mysql and redis.</li>
+</ul>
+<h3 id="037">0.3.7</h3>
+<ul>
+<li>FEATURE: implement user login function through Cocochina platform.</li>
+<li>FEATURE: when invoking the service of Quick Server via either http or WebSocket, to verify session ID is needed.</li>
+<li>IMPROVE: implment user.uploadcodes action instead of "user/codes" web interface. The original http interface "user/codes" will be obsoleted in next release.</li>
+<li>OTHER MINOR CHANGES:</li>
+<li>BUGFIX: fix some bugs in http.lua and url.lua.</li>
+<li>CHANGE: add a configuration into nginx.conf for DNS server.</li>
+<li>IMPROVE: Write a new shell named "status_quick_server.sh" to show the status of Quick Server processes.</li>
+<li>IMPROVE: implement two functions to release mysql and redis connections.</li>
+<li>IMPROVE: After installation, server/config.lua should not be compiled in order to be configured by user conveniently.</li>
+<li>BUGFIX: fix a slight mistake in urlencodeChar() of functions.lua.</li>
+<li>BUGFIX: the param "value" of Ranklist.Add is allowed to be a string.</li>
+<li>BUGFIX: fix the version of luajit in "compile_bytecode.sh", change it to "luajit-2.1.0-alpha".</li>
+<li>IMPROVE: StoreObj returns a id  which don't includes "/" symbol definitely.</li>
+<li>IMPROVE: change the level of error() in the method "throw" of debug.lua in order to make error messge more concise.</li>
+</ul>
+<h3 id="036">0.3.6</h3>
+<ul>
+<li>UPGRADE: OpenResty 1.4.1 to 1.7.2.</li>
+<li>IMPROVE: support accessing user-defined codes via WebSocket besides HTTP.</li>
+<li>BUGFIX: fix LUA_PATH of index-cleaner script.</li>
+<li>DOCS: improve wiki in Chinese based on github wiki.</li>
+<li>CHANGE:  Quick Server is released in bytecode generated by Luajit via Docker. And modify shell script in Ubuntu for some installation errors.</li>
+</ul>
+<h3 id="035">0.3.5</h3>
+<ul>
+<li>IMPROVE: Adjust directory structure of project, make it more simpler and cleaner.</li>
+<li>FEATURE: Integrate lua-resty-http with quick-server.</li>
+<li>BUGFIX: Fix and mend some confinguration in nginx.conf.</li>
+</ul>
+<h3 id="031">0.3.1</h3>
+<ul>
+<li>BUGFIX: There should be an "actions" sub-dir in root of user-defined codes.</li>
+<li>BUGFIX: Allow the type of response of HTTP is "string".</li>
+<li>IMPROVE: Support case-insensitive uri.</li>
+</ul>
+<h3 id="030">0.3.0</h3>
+<ul>
+<li>IMPROVE: refactor the implemnet of user-defined function, supporting sub-dir structure deployment.</li>
+</ul>
+<h3 id="020">0.2.0</h3>
+<ul>
+<li>FEATURE: Support user-defined function via uploading lua codes by users themselves.</li>
+<li>FEATURE: Support Http protocol for invoking interfaces.</li>
+<li>FEATURE: Docker becomes a new way which users can choose for installation besides shell script.</li>
+</ul>
+<h3 id="010">0.1.0</h3>
+<ul>
+<li>FEATURE: Support Object Store based on MySql 5 with JSON format.</li>
+<li>FEATURE: Support Index in Object Store.</li>
+<li>FEATURE: Implement Ranklist function based on Redis.</li>
+<li>FEATURE: All interfaces is based on WebSocket protocol.</li>
+</ul>
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../license/index.html" class="btn btn-neutral float-right" title="License"/>Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../admin/index.html" class="btn btn-neutral" title="管理接口"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+    <!-- Copyright etc -->
+    </p>
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+	  
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+<div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        
+      <span><a href="../admin/index.html" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      <span style="margin-left: 15px"><a href="../license/index.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    </span>
+</div>
+
+<!--
+MkDocs version  : 0.12.1
+Docs Build Date : 2015-04-19 02:55:50.927066
+-->
+</body>
+</html>

@@ -1,0 +1,13 @@
+
+.ct-line {
+    stroke: #c6f43d !important;
+}
+
+.ct-point {
+    stroke: #79d105 !important;
+    fill: #79d105 !important;
+}
+
+.ct-area {
+    fill: #5bf04f !important;
+}
