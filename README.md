@@ -1,55 +1,52 @@
-# GameBox Cloud Core
-## 基于OpenResty的服务器框架
-
----
-
-## 最新版本 0.5.1
-
-## 介绍
+# Welcome to GameBox Cloud Core
 
 GameBox Cloud Core 为开发者提供一个稳定可靠，可伸缩的服务端架构，让开发者可以使用 Lua 脚本语言快速完成服务端的功能开发。
 
 主要特征:
 
--   稳定可靠、经过验证的高性能游戏服务端架构。
--   使用 Lua 脚本语言开发服务端功能。
--   支持短连接和长连接，满足从异步网络到实时网络的各种需求。
--   支持插件机制，使用第三方插件加快功能开发。
+-   稳定可靠、经过验证的高性能游戏服务端架构
 
-更多介绍可以参考[GameBox Cloud Core 介绍](http://quickserver-docs.readthedocs.org/zh_CN/latest/intro/index.html)。
+    基于 OpenResty_ 和 LuaJIT_ 架构，得到了包括 CloudFlare 等大型机构的应用，无论是稳定性还是性能都得到了验证。
 
-## 安装
+    GameBox Cloud Core 在 OpenResty 之上封装了一个 Lua Server Framework，为开发者创建游戏服务端功能提供了一个容易学习、容易扩展的基础架构。
 
-安装 GameBox Cloud Core 请参考[GameBox Cloud Core 安装](http://quickserver-docs.readthedocs.org/zh_CN/latest/install/index.html)。
+    -   [OpenResty](http://openresty.org)
+    -   [LuaJIT](http://luajit.org)
 
-## 相关资源
+    <br />
 
--   文档: [http://quickserver-docs.readthedocs.org/](http://quickserver-docs.readthedocs.org/zh_CN/latest/index.html)
--   QQ群: **424776815**
+-   使用 Lua 脚本语言开发服务端功能
 
-## 版本日志
+    也许您认为在服务端使用 Lua 脚本显得有点不务正业，但 NodeJS 的流行却证明了合适的基础架构可以让一种语言突破原本的应用场景。更何况相比 NodeJS，OpenResty 提供的同步非阻塞编程模型，可以避免写出大量的嵌套 callback，不管是从开发效率还是维护成本上来说都更胜 NodeJS。
 
-### 0.5.1
--   新的功能
-    -    后台执行任务功能 Job Worker 现在已经开发完成了。这个功能主要用于游戏开发中的定时任务的实现。
-    -    Job Worker 是 GameBox Cloud Core 的一个子模块，并且与另一子模块 Beanstalkd 配合使用。
-    -    提供了 Job Service 插件，直接用于添加后台任务。支持任务延时，任务优先级，任务最大处理时间等参数。
+    用 Lua 脚本语言开发服务端功能还有一个巨大的好处，那就是可以和使用 Cocos2d-Lua（quick-cocos2d-x）的客户端共享大量代码。比如数据 Schema 定义、数据对象、游戏逻辑等等，都可以在客户端和服务端之间共享同一份代码。做过网络游戏的同学一定对如何保持客户端和服务端代码在数据接口上的一致头疼过。现在使用 GameBox Cloud Core，这些问题统统消失不见。
 
--   主要 Bug 修复和改进
-    -    GameBox Cloud Core 返回的错误信息会去除冗余的路径显示。
-    -    启动或者停止 GameBox Cloud Core时，各个子模块启动出错之后，脚本现在可以正常退出了。
-    -    对于后台任务数量的监视，Monitor 现在会返回正确的值。
-    -    tools.sh 工具现在能更好的显示执行的结果。
-    -    启动，停止以及状态显示脚本，支持 Job Worker 模块。
-    -    启动，停止以及状态显示脚本，可以在任何目录下正确得到 GameBox Cloud Core 的配置信息，完成相应的功能。
-    -    启动, 停止以及状态显示脚本，可以正确显示当前 GameBox Cloud Core 的版本号，以及是处于 Release 或者 Debug 模式。
+    <br />
 
--   支持 Mac 操作系统
-    -    install.sh 脚本现在可以在 Mac 系统下正常使用。所有参数与在 Linux 系统下没有变化。
-    -    对于在 Mac 下需要的前置安装条件，安装脚本会自动使用 brew 进行安装。
-    -    所有组件都将被离线安装，与 Linux 下表现一致，不会因为网络延时浪费时间。（除了 luasec 库，见下）
-    -    绝大部分 GameBox Cloud Core 组件都能在 Mac 系统下使用。由于 shell 兼容性的原因， Monitor 在 Mac 系统下将不会被启动。
-    -    启动，停止以及状态显示脚本支持 Mac 操作系统。
+-   支持短连接和长连接，满足从异步网络到实时网络的各种需求
 
--  增加了 luasec 库
-    -    该库的作用是对 httpclient 库以及 luasocket 库增加 ssl 的支持。在 Mac 下，作者停止维护，该库仅支持10.4版本的 Mac 系统。因此该库当 GameBox Cloud Core 在 Mac 系统下安装时，该库并不会安装。
+    GameBox Cloud Core 支持 HTTP 和 WebSocket_ 两种连接方式，分别对应短连接和长连接，满足了异步和实时网络游戏的需求。
+
+    > WebSocket 是一种通讯协议。在连接时通过 HTTP 协议进行。在客户端和服务端连接成功后，则变成标准的 TCP Socket 通讯。
+    >
+    > 而相比自己实现 TCP Socket，WebSocket 已经内部处理了数据包的拼合、拆分等问题，极大简化了服务端底层的复杂度。而在传输性能、带宽消耗上，WebSocket 相比传统 TCP Socket 没有任何区别。
+
+    -   [WebSocket RFC 文档](https://tools.ietf.org/html/rfc6455)
+    -   [WebSocket](http://zh.wikipedia.org/wiki/WebSocket)
+
+    <br />
+
+-   支持插件机制，使用第三方插件加快功能开发
+
+    GameBox Cloud Core 支持插件机制，开发者可以使用成熟的第三方插件来加快服务端功能开发。未来 GameBox Cloud 团队也将提供插件仓库，让开发者可以分享各种有用的插件。
+
+<br />
+
+### Get Started
+
+-   [安装 GameBox Cloud Core](http://gameboxcloud.com/docs/core/install/)
+-   [创建 Hello,World 应用程序](http://gameboxcloud.com/docs/core/helloworld/)
+-   [更多文档](http://gameboxcloud.com/docs/)
+-   [版本日志](http://gameboxcloud.com/docs/core/changelog/)
+-   [源代码仓库](https://bitbucket.org/gameboxcloud/gbc-core)
+-   技术支持: QQ群 <424776815>
