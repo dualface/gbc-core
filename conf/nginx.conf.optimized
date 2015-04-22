@@ -75,7 +75,7 @@ end';
 if not SERVER_CONFIG.welcomeEnabled then
     ngx.exit(403)
 else
-    SERVER_CONFIG.appRootPath = SERVER_CONFIG.gbcCoreRootPath .. "/apps/welcome"
+    SERVER_CONFIG.appRootPath = SERVER_CONFIG.serverRootPath .. "/apps/welcome"
 end';
             content_by_lua_file '_GBC_CORE_ROOT_/src/HttpBootstrap.lua';
         }
@@ -86,7 +86,7 @@ end';
 if not SERVER_CONFIG.welcomeEnabled then
     ngx.exit(403)
 else
-    SERVER_CONFIG.appRootPath = SERVER_CONFIG.gbcCoreRootPath .. "/apps/welcome"
+    SERVER_CONFIG.appRootPath = SERVER_CONFIG.serverRootPath .. "/apps/welcome"
 end';
             content_by_lua_file '_GBC_CORE_ROOT_/src/WebSocketBootstrap.lua';
         }
@@ -97,7 +97,7 @@ end';
 if not SERVER_CONFIG.adminEnabled then
     ngx.exit(403)
 else
-    SERVER_CONFIG.appRootPath = SERVER_CONFIG.gbcCoreRootPath .. "/apps/admin"
+    SERVER_CONFIG.appRootPath = SERVER_CONFIG.serverRootPath .. "/apps/admin"
 end';
             content_by_lua_file '_GBC_CORE_ROOT_/src/HttpBootstrap.lua';
         }
