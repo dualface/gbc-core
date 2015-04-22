@@ -1,6 +1,6 @@
 --[[
 
-Copyright (c) 2011-2015 dualface#github
+Copyright (c) 2015 gameboxcloud.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ require("framework.server_functions")
 require("framework.package_support")
 json = require("framework.json")
 
-cc.server = {VERSION = "quickserver 0.5.1"}
+cc.server = {VERSION = "GameBox Cloud Core 0.5.1"}
 
 -- register the build-in packages
 cc.register("event", require("framework.packages.event.init"))

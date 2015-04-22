@@ -10,7 +10,7 @@ events {
 }
 
 http {
-    include '_QUICK_SERVER_ROOT_/bin/openresty/nginx/conf/mime.types';
+    include '_GBC_CORE_ROOT_/bin/openresty/nginx/conf/mime.types';
 
     # optimize
     #keepalive_timeout 60;
@@ -21,11 +21,11 @@ http {
     open_file_cache_valid 60s;
 
     # tmp
-    client_body_temp_path _QUICK_SERVER_ROOT_/tmp/client_body_temp;
-    fastcgi_temp_path _QUICK_SERVER_ROOT_/tmp/fastcgi_temp;
-    proxy_temp_path _QUICK_SERVER_ROOT_/tmp/proxy_temp;
-    scgi_temp_path _QUICK_SERVER_ROOT_/tmp/scgi_temp;
-    uwsgi_temp_path _QUICK_SERVER_ROOT_/tmp/uwsgi_temp;
+    client_body_temp_path _GBC_CORE_ROOT_/tmp/client_body_temp;
+    fastcgi_temp_path _GBC_CORE_ROOT_/tmp/fastcgi_temp;
+    proxy_temp_path _GBC_CORE_ROOT_/tmp/proxy_temp;
+    scgi_temp_path _GBC_CORE_ROOT_/tmp/scgi_temp;
+    uwsgi_temp_path _GBC_CORE_ROOT_/tmp/uwsgi_temp;
 
     # security
     client_max_body_size 32k;
@@ -37,12 +37,12 @@ http {
     ssi off;
 
     # lua
-    lua_package_path '_QUICK_SERVER_ROOT_/src/?.lua;_QUICK_SERVER_ROOT_/src/lib/?.lua;;';
+    lua_package_path '_GBC_CORE_ROOT_/src/?.lua;_GBC_CORE_ROOT_/src/lib/?.lua;;';
     lua_shared_dict INDEXES 512k;
     lua_code_cache on;
 
     init_by_lua '
-SERVER_CONFIG = loadfile("_QUICK_SERVER_ROOT_/conf/config.lua")()
+SERVER_CONFIG = loadfile("_GBC_CORE_ROOT_/conf/config.lua")()
 DEBUG = _DBG_ERROR
 require("framework.init")
 ';
@@ -52,21 +52,21 @@ require("framework.init")
 
         # user app
         location ~ /api {
-            content_by_lua_file '_QUICK_SERVER_ROOT_/src/HttpBootstrap.lua';
+            content_by_lua_file '_GBC_CORE_ROOT_/src/HttpBootstrap.lua';
         }
 
         location = /socket {
             lua_socket_log_errors off;
-            content_by_lua_file '_QUICK_SERVER_ROOT_/src/WebSocketBootstrap.lua';
+            content_by_lua_file '_GBC_CORE_ROOT_/src/WebSocketBootstrap.lua';
         }
 
-        # quick server welcome
+        # GameBox Cloud welcome
         location / {
             access_by_lua '
 if not SERVER_CONFIG.welcomeEnabled then
     ngx.exit(403)
 end';
-            root _QUICK_SERVER_ROOT_/apps/welcome/public_html;
+            root _GBC_CORE_ROOT_/apps/welcome/public_html;
             index index.html;
         }
 
@@ -75,9 +75,9 @@ end';
 if not SERVER_CONFIG.welcomeEnabled then
     ngx.exit(403)
 else
-    SERVER_CONFIG.appRootPath = SERVER_CONFIG.quickserverRootPath .. "/apps/welcome"
+    SERVER_CONFIG.appRootPath = SERVER_CONFIG.gbcCoreRootPath .. "/apps/welcome"
 end';
-            content_by_lua_file '_QUICK_SERVER_ROOT_/src/HttpBootstrap.lua';
+            content_by_lua_file '_GBC_CORE_ROOT_/src/HttpBootstrap.lua';
         }
 
         location = /welcome_socket {
@@ -86,20 +86,20 @@ end';
 if not SERVER_CONFIG.welcomeEnabled then
     ngx.exit(403)
 else
-    SERVER_CONFIG.appRootPath = SERVER_CONFIG.quickserverRootPath .. "/apps/welcome"
+    SERVER_CONFIG.appRootPath = SERVER_CONFIG.gbcCoreRootPath .. "/apps/welcome"
 end';
-            content_by_lua_file '_QUICK_SERVER_ROOT_/src/WebSocketBootstrap.lua';
+            content_by_lua_file '_GBC_CORE_ROOT_/src/WebSocketBootstrap.lua';
         }
 
-        # quick server admin api
+        # GameBox Cloud admin api
         location ~ /admin {
             access_by_lua '
 if not SERVER_CONFIG.adminEnabled then
     ngx.exit(403)
 else
-    SERVER_CONFIG.appRootPath = SERVER_CONFIG.quickserverRootPath .. "/apps/admin"
+    SERVER_CONFIG.appRootPath = SERVER_CONFIG.gbcCoreRootPath .. "/apps/admin"
 end';
-            content_by_lua_file '_QUICK_SERVER_ROOT_/src/HttpBootstrap.lua';
+            content_by_lua_file '_GBC_CORE_ROOT_/src/HttpBootstrap.lua';
         }
 
         location = /nginx_status {

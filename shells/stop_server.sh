@@ -2,7 +2,7 @@
 
 function showHelp()
 {
-    echo "Usage: [sudo] ./stop_quick_server.sh [OPTIONS] [--reload]"
+    echo "Usage: [sudo] ./stop_server.sh [OPTIONS] [--reload]"
     echo "Options:"
     echo -e "\t -a , --all \t\t stop nginx, redis and beanstalkd"
     echo -e "\t -n , --nginx \t\t stop nginx"
@@ -10,14 +10,14 @@ function showHelp()
     echo -e "\t -b , --beanstalkd \t stop beanstalkd"
     echo -e "\t -h , --help \t\t show this help"
     echo -e "\t -v , --version \t\t show version"
-    echo -e "\t      --reload \t\t reload Quick Server config."
+    echo -e "\t      --reload \t\t reload GameBox Cloud Core config."
     echo "if the option is not specified, default option is \"--all(-a)\"."
 }
 
 function getVersion()
 {
     LUABIN=$1/bin/openresty/luajit/bin/lua
-    CODE='_C=require("conf.config"); print("Quick Server " .. _QUICK_SERVER_VERSION);'
+    CODE='_C=require("conf.config"); print("GameBox Cloud Core " .. _GAMEBOX_CLOUD_CORE_VERSION);'
 
     $LUABIN -e "$CODE"
 }
@@ -62,10 +62,10 @@ if [ $OSTYPE == "MACOS" ]; then
     ARGS=$($CURRDIR/tmp/getopt_long "$@")
 else
     SED_BIN='sed -i'
-    ARGS=$(getopt -o abrnvh --long all,nginx,redis,beanstalkd,reload,version,help -n 'Stop quick server' -- "$@")
+    ARGS=$(getopt -o abrnvh --long all,nginx,redis,beanstalkd,reload,version,help -n 'Stop GameBox Cloud Core' -- "$@")
 fi
 
-if [ $? != 0 ] ; then echo "Stop Quick Server Terminating..." >&2; exit 1; fi
+if [ $? != 0 ] ; then echo "Stop GameBox Cloud Core Terminating..." >&2; exit 1; fi
 
 eval set -- "$ARGS"
 
@@ -210,6 +210,6 @@ if [ $ALL -eq 1 ] ; then
 fi
 
 sleep 3
-$CURRDIR/status_quick_server.sh
+$CURRDIR/check_server.sh
 
 cd $OLDDIR

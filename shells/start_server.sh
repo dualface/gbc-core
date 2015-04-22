@@ -2,23 +2,23 @@
 
 function showHelp()
 {
-    echo "Usage: [sudo] ./start_quick_server.sh [OPTIONS]"
+    echo "Usage: [sudo] ./start_server.sh [OPTIONS]"
     echo "Options:"
     echo -e "\t -a , --all \t\t start nginx(release mode), redis and beanstalkd"
     echo -e "\t -n , --nginx \t\t start nginx in release mode"
     echo -e "\t -r , --redis \t\t start redis"
     echo -e "\t -b , --beanstalkd \t start beanstalkd"
-    echo -e "\t -v , --version \t\t show Quick Server version"
+    echo -e "\t -v , --version \t\t show GameBox Cloud Core version"
     echo -e "\t -h , --help \t\t show this help"
-    echo -e "\t      --debug \t\t start Quick Server in debug mode."
+    echo -e "\t      --debug \t\t start GameBox Cloud Core in debug mode."
     echo "if the option is not specified, default option is \"--all(-a)\"."
-    echo "In default, Quick Server will start in release mode, or else it will start in debug mode when you specified \"--debug\"."
+    echo "In default, GameBox Cloud Core will start in release mode, or else it will start in debug mode when you specified \"--debug\"."
 }
 
 function getVersion()
 {
     LUABIN=$1/bin/openresty/luajit/bin/lua
-    CODE='_C=require("conf.config"); print("Quick Server " .. _QUICK_SERVER_VERSION);'
+    CODE='_C=require("conf.config"); print("GameBox Cloud Core " .. _GAMEBOX_CLOUD_CORE_VERSION);'
 
     $LUABIN -e "$CODE"
 }
@@ -63,10 +63,10 @@ if [ $OSTYPE == "MACOS" ]; then
     ARGS=$($CURRDIR/tmp/getopt_long "$@")
 else
     SED_BIN='sed -i'
-    ARGS=$(getopt -o abrnvh --long all,nginx,redis,beanstalkd,debug,version,help -n 'Start quick server' -- "$@")
+    ARGS=$(getopt -o abrnvh --long all,nginx,redis,beanstalkd,debug,version,help -n 'Start GameBox Cloud Core' -- "$@")
 fi
 
-if [ $? -ne 0 ] ; then echo "Start Quick Server Terminating..." >&2; exit 1; fi
+if [ $? -ne 0 ] ; then echo "Start GameBox Cloud Core Terminating..." >&2; exit 1; fi
 
 eval set -- "$ARGS"
 
@@ -222,10 +222,10 @@ if [ $ALL -eq 1 ]; then
         done
     fi
 
-    echo -e "\033[33mStart Quick Server DONE! \033[0m"
+    echo -e "\033[33mStart GameBox Cloud Core DONE! \033[0m"
 fi
 
 sleep 1
-$CURRDIR/status_quick_server.sh
+$CURRDIR/check_server.sh
 
 cd $OLDDIR

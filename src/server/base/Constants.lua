@@ -21,7 +21,7 @@ Constants.CONNECT_CHANNEL_PREFIX                = "_C"
 -- websocket
 Constants.WEBSOCKET_TEXT_MESSAGE_TYPE           = "text"
 Constants.WEBSOCKET_BINARY_MESSAGE_TYPE         = "binary"
-Constants.WEBSOCKET_SUBPROTOCOL_PATTERN         = "quickserver%-([%w%d%-]+)"
+Constants.WEBSOCKET_SUBPROTOCOL_PATTERN         = "gbc%-([%w%d%-]+)"
 Constants.WEBSOCKET_DEFAULT_TIME_OUT            = 10 * 1000 -- 10s
 Constants.WEBSOCKET_DEFAULT_MAX_PAYLOAD_LEN     = 16 * 1024 -- 16KB
 Constants.WEBSOCKET_DEFAULT_MAX_RETRY_COUNT     = 5 -- 5 times

@@ -1,23 +1,26 @@
-#some tools for quick-server
+# some tools for GameBox Cloud Core. 
 
-- start\_quick\_server.sh function list:
-    - start the whole Quick Server.
-    - start redis sever.
-    - start mysql server.
-    - start a cleaner for index tables in mysql.
+-   start\_server.sh
+    -   start nginx process.
+    -   start redis sever.
+    -   start beanstalkd process.
+    -   start job worker process.
+    -   start monitor process.
 
-- stop\_quick\_server.sh function list:
-    - stop nginx process.
-    - stop the cleaner for index tables.
+-   stop\_server.sh
+    -   stop nginx process.
+    -   stop redis process.
+    -   stop beanstalkd process.
+    -   stop job worker process. 
+    -   stop monitor process.
+    -   reload ngxin conf file and restart nginx only(with --reload option).
 
-- status\_quick\_server.sh function list:
-    - show nginx process.
-    - show redis process.
-    - show mysql process.
-    - show the cleaner process.
+-   check\_server.sh
+    -   show nginx process.
+    -   show redis process.
+    -   show beanstalkd process.
+    -   show job worker process.
+    -   show monitor process.
 
-- restart\_nginx\_only.sh function list:
-    - reload ngxin conf file and restart nginx only.
-
-- start.sh, stop.sh and reload.sh function:
-    - command "nginx" is encapsulated in these shells.
+-   tools.sh
+    -   start a server tool written with GameBox Cloud Core. 
