@@ -322,7 +322,7 @@ var tests = {
             return;
         }
 
-        var protocol = "quickserver-" + status.session_id;
+        var protocol = "gbc-" + status.session_id;
         log.add("CONNECT WEBSOCKET with PROTOCOL: " + protocol.toString());
 
         var socket = new WebSocket(opts.websocket_server_addr, protocol);
