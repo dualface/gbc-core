@@ -4,9 +4,9 @@
 
 - CHNAGES:
     - `Quick Server` rename to `GameBox Cloud Core`, short name is `gbc-core`.
-    - `start_quick_server.sh` rename to `start_server.sh`.
-    - `stop_quick_server.sh` rename to `stop_server.sh`.
-    - `status_quick_server.sh` rename to `check_server.sh`.
+    - `start_quick_server.sh` rename to `start_server`.
+    - `stop_quick_server.sh` rename to `stop_server`.
+    - `status_quick_server.sh` rename to `check_server`.
     - the `conf/config.lua` option `quickserverRootPath` rename to `serverRootPath`.
 
 ### 0.5.1
