@@ -1,4 +1,4 @@
-# some tools for GameBox Cloud Core. 
+# some tools for GameBox Cloud Core.
 
 -   start\_server.sh
     -   start nginx process.
@@ -11,7 +11,7 @@
     -   stop nginx process.
     -   stop redis process.
     -   stop beanstalkd process.
-    -   stop job worker process. 
+    -   stop job worker process.
     -   stop monitor process.
     -   reload ngxin conf file and restart nginx only(with --reload option).
 
@@ -23,4 +23,4 @@
     -   show monitor process.
 
 -   tools.sh
-    -   start a server tool written with GameBox Cloud Core. 
+    -   start a server tool written with GameBox Cloud Core.
