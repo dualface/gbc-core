@@ -226,6 +226,6 @@ if [ $ALL -eq 1 ]; then
 fi
 
 sleep 1
-$CURRDIR/check_server.sh
+$CURRDIR/check_server
 
 cd $OLDDIR
