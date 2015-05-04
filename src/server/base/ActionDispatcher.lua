@@ -44,43 +44,35 @@ function ActionDispatcher:ctor(config)
     self.config.actionModuleSuffix = config.actionModuleSuffix or Constants.DEFAULT_ACTION_MODULE_SUFFIX
 
     self._actionModules = {}
-    self._actionInstances = {}
     self._requestParameters = nil
 end
 
-function ActionDispatcher:runAction(actionName, data, isPersistentActionInstance)
+function ActionDispatcher:runAction(actionName, data)
     -- parse actionName
     local actionModuleName, actionMethodName = self:normalizeActionName(actionName)
     actionMethodName = actionMethodName .. self.config.actionModuleSuffix
 
     local action -- instance
-    if isPersistentActionInstance and self._actionInstances[actionModuleName] then
-        action = self._actionInstances[actionModuleName]
-    else
-        -- check registered action module before load module
-        local actionModule = self._actionModules[actionModuleName]
-        local actionModulePath
-        if not actionModule then
-            actionModulePath = string_format("%s.%s%s", self.config.actionPackage, actionModuleName, self.config.actionModuleSuffix)
-            local ok, _actionModule = pcall(require,  actionModulePath)
-            if ok then
-                actionModule = _actionModule
-            else
-                local err = _actionModule
-                throw(err)
-            end
-        end
-
-        local t = type(actionModule)
-        if t ~= "table" and t ~= "userdata" then
-            throw("failed to load action module \"%s\"", actionModulePath or actionModuleName)
-        end
-
-        action = actionModule:create(self)
-        if isPersistentActionInstance then
-            self._actionInstances[actionModuleName] = action
+    -- check registered action module before load module
+    local actionModule = self._actionModules[actionModuleName]
+    local actionModulePath
+    if not actionModule then
+        actionModulePath = string_format("%s.%s%s", self.config.actionPackage, actionModuleName, self.config.actionModuleSuffix)
+        local ok, _actionModule = pcall(require,  actionModulePath)
+        if ok then
+            actionModule = _actionModule
+        else
+            local err = _actionModule
+            throw(err)
         end
     end
+
+    local t = type(actionModule)
+    if t ~= "table" and t ~= "userdata" then
+        throw("failed to load action module \"%s\"", actionModulePath or actionModuleName)
+    end
+
+    action = actionModule:create(self)
 
     local method = action[actionMethodName]
     if type(method) ~= "function" then
