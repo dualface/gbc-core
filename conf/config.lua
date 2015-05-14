@@ -40,6 +40,8 @@ local config = {
     appJobMessageFormat    = "json",
     appSessionExpiredTime  = 60 * 10, -- 10m
 
+    defaultAcceptedRequestType = "http",
+
     -- GameBox Cloud Core settings
     serverRootPath = "_GBC_CORE_ROOT_",
     port = 8088,

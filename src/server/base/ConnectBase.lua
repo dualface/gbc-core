@@ -41,6 +41,10 @@ function ConnectBase:ctor(config)
     self.config.messageFormat = self.config.messageFormat or Constants.DEFAULT_MESSAGE_FORMAT
 end
 
+function ConnectBase:getRequestType()
+    return self._requestType or "unknow type"
+end
+
 function ConnectBase:run()
     throw("ConnectBase:run() - must override in inherited class")
 end
