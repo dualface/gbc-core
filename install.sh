@@ -242,7 +242,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
         $SED_BIN "s#LUAINC_linux_base?=/usr/include#LUAINC_linux_base?=$DEST_BIN_DIR/openresty/luajit/include#g" src/makefile
         $SED_BIN "s#\$(LUAINC_linux_base)/lua/\$(LUAV)#\$(LUAINC_linux_base)/luajit-2.1#g" src/makefile
     fi
-    make && make install
+    make clean && make && make install
     cp -f src/serial.so src/unix.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/socket/.
 
     # install luasec
@@ -252,8 +252,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     $SED_BIN "s#/usr/share/lua/5.1#$DEST_BIN_DIR/openresty/luajit/share/lua/5.1#g" ./Makefile
     $SED_BIN "s#/usr/lib/lua/5.1#$DEST_BIN_DIR/openresty/luajit/lib/lua/5.1#g" ./Makefile
     if [ $OSTYPE != "MACOS" ]; then
-        make linux
-        make install
+        make clean && make linux && make install
     fi
 
     # install cjson
