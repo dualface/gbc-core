@@ -243,3 +243,19 @@ function EXPECT_ERROR(errMsg, func, arg1, ...)
         table_insert(_steps, codes)
     end
 end
+
+-- table
+function EXPECT_TABLE(tbl, resTbl)
+    assert(_steps)
+
+    for k, v in pairs(tbl) do
+        if resTbl[k] ~= v then
+            local codes =  [[do
+                return fales
+            end
+            ]]
+            table_insert(_steps, codes)
+            break
+        end
+    end
+end
