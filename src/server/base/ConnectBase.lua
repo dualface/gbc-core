@@ -42,7 +42,7 @@ function ConnectBase:ctor(config)
 end
 
 function ConnectBase:getRequestType()
-    return self._requestType or "unknow type"
+    return self._requestType or "unknow"
 end
 
 function ConnectBase:run()
