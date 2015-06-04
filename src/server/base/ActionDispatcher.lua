@@ -72,6 +72,12 @@ function ActionDispatcher:runAction(actionName, data)
         throw("failed to load action module \"%s\"", actionModulePath or actionModuleName)
     end
 
+    local acceptedRequestType = rawget(actionModule, "ACCEPTED_REQUEST_TYPE") or self.config.defaultAcceptedRequestType
+    local currentRequestType = self:getRequestType()
+    if currentRequestType ~= acceptedRequestType then
+        throw("can't access this action via \"%s\"", currentRequestType)
+    end
+
     action = actionModule:create(self)
 
     local method = action[actionMethodName]
