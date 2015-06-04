@@ -105,6 +105,10 @@ function WorkerBase:runEventLoop()
     printInfo("DONE")
 end
 
+function WorkerBase:getActionModulePath(actionModuleName)
+    return string_format("%s.%s%s", "workers.actions", actionModuleName, self.config.actionModuleSuffix)
+end
+
 function WorkerBase:_getBeans()
     if not self._beans then
         self._beans = self:_newBeans()

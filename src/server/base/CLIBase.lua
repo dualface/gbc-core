@@ -65,6 +65,10 @@ function CLIBase:runEventLoop()
     return self:runAction(actionName, self._requestParameters)
 end
 
+function CLIBase:getActionModulePath(actionModuleName)
+    return string_format("%s.%s%s", "tools.actions", actionModuleName, self.config.actionModuleSuffix)
+end
+
 function CLIBase:_showHelp()
     printf("usage: tools [ActionModule.Action] [args]")
 end
