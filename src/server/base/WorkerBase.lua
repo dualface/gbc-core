@@ -25,6 +25,7 @@ THE SOFTWARE.
 local assert = assert
 local type = type
 local string_lower = string.lower
+local string_format = string.format
 local json_decode = json.decode
 local json_encode = json.encode
 local tostring = tostring
