@@ -58,6 +58,9 @@ function ActionDispatcher:runAction(actionName, data)
     local actionModulePath
     if not actionModule then
         actionModulePath = self:getActionModulePath(actionModuleName)
+        if DEBUG >= _DBG_INFO then
+            package.loaded[actionModulePath] = false
+        end
         local ok, _actionModule = pcall(require,  actionModulePath)
         if ok then
             actionModule = _actionModule
