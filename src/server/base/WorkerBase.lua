@@ -96,7 +96,7 @@ function WorkerBase:runEventLoop()
             res = json_encode(res)
         end
 
-        printf("finish job, jobId: %s, joined_time: %s, reserved_time:%s, result: %s", tostring(data.id), os_date("%Y-%m-%d %H:%M:%S", data.joined_time), os_date("%Y-%m-%d %H:%M:%S"), res)
+        printInfo("finish job, jobId: %s, joined_time: %s, reserved_time:%s, result: %s", tostring(data.id), os_date("%Y-%m-%d %H:%M:%S", data.joined_time), os_date("%Y-%m-%d %H:%M:%S"), res)
 
         io_flush()
 ::reserve_next_job::
