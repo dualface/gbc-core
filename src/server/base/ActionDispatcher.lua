@@ -57,7 +57,10 @@ function ActionDispatcher:runAction(actionName, data)
     local actionModule = self._actionModules[actionModuleName]
     local actionModulePath
     if not actionModule then
-        actionModulePath = string_format("%s.%s%s", self.config.actionPackage, actionModuleName, self.config.actionModuleSuffix)
+        actionModulePath = self:getActionModulePath(actionModuleName)
+        if DEBUG >= _DBG_INFO then
+            package.loaded[actionModulePath] = false
+        end
         local ok, _actionModule = pcall(require,  actionModulePath)
         if ok then
             actionModule = _actionModule
@@ -72,6 +75,12 @@ function ActionDispatcher:runAction(actionName, data)
         throw("failed to load action module \"%s\"", actionModulePath or actionModuleName)
     end
 
+    local acceptedRequestType = rawget(actionModule, "ACCEPTED_REQUEST_TYPE") or self.config.defaultAcceptedRequestType
+    local currentRequestType = self:getRequestType()
+    if currentRequestType ~= acceptedRequestType then
+        throw("can't access this action via \"%s\"", currentRequestType)
+    end
+
     action = actionModule:create(self)
 
     local method = action[actionMethodName]
@@ -84,6 +93,10 @@ function ActionDispatcher:runAction(actionName, data)
     end
 
     return method(action, data)
+end
+
+function ActionDispatcher:getActionModulePath(actionModuleName)
+    return string_format("%s.%s%s", self.config.actionPackage, actionModuleName, self.config.actionModuleSuffix)
 end
 
 function ActionDispatcher:registerActionModule(actionModuleName, actionModule)

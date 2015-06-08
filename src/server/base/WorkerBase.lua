@@ -25,6 +25,7 @@ THE SOFTWARE.
 local assert = assert
 local type = type
 local string_lower = string.lower
+local string_format = string.format
 local json_decode = json.decode
 local json_encode = json.encode
 local tostring = tostring
@@ -96,13 +97,17 @@ function WorkerBase:runEventLoop()
             res = json_encode(res)
         end
 
-        printf("finish job, jobId: %s, joined_time: %s, reserved_time:%s, result: %s", tostring(data.id), os_date("%Y-%m-%d %H:%M:%S", data.joined_time), os_date("%Y-%m-%d %H:%M:%S"), res)
+        printInfo("finish job, jobId: %s, joined_time: %s, reserved_time:%s, result: %s", tostring(data.id), os_date("%Y-%m-%d %H:%M:%S", data.joined_time), os_date("%Y-%m-%d %H:%M:%S"), res)
 
         io_flush()
 ::reserve_next_job::
     end
 
     printInfo("DONE")
+end
+
+function WorkerBase:getActionModulePath(actionModuleName)
+    return string_format("%s.%s%s", "workers.actions", actionModuleName, self.config.actionModuleSuffix)
 end
 
 function WorkerBase:_getBeans()

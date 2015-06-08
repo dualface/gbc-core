@@ -7,6 +7,6 @@ SCRIPT=CLIBootstrap.lua
 
 cd $GBC_CORE_ROOT
 
-ENV="SERVER_CONFIG=loadfile([[_GBC_CORE_ROOT_/conf/config.lua]])();DEBUG=_DBG_DEBUG;require([[framework.init]]);SERVER_CONFIG.appRootPath=SERVER_CONFIG.appRootPath..[[/tools]];"
+ENV="SERVER_CONFIG=loadfile([[_GBC_CORE_ROOT_/conf/config.lua]])();DEBUG=_DBG_DEBUG;require([[framework.init]]);SERVER_CONFIG.appRootPath=SERVER_CONFIG.appRootPath;"
 
 $LUABIN -e "$ENV" $GBC_CORE_ROOT/src/$SCRIPT $*

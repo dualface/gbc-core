@@ -7,7 +7,7 @@ SCRIPT=WorkerBootstrap.lua
 
 cd $GBC_CORE_ROOT
 
-ENV="SERVER_CONFIG=loadfile([[_GBC_CORE_ROOT_/conf/config.lua]])(); DEBUG=_DBG_DEBUG; require([[framework.init]]); SERVER_CONFIG.appRootPath= SERVER_CONFIG.appRootPath .. [[/workers/?.lua;]] .. SERVER_CONFIG.appRootPath;"
+ENV="SERVER_CONFIG=loadfile([[_GBC_CORE_ROOT_/conf/config.lua]])(); DEBUG=_DBG_DEBUG; require([[framework.init]]); SERVER_CONFIG.appRootPath= SERVER_CONFIG.appRootPath;"
 
 # workers should be restarted by itself.
 while true; do

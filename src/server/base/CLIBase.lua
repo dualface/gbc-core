@@ -36,6 +36,10 @@ function CLIBase:ctor(config, arg)
     self._requestParameters = checktable(arg)
 end
 
+function CLIBase:getRequestType()
+    return self._requestType or "unknow"
+end
+
 function CLIBase:run()
     local ok, res = xpcall(function()
         return self:runEventLoop()
@@ -63,6 +67,10 @@ function CLIBase:runEventLoop()
     end
 
     return self:runAction(actionName, self._requestParameters)
+end
+
+function CLIBase:getActionModulePath(actionModuleName)
+    return string_format("%s.%s%s", "tools.actions", actionModuleName, self.config.actionModuleSuffix)
 end
 
 function CLIBase:_showHelp()
