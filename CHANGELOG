@@ -1,5 +1,17 @@
 # Change Log
 
+### 0.7.0
+- CHNAGES:
+    - When user writes a new action, an property of the action named `ACCEPTED_REQUEST_TYPE` can be set. It is used for determining which type of the request can access the action.
+
+- IMPROVE:
+    - `Job Worker` only prints job finished info in debug mode.
+    - The codes of the actions of `Job Worker` can be updated dynamically.
+
+- BUGFIX:
+    - `luasec-0.5` should be installed correctly in 32-bit linux.
+    - The actions of `Job Worker` should be settled only in `worker/actinos`.
+
 ### 0.6.0
 
 - CHNAGES:

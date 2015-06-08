@@ -32,7 +32,7 @@ require("framework.server_functions")
 require("framework.package_support")
 json = require("framework.json")
 
-cc.server = {VERSION = "GameBox Cloud Core 0.6.0"}
+cc.server = {VERSION = "GameBox Cloud Core 0.7.0"}
 
 -- register the build-in packages
 cc.register("event", require("framework.packages.event.init"))
