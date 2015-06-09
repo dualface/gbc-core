@@ -30,6 +30,11 @@ function Factory.create(config, classNamePrefix, ...)
         package.path = path .. package.path
     end
 
+    local ok, appConfig = pcall(require, "app_config")
+    if ok and type(appConfig) == "table" then
+        table.merge(config, appConfig)
+    end
+
     local tagretClass
     local ok, _tagretClass = pcall(require, classNamePrefix)
     if ok then
