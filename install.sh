@@ -202,7 +202,6 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     mkdir -p $DEST_DIR/apps/welcome/tools/actions
     mkdir -p $DEST_DIR/apps/welcome/workers/actions
     cp -f tools.sh $DEST_DIR/apps/welcome/.
-    #ln -f -s $DEST_BIN_DIR/openresty/nginx/sbin/nginx /usr/bin/nginx
     # if it in Mac OS X, getopt_long should be deployed.
     if [ $OSTYPE == "MACOS" ]; then
         cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/tmp
