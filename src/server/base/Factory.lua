@@ -32,6 +32,7 @@ function Factory.create(config, classNamePrefix, ...)
 
     local ok, appConfig = pcall(require, "app_config")
     if ok and type(appConfig) == "table" then
+        config = clone(config)
         table.merge(config, appConfig)
     end
 
