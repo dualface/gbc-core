@@ -191,7 +191,9 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ]; then
         rm -f $CURRDIR/bin/instrument/start_workers.sh--
         rm -f $CURRDIR/bin/instrument/monitor.sh--
 
-        nginx -p $CURRDIR -c $NGINXDIR/conf/nginx.conf
+        #nginx -p $CURRDIR -c $NGINXDIR/conf/nginx.conf
+        $NGINXDIR/sbin/nginx -p $CURRDIR -c $NGINXDIR/conf/nginx.conf
+
         if [ $? -ne 0 ]; then
             exit $?
         fi

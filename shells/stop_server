@@ -144,7 +144,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] || [ $RELOAD -eq 1 ]; then
     if [ $RELOAD -eq 0 ] ; then
         pgrep nginx > /dev/null
         if [ $? -eq 0 ]; then
-            nginx -q -p $CURRDIR -c $NGINXDIR/conf/nginx.conf -s stop
+            $NGINXDIR/sbin/nginx -q -p $CURRDIR -c $NGINXDIR/conf/nginx.conf -s stop
             if [ $? -ne 0 ]; then
                 exit $?
             fi
@@ -161,7 +161,8 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] || [ $RELOAD -eq 1 ]; then
 
         rm -f $NGINXDIR/conf/nginx.conf--
 
-        nginx -p $CURRDIR -c $NGINXDIR/conf/nginx.conf -s reload
+
+        $NGINXDIR/sbin/nginx -p $CURRDIR -c $NGINXDIR/conf/nginx.conf -s reload
         if [ $? -ne 0 ]; then
             exit $?
         fi
@@ -175,7 +176,7 @@ if [ $ALL -eq 1 ] || [ $REDIS -eq 1 ]; then
 
     while [ $? -eq 0 ];
     do
-        nginx -q -p $CURRDIR -c $NGINXDIR/conf/nginx.conf -s stop
+        $NGINXDIR/sbin/nginx -q -p $CURRDIR -c $NGINXDIR/conf/nginx.conf -s stop
         pgrep nginx > /dev/null
     done
 
