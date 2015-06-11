@@ -23,6 +23,7 @@ THE SOFTWARE.
 ]]
 
 local pcall = pcall
+local type = type
 local string_lower = string.lower
 local string_ucfirst = string.ucfirst
 local string_gsub = string.gsub
@@ -77,7 +78,7 @@ function ActionDispatcher:runAction(actionName, data)
 
     local acceptedRequestType = rawget(actionModule, "ACCEPTED_REQUEST_TYPE") or self.config.defaultAcceptedRequestType
     local currentRequestType = self:getRequestType()
-    if currentRequestType ~= acceptedRequestType then
+    if not self:checkActionTypes(currentRequestType, acceptedRequestType) then
         throw("can't access this action via \"%s\"", currentRequestType)
     end
 
@@ -93,6 +94,22 @@ function ActionDispatcher:runAction(actionName, data)
     end
 
     return method(action, data)
+end
+
+function ActionDispatcher:checkActionTypes(currentRequestType, acceptedRequestType)
+    if type(acceptedRequestType) == "table" then
+        for _, v in ipairs(acceptedRequestType) do
+            if string_lower(v) == currentRequestType then
+                return true
+            end
+        end
+    elseif type(acceptedRequestType) == "string" then
+        return currentRequestType == string_lower(acceptedRequestType)
+    else
+        throw("invalid ACCEPTED_REQUEST_TYPE of the action.")
+    end
+
+    return false
 end
 
 function ActionDispatcher:getActionModulePath(actionModuleName)
