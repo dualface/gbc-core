@@ -1,6 +1,8 @@
 
 local ChatAction = class("ChatAction")
 
+ChatAction.ACCEPTED_REQUEST_TYPE = "websocket"
+
 function ChatAction:ctor(connect)
     self.connect = connect
     self.connects = connect.connects

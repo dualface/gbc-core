@@ -210,6 +210,9 @@ var dashboard = {
 
 
     calc_ngx_data_at_index: function(data, timetype, index) {
+        if (!data["NGINX_MASTER"]) {
+            return false;
+        }
         var cpu_set = data["NGINX_MASTER"].cpu[timetype];
         var mem_set = data["NGINX_MASTER"].mem[timetype];
 
