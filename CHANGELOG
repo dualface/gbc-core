@@ -1,6 +1,7 @@
 # Change Log
 
 ### 0.7.0
+
 - CHNAGES:
     - When user writes a new action, an property of the action named `ACCEPTED_REQUEST_TYPE` can be set. It is used for determining which type of the request can access the action.
 
