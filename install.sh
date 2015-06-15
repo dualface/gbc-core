@@ -206,6 +206,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     # if it in Mac OS X, getopt_long should be deployed.
     if [ $OSTYPE == "MACOS" ]; then
         cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/tmp
+        rm $CUR_DIR/shells/getopt_long
     fi
 
     # copy nginx and config.lua file
@@ -216,6 +217,10 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     cp -f $CUR_DIR/conf/config.lua $DEST_DIR/conf
     $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/conf/config.lua
     rm -f $DEST_DIR/conf/config.lua--
+
+    # modify apps entry config
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/welcome/app_entry.conf
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/admin/app_entry.conf
 
     # modify tools path
     $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/welcome/tools.sh
