@@ -43,9 +43,17 @@ function ActionDispatcher:ctor(config)
     self.config.appRootPath = self.config.appRootPath
     self.config.actionPackage = self.config.actionPackage or Constants.ACTION_PACKAGE_NAME
     self.config.actionModuleSuffix = config.actionModuleSuffix or Constants.DEFAULT_ACTION_MODULE_SUFFIX
+    self.config.autoloads = config.autoloads or {}
 
     self._actionModules = {}
     self._requestParameters = nil
+
+    -- autoloads
+    for packageName, packageConfig in pairs(self.config.autoloads) do
+        local packageClass = cc.load(packageName)
+        local package = packageClass.new(packageConfig, self)
+        self[packageName .. "_"] = package
+    end
 end
 
 function ActionDispatcher:runAction(actionName, data)
