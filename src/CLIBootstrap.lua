@@ -22,10 +22,9 @@ THE SOFTWARE.
 
 ]]
 
-local factory = require("server.base.Factory")
+local Factory = require("server.base.Factory")
 
-local args = {...}
-
--- SERVER_CONFIG from init_by_lua, see nginx.conf
-local app = factory.create(SERVER_CONFIG, "CLI", args)
+local args = {...} -- CLI arguments
+-- SERVER_CONFIG from shell
+local app = Factory.create(SERVER_CONFIG, "CLI", args)
 app:run()
