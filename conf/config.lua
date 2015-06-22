@@ -22,7 +22,8 @@ THE SOFTWARE.
 
 ]]
 
-_GAMEBOX_CLOUD_CORE_VERSION = "0.7.0"
+_GBC_CORE_VER = "0.8.0"
+_SERVER_ROOT_DIR = "_GBC_CORE_ROOT_"
 
 _DBG_ERROR = 0
 _DBG_WARN  = 1
@@ -30,8 +31,7 @@ _DBG_INFO  = 2
 _DBG_DEBUG = 3
 
 local config = {
-    -- user app
-    appRootPath = "_GBC_CORE_ROOT_/<USER_APP_ROOT>",
+    appRootPath = "_GBC_CORE_ROOT_",
 
     numOfWorkers = 4,
 
@@ -43,7 +43,6 @@ local config = {
     defaultAcceptedRequestType = "http",
 
     -- GameBox Cloud Core settings
-    serverRootPath = "_GBC_CORE_ROOT_",
     port = 8088,
     welcomeEnabled = true,
     adminEnabled = true,
@@ -61,9 +60,10 @@ local config = {
 
     -- background job server
     beanstalkd = {
-        host       = "127.0.0.1",
-        port       = 11300,
-        jobTube    = "jobTube",
+        host         = "127.0.0.1",
+        port         = 11300,
+        jobTube      = "jobTube",
+        numOfWorkers = 4,
     },
 
     -- internal monitor
