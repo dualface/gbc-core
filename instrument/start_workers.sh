@@ -1,17 +1,22 @@
 #!/bin/bash
-export LUA_PATH="_GBC_CORE_ROOT_/src/?.lua;_GBC_CORE_ROOT_/src/lib/?.lua;;"
 
-GBC_CORE_ROOT="_GBC_CORE_ROOT_"
-LUABIN=bin/openresty/luajit/bin/lua
+_DIR=$(cd "$(dirname $0)" && pwd)
+_DIR=`dirname $_DIR`
+
+ROOT_DIR=`dirname $_DIR`
+source $ROOT_DIR/init.inc quiet
+
+# start
+
+cd $ROOT_DIR
+export LUA_PATH="$ROOT_DIR/src/?.lua;$ROOT_DIR/src/lib/?.lua;;"
 SCRIPT=WorkerBootstrap.lua
 
-cd $GBC_CORE_ROOT
-
-ENV="SERVER_CONFIG=loadfile([[_GBC_CORE_ROOT_/conf/config.lua]])(); DEBUG=_DBG_DEBUG; require([[framework.init]]); SERVER_CONFIG.appRootPath= SERVER_CONFIG.appRootPath;"
+ENV="SERVER_CONFIG=loadfile('$VAR_CONF_PATH')(); DEBUG=_DBG_DEBUG; require('framework.init');"
 
 # workers should be restarted by itself.
 while true; do
-    $LUABIN -e "$ENV" $GBC_CORE_ROOT/src/$SCRIPT
+    $LUA_BIN -e "$ENV" $ROOT_DIR/src/$SCRIPT
     if [ $? -ne 0 ]; then
         exit $?
     fi

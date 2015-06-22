@@ -8,6 +8,10 @@ function UserAction:ctor(connect)
     self.online = OnlineService:create(connect)
 end
 
+function UserAction:pingAction(arg)
+    return {text = "pong"}
+end
+
 function UserAction:loginAction(arg)
     local username = arg.username
     if not username then

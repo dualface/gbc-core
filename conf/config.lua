@@ -22,7 +22,8 @@ THE SOFTWARE.
 
 ]]
 
-_GAMEBOX_CLOUD_CORE_VERSION = "0.8.0"
+_GBC_CORE_VER = "0.8.0"
+_SERVER_ROOT_DIR = "_GBC_CORE_ROOT_"
 
 _DBG_ERROR = 0
 _DBG_WARN  = 1
@@ -45,7 +46,6 @@ local config = {
         websocketsMaxPayloadLen = 16 * 1024, -- 16KB
         websocketMessageFormat = "json",
         maxSubscribeRetryCount = 10,
-
     },
 
     server = {
@@ -66,9 +66,10 @@ local config = {
 
         -- background job server
         beanstalkd = {
-            host       = "127.0.0.1",
-            port       = 11300,
-            jobTube    = "jobTube",
+            host         = "127.0.0.1",
+            port         = 11300,
+            jobTube      = "jobTube",
+            numOfWorkers = 4,
         },
 
         -- internal monitor

@@ -40,7 +40,7 @@ local os_execute = os.execute
 local os_time = os.time
 
 local _RESET_REDIS_CMD = [[_GBC_CORE_ROOT_/bin/redis/bin/redis-server _GBC_CORE_ROOT_/bin/redis/conf/redis.conf]]
-local _RESET_NGINX_CMD = [[nginx -p _GBC_CORE_ROOT_ -c _GBC_CORE_ROOT_/bin/openresty/nginx/conf/nginx.conf]]
+local _RESET_NGINX_CMD = [[_GBC_CORE_ROOT_/bin/openresty/nginx/sbin/nginx -p _GBC_CORE_ROOT_ -c _GBC_CORE_ROOT_/bin/openresty/nginx/conf/nginx.conf]]
 local _RESET_BEANSTALKD_CMD = [[_GBC_CORE_ROOT_/bin/beanstalkd/bin/beanstalkd > _GBC_CORE_ROOT_/logs/beanstalkd.log &]]
 
 local _GET_MEM_INFO_CMD = [[cat /proc/meminfo | grep -E "Mem(Free|Total)"]]

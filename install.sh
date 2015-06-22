@@ -202,21 +202,14 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     mkdir -p $DEST_DIR/apps/welcome/tools/actions
     mkdir -p $DEST_DIR/apps/welcome/workers/actions
     cp -f tools.sh $DEST_DIR/apps/welcome/.
-    ln -f -s $DEST_BIN_DIR/openresty/nginx/sbin/nginx /usr/bin/nginx
     # if it in Mac OS X, getopt_long should be deployed.
     if [ $OSTYPE == "MACOS" ]; then
         cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/tmp
         rm $CUR_DIR/shells/getopt_long
     fi
 
-    # copy nginx and config.lua file
-    cp -f $CUR_DIR/conf/nginx.conf $DEST_BIN_DIR/openresty/nginx/conf/.
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/openresty/nginx/conf/nginx.conf
-    rm -f $DEST_BIN_DIR/openresty/nginx/conf/nginx.conf--
-
-    cp -f $CUR_DIR/conf/config.lua $DEST_DIR/conf
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/conf/config.lua
-    rm -f $DEST_DIR/conf/config.lua--
+    # copy all configuration files
+    cp -f $CUR_DIR/conf/* $DEST_DIR/conf/
 
     # modify apps entry config
     $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/welcome/app_entry.conf
@@ -291,11 +284,6 @@ if [ $ALL -eq 1 ] || [ $REDIS -eq 1 ] ; then
     cp src/redis-benchmark $DEST_BIN_DIR/redis/bin
     cp src/redis-check-aof $DEST_BIN_DIR/redis/bin
     cp src/redis-check-dump $DEST_BIN_DIR/redis/bin
-
-    mkdir -p $DEST_BIN_DIR/redis/conf
-    cp -f $CUR_DIR/conf/redis.conf $DEST_BIN_DIR/redis/conf/.
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/redis/conf/redis.conf
-    rm -f $DEST_BIN_DIR/redis/conf/redis.conf--
 
     echo "Install Redis DONE"
 fi
