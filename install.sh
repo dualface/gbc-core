@@ -198,7 +198,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
 
     # deploy tool script
     cd $CUR_DIR/shells/
-    cp -f start_server stop_server check_server $DEST_DIR
+    cp -f start_server stop_server check_server init.inc $DEST_DIR
     mkdir -p $DEST_DIR/apps/welcome/tools/actions
     mkdir -p $DEST_DIR/apps/welcome/workers/actions
     cp -f tools.sh $DEST_DIR/apps/welcome/.
