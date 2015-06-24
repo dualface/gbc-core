@@ -14,98 +14,19 @@ function getVersion()
     $LUA_BIN -e "$CODE"
 }
 
-function getNginxNumOfWorker()
-{
-    CODE="_C=loadfile('$VAR_CONF_PATH')(); print(_C.numOfWorkers)"
-    $LUA_BIN -e "$CODE"
-}
-
-function getNginxPort()
-{
-    CODE="_C=loadfile('$VAR_CONF_PATH')(); print(_C.port)"
-    $LUA_BIN -e "$CODE"
-}
-
-function getRedisSocket()
-{
-    CODE="_C=loadfile('$VAR_CONF_PATH')(); if _C.redis and _C.redis.socket then print(string.sub(_C.redis.socket, 6)) end"
-    $LUA_BIN -e "$CODE"
-}
-
-function getRedisHost()
-{
-    CODE="_C=loadfile('$VAR_CONF_PATH')(); if _C.redis and _C.redis.host then print(_C.redis.host) end"
-    $LUA_BIN -e "$CODE"
-}
-
-function getRedisPort()
-{
-    CODE="_C=loadfile('$VAR_CONF_PATH')(); if _C.redis and _C.redis.port then print(_C.redis.port) end"
-    $LUA_BIN -e "$CODE"
-}
-
-function getBeanstalkdHost()
-{
-    CODE="_C=loadfile('$VAR_CONF_PATH')(); if _C.beanstalkd and _C.beanstalkd.host then print(_C.beanstalkd.host) end"
-    $LUA_BIN -e "$CODE"
-}
-
-function getBeanstalkdPort()
-{
-    CODE="_C=loadfile('$VAR_CONF_PATH')(); if _C.beanstalkd and _C.beanstalkd.port then print(_C.beanstalkd.port) end"
-    $LUA_BIN -e "$CODE"
-}
-
-function getBeanstalkdNumOfWorker()
-{
-    CODE="_C=loadfile('$VAR_CONF_PATH')(); if _C.beanstalkd and _C.beanstalkd.numOfWorkers then print(_C.beanstalkd.numOfWorkers) else print(1) end"
-    $LUA_BIN -e "$CODE"
-}
-
-# --
-
 function updateConfig()
 {
-    cp -f $CONF_PATH $VAR_CONF_PATH
-    $SED_BIN "s#_GBC_CORE_ROOT_#$ROOT_DIR#g" $VAR_CONF_PATH
-    if [ -f "$VAR_CONF_PATH--" ]; then
-        rm -f "$VAR_CONF_PATH--"
-    fi
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); updateConfig()"
 }
 
 function updateNginxConf()
 {
-    cp -f $NGINX_CONF_PATH $VAR_NGINX_CONF_PATH
-    $SED_BIN "s#_GBC_CORE_ROOT_#$ROOT_DIR#g" $VAR_NGINX_CONF_PATH
-
-    NGINX_PORT=$(getNginxPort $ROOT_DIR)
-    $SED_BIN "s#listen [0-9]*#listen $NGINX_PORT#g" $VAR_NGINX_CONF_PATH
-
-    NGINX_NUM_OF_WORKERS=$(getNginxNumOfWorker $ROOT_DIR)
-    $SED_BIN "s#worker_processes [0-9]*#worker_processes $NGINX_NUM_OF_WORKERS#g" $VAR_NGINX_CONF_PATH
-
-    if [ "$DEBUG" == "1" ] ; then
-        $SED_BIN "s#DEBUG = _DBG_ERROR#DEBUG = _DBG_DEBUG#g" $VAR_NGINX_CONF_PATH
-        $SED_BIN "s#error_log logs/error.log;#error_log logs/error.log debug;#g" $VAR_NGINX_CONF_PATH
-        $SED_BIN "s#lua_code_cache on#lua_code_cache off#g" $VAR_NGINX_CONF_PATH
-    else
-        $SED_BIN "s#DEBUG = _DBG_DEBUG#DEBUG = _DBG_ERROR#g" $VAR_NGINX_CONF_PATH
-        $SED_BIN "s#error_log logs/error.log debug;#error_log logs/error.log;#g" $VAR_NGINX_CONF_PATH
-        $SED_BIN "s#lua_code_cache off#lua_code_cache on#g" $VAR_NGINX_CONF_PATH
-    fi
-
-    if [ -f "$VAR_NGINX_CONF_PATH--" ]; then
-        rm -f "$VAR_NGINX_CONF_PATH--"
-    fi
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); updateNginxConfig()"
 }
 
 function updateRedisConf()
 {
-    cp -f $REDIS_CONF_PATH $VAR_REDIS_CONF_PATH
-    $SED_BIN "s#_GBC_CORE_ROOT_#$ROOT_DIR#g" $VAR_REDIS_CONF_PATH
-    if [ -f "$VAR_REDIS_CONF_PATH--" ]; then
-        rm -f "$VAR_REDIS_CONF_PATH--"
-    fi
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); updateRedisConfig()"
 }
 
 function updateAllConfigs()
@@ -113,6 +34,16 @@ function updateAllConfigs()
     updateConfig
     updateNginxConf
     updateRedisConf
+}
+
+function getRedisArgs()
+{
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); print(getRedisArgs())"
+}
+
+function getBeanstalkdArgs()
+{
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); print(getBeanstalkdArgs())"
 }
 
 # --
@@ -188,22 +119,7 @@ function stopRedis()
     # check redis process
     pgrep redis-server > /dev/null
     if [ $? -eq 0 ]; then
-        REDIS_ARGS=""
-        REDIS_SOCKET=$(getRedisSocket)
-        if [ "$REDIS_SOCKET" == "" ]; then
-            REDIS_HOST=$(getRedisHost)
-            if [ "$REDIS_HOST" != "" ]; then
-                REDIS_ARGS="$REDIS_ARGS -h $REDIS_HOST"
-            fi
-
-            REDIS_PORT=$(getRedisPort)
-            if [ "$REDIS_PORT" != "" ]; then
-                REDIS_ARGS="$REDIS_ARGS -p $REDIS_PORT"
-            fi
-        else
-            REDIS_ARGS="-s $REDIS_SOCKET"
-        fi
-
+        REDIS_ARGS=$(getRedisArgs)
         echo "[CMD] redis-cli $REDIS_ARGS SHUTDOWN SAVE"
         $REDIS_DIR/bin/redis-cli $REDIS_ARGS SHUTDOWN SAVE
         echo "Stop Redis DONE"
@@ -219,15 +135,7 @@ function startBeanstalkd()
 {
     pgrep beanstalkd > /dev/null
     if [ $? -ne 0 ]; then
-        BEANS_ARGS="-F"
-        BEANS_HOST=$(getBeanstalkdHost)
-        if [ "$BEANS_HOST" != "" ]; then
-            BEANS_ARGS="$BEANS_ARGS -l $BEANS_HOST"
-        fi
-        BEANS_PORT=$(getBeanstalkdPort)
-        if [ "$BEANS_PORT" != "" ]; then
-            BEANS_ARGS="$BEANS_ARGS -p $BEANS_PORT"
-        fi
+        BEANS_ARGS=$(getBeanstalkdArgs)
         echo "[CMD] beanstalkd $BEANS_ARGS"
         $ROOT_DIR/bin/beanstalkd/bin/beanstalkd $BEANS_ARGS > $VAR_BEANS_LOG_PATH &
         if [ $? -ne 0 ]; then
@@ -257,33 +165,33 @@ function stopBeanstalkd()
 
 function startJobWorkers()
 {
-    ps -ef | grep -i "start_workers.*sh" | grep -v "grep" > /dev/null
-    if [ $? -ne 0 ]; then
-        I=0
-        rm -f $ROOT_DIR/logs/jobworker.log
-        BEANS_NUM_OF_WORKERS=$(getBeanstalkdNumOfWorker)
-        while [ $I -lt $BEANS_NUM_OF_WORKERS ]; do
-            $ROOT_DIR/bin/instrument/start_workers.sh >> $ROOT_DIR/logs/jobworker.log &
-            I=$((I+1))
-        done
-        echo "Start Job Workers DONE"
-    else
-        echo "Job Workers is already started"
-    fi
+    # ps -ef | grep -i "start_workers.*sh" | grep -v "grep" > /dev/null
+    # if [ $? -ne 0 ]; then
+    #     I=0
+    #     rm -f $ROOT_DIR/logs/jobworker.log
+    #     BEANS_NUM_OF_WORKERS=$(getBeanstalkdNumOfWorker)
+    #     while [ $I -lt $BEANS_NUM_OF_WORKERS ]; do
+    #         $ROOT_DIR/bin/instrument/start_workers.sh >> $ROOT_DIR/logs/jobworker.log &
+    #         I=$((I+1))
+    #     done
+    #     echo "Start Job Workers DONE"
+    # else
+    #     echo "Job Workers is already started"
+    # fi
     echo ""
 }
 
 function stopJobWorkers()
 {
-    echo "[CMD] killall start_workers.sh"
-    if [ $OS_TYPE == "MACOS" ]; then
-        ps -ef | grep "start_workers" | awk '{print $2}' | xargs kill -9 > /dev/null 2> /dev/null
-    else
-        killall start_workers.sh > /dev/null 2> /dev/null
-    fi
-    echo "[CMD] killall $CURRDIR/bin/openresty/luajit/bin/lua"
-    killall -KILL $CURRDIR/bin/openresty/luajit/bin/lua > /dev/null 2> /dev/null
-    echo "Stop Job Workers DONE"
+    # echo "[CMD] killall start_workers.sh"
+    # if [ $OS_TYPE == "MACOS" ]; then
+    #     ps -ef | grep "start_workers" | awk '{print $2}' | xargs kill -9 > /dev/null 2> /dev/null
+    # else
+    #     killall start_workers.sh > /dev/null 2> /dev/null
+    # fi
+    # echo "[CMD] killall $CURRDIR/bin/openresty/luajit/bin/lua"
+    # killall -KILL $CURRDIR/bin/openresty/luajit/bin/lua > /dev/null 2> /dev/null
+    # echo "Stop Job Workers DONE"
     echo ""
 }
 
@@ -315,27 +223,33 @@ function checkStatus()
     if [ -f "$VAR_NGINX_CONF_PATH" ]; then
         grep "_DBG_DEBUG" $VAR_NGINX_CONF_PATH > /dev/null
         if [ $? -ne 0 ]; then
-            echo -e "\n$VERSION in \033[32mRELEASE\033[0m mode"
+            DEBUG=0
+            echo -e "$VERSION in \033[32mRELEASE\033[0m mode"
         else
-            echo -e "\n$VERSION in \033[31mDEBUG\033[0m mode"
+            DEBUG=1
+            echo -e "$VERSION in \033[31mDEBUG\033[0m mode"
         fi
+        echo ""
     fi
 
-    echo -e "\n\033[33m[Nginx] \033[0m"
+    echo -e "\033[33m[Nginx] \033[0m"
     ps -ef | grep -i "nginx" | grep -v "grep" --color=auto
+    echo ""
 
-    echo -e "\n\033[33m[Redis] \033[0m"
+    echo -e "\033[33m[Redis] \033[0m"
     ps -ef | grep -i "redis" | grep -v "grep" --color=auto
+    echo ""
 
-    echo -e "\n\033[33m[Beanstalkd] \033[0m"
+    echo -e "\033[33m[Beanstalkd] \033[0m"
     ps -ef | grep -i "beanstalkd" | grep -v "grep" --color=auto
+    echo ""
 
-    echo -e "\n\033[33m[Monitor] \033[0m"
+    echo -e "\033[33m[Monitor] \033[0m"
     ps -ef | grep -i "monitor\.sh" | grep -v "grep" --color=auto | grep -v "lua -e SERVER_CONFIG" --color=auto
+    echo ""
 
-    echo -e "\n\033[33m[Job Worker] \033[0m"
+    echo -e "\033[33m[Job Worker] \033[0m"
     ps -ef | grep -i "start_workers\.sh" | grep -v "grep" --color=auto | grep -v "lua -e SERVER_CONFIG" --color=auto
-
     echo ""
 }
 

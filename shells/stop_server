@@ -23,6 +23,8 @@ fi
 
 eval set -- "$ARGS"
 
+declare -i DEBUG=1
+
 while true ; do
     case "$1" in
         -v|--version)

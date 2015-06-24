@@ -31,8 +31,14 @@ _DBG_INFO  = 2
 _DBG_DEBUG = 3
 
 local config = {
+    -- all apps
+    apps = {
+        welcome = "_GBC_CORE_ROOT_/apps/welcome",
+        admin = "_GBC_CORE_ROOT_/apps/admin",
+    },
+
+    -- default app config
     app = {
-        -- default app config
         httpEnabled         = true,
         httpMessageFormat   = "json",
 
@@ -41,20 +47,21 @@ local config = {
 
         defaultAcceptedRequestType = "http",
 
-        websocketEnabled    = true,
-        websocketsTimeout   = 60 * 1000, -- 60s
+        websocketEnabled        = true,
+        websocketsTimeout       = 60 * 1000, -- 60s
         websocketsMaxPayloadLen = 16 * 1024, -- 16KB
-        websocketMessageFormat = "json",
-        maxSubscribeRetryCount = 10,
+        websocketMessageFormat  = "json",
+        maxSubscribeRetryCount  = 10,
+
+        numOfJobWorkers = 4,
     },
 
+    -- server config
     server = {
-        -- server config
-        numOfWorkers = 4,
-
-        -- GameBox Cloud Core settings
-        serverRootPath = "_GBC_CORE_ROOT_",
-        port = 8088,
+        nginx = {
+            numOfWorkers = 4,
+            port = 8088,
+        },
 
         -- internal memory database
         redis = {
@@ -69,7 +76,6 @@ local config = {
             host         = "127.0.0.1",
             port         = 11300,
             jobTube      = "jobTube",
-            numOfWorkers = 4,
         },
 
         -- internal monitor
@@ -79,7 +85,6 @@ local config = {
                 "redis-server",
                 "beanstalkd",
             },
-
             interval = 2,
         },
     }
