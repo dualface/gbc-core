@@ -39,21 +39,21 @@ local config = {
 
     -- default app config
     app = {
-        httpEnabled         = true,
-        httpMessageFormat   = "json",
-
-        jobMessageFormat    = "json",
-        sessionExpiredTime  = 60 * 10, -- 10m
-
+        messageFormat              = "json",
         defaultAcceptedRequestType = "http",
+        sessionExpiredTime         = 60 * 10, -- 10m
 
-        websocketEnabled        = true,
-        websocketsTimeout       = 60 * 1000, -- 60s
-        websocketsMaxPayloadLen = 16 * 1024, -- 16KB
-        websocketMessageFormat  = "json",
-        maxSubscribeRetryCount  = 10,
+        httpEnabled                = true,
+        httpMessageFormat          = "json",
 
-        numOfJobWorkers = 4,
+        websocketEnabled           = true,
+        websocketMessageFormat     = "json",
+        websocketsTimeout          = 60 * 1000, -- 60s
+        websocketsMaxPayloadLen    = 16 * 1024, -- 16KB
+        maxSubscribeRetryCount     = 10,
+
+        jobMessageFormat           = "json",
+        numOfJobWorkers            = 4,
     },
 
     -- server config

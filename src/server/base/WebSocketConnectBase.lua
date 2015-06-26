@@ -46,13 +46,13 @@ local Constants = import(".Constants")
 function WebSocketConnectBase:ctor(config)
     WebSocketConnectBase.super.ctor(self, config)
 
-    if config.appSocketMessageFormat then
-        self.config.messageFormat = config.appSocketMessageFormat
+    if config.app.websocketMessageFormat then
+        self.config.app.messageFormat = config.app.websocketMessageFormat
     end
 
-    self.config.websocketsTimeout = self.config.websocketsTimeout or Constants.WEBSOCKET_DEFAULT_TIME_OUT
-    self.config.websocketsMaxPayloadLen = self.config.websocketsMaxPayloadLen or Constants.WEBSOCKET_DEFAULT_MAX_PAYLOAD_LEN
-    self.config.maxSubscribeRetryCount  = self.config.maxSubscribeRetryCount or Constants.WEBSOCKET_DEFAULT_MAX_SUB_RETRY_COUNT
+    self.config.app.websocketsTimeout       = self.config.app.websocketsTimeout or Constants.WEBSOCKET_DEFAULT_TIME_OUT
+    self.config.app.websocketsMaxPayloadLen = self.config.app.websocketsMaxPayloadLen or Constants.WEBSOCKET_DEFAULT_MAX_PAYLOAD_LEN
+    self.config.app.maxSubscribeRetryCount  = self.config.app.maxSubscribeRetryCount or Constants.WEBSOCKET_DEFAULT_MAX_SUB_RETRY_COUNT
 
     self._requestType = Constants.WEBSOCKET_REQUEST_TYPE
     self._subscribeChannels = {}
@@ -81,8 +81,8 @@ function WebSocketConnectBase:runEventLoop()
 
     local server = require("resty.websocket.server")
     local socket, err = server:new({
-        timeout = self.config.websocketsTimeout,
-        max_payload_len = self.config.websocketsMaxPayloadLen,
+        timeout = self.config.app.websocketsTimeout,
+        max_payload_len = self.config.app.websocketsMaxPayloadLen,
     })
     if err then
         throw("failed to create websocket server, %s", err)
@@ -202,7 +202,7 @@ function WebSocketConnectBase:getConnectId()
 end
 
 function WebSocketConnectBase:sendMessageToSelf(message)
-    if self.config.messageFormat == Constants.MESSAGE_FORMAT_JSON and type(message) == "table" then
+    if self.config.app.messageFormat == Constants.MESSAGE_FORMAT_JSON and type(message) == "table" then
         message = json_encode(message)
     end
     self._socket:send_text(tostring(message))
@@ -266,7 +266,7 @@ function WebSocketConnectBase:subscribeChannel(channelName, callback)
             self._subscribeChannels[channel] = nil
         else
             -- if an error leads to an exiting, retry to subscribe channel
-            if sub.retryCount < self.config.maxSubscribeRetryCount then
+            if sub.retryCount < self.config.app.maxSubscribeRetryCount then
                 sub.retryCount = sub.retryCount + 1
                 printWarn("subscribe channel \"%s\" loop ended, try [%d]", channel, sub.retryCount)
                 self:subscribeChannel(channel, callback)
@@ -364,7 +364,7 @@ function WebSocketConnectBase:_parseMessage(rawMessage, messageType)
     end
 
     -- TODO: support message format plugin
-    if self.config.appSocketMessageFormat == "json" then
+    if self.config.app.messageFormat == "json" then
         local message = json.decode(rawMessage)
         if type(message) == "table" then
             return message
@@ -372,7 +372,7 @@ function WebSocketConnectBase:_parseMessage(rawMessage, messageType)
             throw("not supported message format \"%s\"", type(message))
         end
     else
-        throw("not support message format \"%s\"", tostring(self.config.appSocketMessageFormat))
+        throw("not support message format \"%s\"", tostring(self.config.app.messageFormat))
     end
 end
 

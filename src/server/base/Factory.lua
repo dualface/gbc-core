@@ -24,17 +24,10 @@ THE SOFTWARE.
 
 local Factory = class("Factory")
 
-function Factory.create(config, classNamePrefix, ...)
-    local path = config.appRootPath .. "/?.lua;"
-    if not string.find(package.path, path, 1, true) then
-        package.path = path .. package.path
-    end
-
-    local ok, appConfig = pcall(require, "app_config")
-    if ok and type(appConfig) == "table" then
-        config = clone(config)
-        table.merge(config, appConfig)
-    end
+function Factory.create(appRootPath, classNamePrefix, ...)
+    printInfo(appRootPath)
+    local config = SERVER_APP_CONFIGS[appRootPath]
+    package.path = config.app.packagePath
 
     local tagretClass
     local ok, _tagretClass = pcall(require, classNamePrefix)

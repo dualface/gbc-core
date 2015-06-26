@@ -48,7 +48,7 @@ function WorkerBase:ctor(config)
     WorkerBase.super.ctor(self, config)
 
     self._requestType = Constants.WORKER_REQUEST_TYPE
-    self._jobTube = config.beanstalkd.jobTube
+    self._jobTube = config.server.beanstalkd.jobTube
     self._jobService = JobService:create(self:_getRedis(), self:_getBeans(), config)
 end
 
@@ -93,7 +93,7 @@ function WorkerBase:runEventLoop()
         -- handle this job
         local jobAction = data.action
         res = self:runAction(jobAction, data.arg)
-        if self.config.appJobMessageFormat == "json" then
+        if self.config.app.jobMessageFormat == "json" then
             res = json_encode(res)
         end
 
@@ -107,7 +107,7 @@ function WorkerBase:runEventLoop()
 end
 
 function WorkerBase:getActionModulePath(actionModuleName)
-    return string_format("%s.%s%s", "workers.actions", actionModuleName, self.config.actionModuleSuffix)
+    return string_format("%s.%s%s", "workers.actions", actionModuleName, self.config.app.actionModuleSuffix)
 end
 
 function WorkerBase:_getBeans()
@@ -118,7 +118,7 @@ function WorkerBase:_getBeans()
 end
 
 function WorkerBase:_newBeans()
-    local beans = BeansService:create(self.config.beanstalkd)
+    local beans = BeansService:create(self.config.server.beanstalkd)
     local ok, err = beans:connect()
     if err then
         throw("connect internal beanstalkd failed, %s", err)
@@ -134,7 +134,7 @@ function WorkerBase:_getRedis()
 end
 
 function WorkerBase:_newRedis()
-    local redis = RedisService:create(self.config.redis)
+    local redis = RedisService:create(self.config.server.redis)
     local ok, err = redis:connect()
     if err then
         throw("connect internal redis failed, %s", err)

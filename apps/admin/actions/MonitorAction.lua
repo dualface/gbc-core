@@ -43,7 +43,7 @@ local MonitorAction = class("MonitorAction")
 
 function MonitorAction:ctor(connect)
     self.connect = connect
-    self._interval = connect.config.monitor.interval
+    self._interval = connect.config.server.monitor.interval
 end
 
 function MonitorAction:getalldataAction(arg)

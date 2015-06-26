@@ -40,16 +40,15 @@ local ActionDispatcher = class("ActionDispatcher")
 function ActionDispatcher:ctor(config)
     self.config = clone(checktable(config))
 
-    self.config.appRootPath = self.config.appRootPath
-    self.config.actionPackage = self.config.actionPackage or Constants.ACTION_PACKAGE_NAME
-    self.config.actionModuleSuffix = config.actionModuleSuffix or Constants.DEFAULT_ACTION_MODULE_SUFFIX
-    self.config.autoloads = config.autoloads or {}
+    self.config.app.actionPackage      = self.config.app.actionPackage or Constants.ACTION_PACKAGE_NAME
+    self.config.app.actionModuleSuffix = config.app.actionModuleSuffix or Constants.DEFAULT_ACTION_MODULE_SUFFIX
+    self.config.app.autoloads          = config.app.autoloads or {}
 
     self._actionModules = {}
     self._requestParameters = nil
 
     -- autoloads
-    for packageName, packageConfig in pairs(self.config.autoloads) do
+    for packageName, packageConfig in pairs(self.config.app.autoloads) do
         local packageClass = cc.load(packageName)
         local package = packageClass.new(packageConfig, self)
         self[packageName .. "_"] = package
@@ -59,7 +58,7 @@ end
 function ActionDispatcher:runAction(actionName, data)
     -- parse actionName
     local actionModuleName, actionMethodName = self:normalizeActionName(actionName)
-    actionMethodName = actionMethodName .. self.config.actionModuleSuffix
+    actionMethodName = actionMethodName .. self.config.app.actionModuleSuffix
 
     local action -- instance
     -- check registered action module before load module
@@ -84,7 +83,7 @@ function ActionDispatcher:runAction(actionName, data)
         throw("failed to load action module \"%s\"", actionModulePath or actionModuleName)
     end
 
-    local acceptedRequestType = rawget(actionModule, "ACCEPTED_REQUEST_TYPE") or self.config.defaultAcceptedRequestType
+    local acceptedRequestType = rawget(actionModule, "ACCEPTED_REQUEST_TYPE") or self.config.app.defaultAcceptedRequestType
     local currentRequestType = self:getRequestType()
     if not self:checkActionTypes(currentRequestType, acceptedRequestType) then
         throw("can't access this action via \"%s\"", currentRequestType)
@@ -121,7 +120,7 @@ function ActionDispatcher:checkActionTypes(currentRequestType, acceptedRequestTy
 end
 
 function ActionDispatcher:getActionModulePath(actionModuleName)
-    return string_format("%s.%s%s", self.config.actionPackage, actionModuleName, self.config.actionModuleSuffix)
+    return string_format("%s.%s%s", self.config.app.actionPackage, actionModuleName, self.config.app.actionModuleSuffix)
 end
 
 function ActionDispatcher:registerActionModule(actionModuleName, actionModule)

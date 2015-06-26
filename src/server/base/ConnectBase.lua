@@ -38,7 +38,7 @@ local ConnectBase = class("ConnectBase", ActionDispatcher)
 
 function ConnectBase:ctor(config)
     ConnectBase.super.ctor(self, config)
-    self.config.messageFormat = self.config.messageFormat or Constants.DEFAULT_MESSAGE_FORMAT
+    self.config.app.messageFormat = self.config.app.messageFormat or Constants.DEFAULT_MESSAGE_FORMAT
 end
 
 function ConnectBase:getRequestType()
@@ -102,7 +102,7 @@ function ConnectBase:sendMessageToChannel(channelName, message)
     if not channelName or not message then
         throw("send message to channel with invalid channel name \"%s\" or invalid message", tostring(channelName))
     end
-    if self.config.messageFormat == Constants.MESSAGE_FORMAT_JSON and type(message) == "table" then
+    if self.config.app.messageFormat == Constants.MESSAGE_FORMAT_JSON and type(message) == "table" then
         message = json_encode(message)
     end
     local redis = self:getRedis()
@@ -118,7 +118,7 @@ end
 
 function ConnectBase:_loadSession(sid)
     local redis = self:getRedis()
-    local session = SessionService.load(redis, sid, self.config.appSessionExpiredTime, ngx.var.remote_addr)
+    local session = SessionService.load(redis, sid, self.config.app.sessionExpiredTime, ngx.var.remote_addr)
     if session then
         session:setKeepAlive()
         printInfo("load session \"%s\"", sid)
@@ -134,11 +134,11 @@ function ConnectBase:_genSession()
     local mask = string.format("%0.5f|%0.10f|%s", now, random, self._secret)
     local origin = string.format("%s|%s", addr, ngx_md5(mask))
     local sid = ngx_md5(origin)
-    return SessionService:create(self:getRedis(), sid, self.config.appSessionExpiredTime, addr)
+    return SessionService:create(self:getRedis(), sid, self.config.app.sessionExpiredTime, addr)
 end
 
 function ConnectBase:_newRedis()
-    local redis = RedisService:create(self.config.redis)
+    local redis = RedisService:create(self.config.server.redis)
     local ok, err = redis:connect()
     if err then
         throw("connect internal redis failed, %s", err)

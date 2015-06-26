@@ -44,8 +44,8 @@ local Constants = import(".Constants")
 function HttpConnectBase:ctor(config)
     HttpConnectBase.super.ctor(self, config)
 
-    if config.appHttpMessageFormat then
-        self.config.messageFormat = config.appHttpMessageFormat
+    if config.app.httpMessageFormat then
+        self.config.app.messageFormat = config.app.httpMessageFormat
     end
 
     self._requestType = Constants.HTTP_REQUEST_TYPE
@@ -129,7 +129,7 @@ end
 
 function HttpConnectBase:_genOutput(result, err)
     local rtype = type(result)
-    if self.config.messageFormat == Constants.MESSAGE_FORMAT_JSON then
+    if self.config.app.messageFormat == Constants.MESSAGE_FORMAT_JSON then
         if err then
             result = {err = strip_luafile_paths(err)}
         elseif rtype == "nil" then
@@ -138,7 +138,7 @@ function HttpConnectBase:_genOutput(result, err)
             result = {result = tostring(result)}
         end
         return json_encode(result)
-    elseif self.config.messageFormat == Constants.MESSAGE_FORMAT_TEXT then
+    elseif self.config.app.messageFormat == Constants.MESSAGE_FORMAT_TEXT then
         if err then
             return nil, err
         elseif rtype == "nil" then
