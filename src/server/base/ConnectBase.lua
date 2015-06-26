@@ -143,6 +143,7 @@ function ConnectBase:_newRedis()
     if err then
         throw("connect internal redis failed, %s", err)
     end
+    redis:command("SELECT", self.config.app.appIndex)
     return redis
 end
 
