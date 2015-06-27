@@ -32,12 +32,13 @@ local string_find = string.find
 local string_sub = string.sub
 local table_concat = table.concat
 local table_remove = table.remove
+local json_encode = json.encode
 
 local Constants = import(".Constants")
 
-local ActionDispatcher = class("ActionDispatcher")
+local AppBase = class("AppBase")
 
-function ActionDispatcher:ctor(config)
+function AppBase:ctor(config)
     self.config = clone(checktable(config))
 
     self.config.app.actionPackage      = self.config.app.actionPackage or Constants.ACTION_PACKAGE_NAME
@@ -46,6 +47,7 @@ function ActionDispatcher:ctor(config)
 
     self._actionModules = {}
     self._requestParameters = nil
+    self._services = {}
 
     -- autoloads
     for packageName, packageConfig in pairs(self.config.app.autoloads) do
@@ -55,7 +57,7 @@ function ActionDispatcher:ctor(config)
     end
 end
 
-function ActionDispatcher:runAction(actionName, data)
+function AppBase:runAction(actionName, data)
     -- parse actionName
     local actionModuleName, actionMethodName = self:normalizeActionName(actionName)
     actionMethodName = actionMethodName .. self.config.app.actionModuleSuffix
@@ -103,7 +105,7 @@ function ActionDispatcher:runAction(actionName, data)
     return method(action, data)
 end
 
-function ActionDispatcher:checkActionTypes(currentRequestType, acceptedRequestType)
+function AppBase:checkActionTypes(currentRequestType, acceptedRequestType)
     if type(acceptedRequestType) == "table" then
         for _, v in ipairs(acceptedRequestType) do
             if string_lower(v) == currentRequestType then
@@ -119,11 +121,11 @@ function ActionDispatcher:checkActionTypes(currentRequestType, acceptedRequestTy
     return false
 end
 
-function ActionDispatcher:getActionModulePath(actionModuleName)
+function AppBase:getActionModulePath(actionModuleName)
     return string_format("%s.%s%s", self.config.app.actionPackage, actionModuleName, self.config.app.actionModuleSuffix)
 end
 
-function ActionDispatcher:registerActionModule(actionModuleName, actionModule)
+function AppBase:registerActionModule(actionModuleName, actionModule)
     if type(actionModuleName) ~= "string" then
         throw("invalid action module name \"%s\"", actionModuleName)
     end
@@ -136,7 +138,7 @@ function ActionDispatcher:registerActionModule(actionModuleName, actionModule)
     self._actionModules[actionModuleName] = actionModule
 end
 
-function ActionDispatcher:normalizeActionName(actionName)
+function AppBase:normalizeActionName(actionName)
     local actionName = actionName
     if not actionName or actionName == "" then
         actionName = "index.index"
@@ -161,4 +163,62 @@ function ActionDispatcher:normalizeActionName(actionName)
     return table_concat(parts, "."), method
 end
 
-return ActionDispatcher
+function AppBase:closeConnect(connectId)
+    if not connectId then
+        throw("invalid connect id \"%s\"", tostring(connectId))
+    end
+    self:sendMessageToConnect(connectId, "QUIT")
+end
+
+function AppBase:sendMessageToConnect(connectId, message)
+    if not connectId then
+        throw("send message to connect with invalid id \"%s\"", tostring(connectId))
+    end
+    local channelName = Constants.CONNECT_CHANNEL_PREFIX .. tostring(connectId)
+    self:sendMessageToChannel(channelName, message)
+end
+
+function AppBase:sendMessageToChannel(channelName, message)
+    if not channelName or not message then
+        throw("send message to channel with invalid channel name \"%s\" or invalid message", tostring(channelName))
+    end
+    if self.config.app.messageFormat == Constants.MESSAGE_FORMAT_JSON and type(message) == "table" then
+        message = json_encode(message)
+    end
+    local redis = self:getRedis()
+    redis:command("PUBLISH", channelName, tostring(message))
+end
+
+function AppBase:getService(name, ...)
+    local service = self._services[name]
+    if not service then
+        local serviceClass = cc.load(name).service
+        service = serviceClass:create(...)
+        self._services[name] = service
+    end
+    return service
+end
+
+function AppBase:getRedis()
+    local redis = self._redis
+    if not redis then
+        redis = self:getService("redis", self.config.server.redis)
+        redis:connect()
+        redis:command("SELECT", self.config.app.appIndex)
+        self._redis = redis
+    end
+    return redis
+end
+
+function AppBase:getJobs()
+    if not self._beans then
+        self._beans = self:getService("beanstalkd", self.config.server.beanstalkd)
+        self._beans:connect()
+    end
+    if not self._jobs then
+        self._jobs = self:getService("job", self:getRedis(), self._beans, self.config.app)
+    end
+    return self._jobs
+end
+
+return AppBase

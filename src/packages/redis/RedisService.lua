@@ -64,20 +64,27 @@ function RedisService:ctor(config)
     end
     self._config = clone(config)
     self._redis = RedisAdapter:create(self._config)
+    self._connected = false
 end
 
 function RedisService:connect()
     local ok, err = self._redis:connect()
     if err then
-        throw("%s", err)
+        throw("connect redis failed, %s", err)
     end
+    self._connected = true
+end
+
+function RedisService:isConnected()
+    return self._connected
 end
 
 function RedisService:close()
     local ok, err = self._redis:close()
     if err then
-        throw("%s", err)
+        throw("close redis connect failed, %s", err)
     end
+    self._connected = false
     return true
 end
 
@@ -93,7 +100,7 @@ function RedisService:command(command, ...)
     command = string_lower(command)
     local res, err = self._redis:command(command, ...)
     if err then
-        throw("%s", err)
+        throw("redis command [%s] failed, %s", command, err)
     end
 
     -- converting result
@@ -108,7 +115,7 @@ end
 function RedisService:pubsub(subscriptions)
     local loop, err = self._redis:pubsub(subscriptions)
     if err then
-        throw("%s", err)
+        throw("redis pubsub failed, %s", err)
     end
     return loop
 end

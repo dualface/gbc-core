@@ -41,11 +41,11 @@ function JobService:ctor(redis, beans, config)
         throw("job service is initialized failed: redis or beans is invalid.")
     end
     if not config then
-        throw("job service is initialized failed: can't get jobTube from config.")
+        throw("job service is initialized failed: can't get config.")
     end
     self._redis = redis
     self._beans = beans
-    self._jobTube = config.beanstalkd.jobTube
+    self._tube = string.format("job-%d", config.appIndex)
 end
 
 function JobService:add(action, data, delay, priority, ttr)
@@ -76,7 +76,7 @@ function JobService:add(action, data, delay, priority, ttr)
     job.ttr = ttr
 
     -- put job to beanstalkd
-    beans:command("use", self._jobTube)
+    beans:command("use", self._tube)
 
     -- jobBid means job id in beanstalkd.
     jobBid = beans:command("put", json_encode(job), tonumber(priority), tonumber(delay), tonumber(ttr))

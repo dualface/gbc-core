@@ -27,14 +27,13 @@ local checktable = checktable
 local ngx = ngx
 local ngx_now = ngx.now
 local ngx_md5 = ngx.md5
-local json_encode = json.encode
 
 local Constants = import(".Constants")
 local SessionService = import(".SessionService")
 local RedisService = cc.load("redis").service
 
-local ActionDispatcher = import(".ActionDispatcher")
-local ConnectBase = class("ConnectBase", ActionDispatcher)
+local AppBase = import(".AppBase")
+local ConnectBase = class("ConnectBase", AppBase)
 
 function ConnectBase:ctor(config)
     ConnectBase.super.ctor(self, config)
@@ -83,39 +82,6 @@ function ConnectBase:destroySession()
     end
 end
 
-function ConnectBase:closeConnect(connectId)
-    if not connectId then
-        throw("invalid connect id \"%s\"", tostring(connectId))
-    end
-    self:sendMessageToConnect(connectId, "QUIT")
-end
-
-function ConnectBase:sendMessageToConnect(connectId, message)
-    if not connectId then
-        throw("send message to connect with invalid id \"%s\"", tostring(connectId))
-    end
-    local channelName = Constants.CONNECT_CHANNEL_PREFIX .. tostring(connectId)
-    self:sendMessageToChannel(channelName, message)
-end
-
-function ConnectBase:sendMessageToChannel(channelName, message)
-    if not channelName or not message then
-        throw("send message to channel with invalid channel name \"%s\" or invalid message", tostring(channelName))
-    end
-    if self.config.app.messageFormat == Constants.MESSAGE_FORMAT_JSON and type(message) == "table" then
-        message = json_encode(message)
-    end
-    local redis = self:getRedis()
-    redis:command("PUBLISH", channelName, tostring(message))
-end
-
-function ConnectBase:getRedis()
-    if not self._redis then
-        self._redis = self:_newRedis()
-    end
-    return self._redis
-end
-
 function ConnectBase:_loadSession(sid)
     local redis = self:getRedis()
     local session = SessionService.load(redis, sid, self.config.app.sessionExpiredTime, ngx.var.remote_addr)
@@ -135,16 +101,6 @@ function ConnectBase:_genSession()
     local origin = string.format("%s|%s", addr, ngx_md5(mask))
     local sid = ngx_md5(origin)
     return SessionService:create(self:getRedis(), sid, self.config.app.sessionExpiredTime, addr)
-end
-
-function ConnectBase:_newRedis()
-    local redis = RedisService:create(self.config.server.redis)
-    local ok, err = redis:connect()
-    if err then
-        throw("connect internal redis failed, %s", err)
-    end
-    redis:command("SELECT", self.config.app.appIndex)
-    return redis
 end
 
 return ConnectBase

@@ -230,7 +230,10 @@ function WebSocketConnectBase:subscribeChannel(channelName, callback)
         sub.running = true
 
         -- pubsub thread need separated redis connect
-        local redis = self:_newRedis()
+        local redis = cc.load("redis").service:create(self.config.server.redis)
+        redis:connect()
+        redis:command("SELECT", self.config.app.appIndex)
+
         local channel = sub.name
         local loop, err = redis:pubsub({subscribe = channel})
         if not loop then

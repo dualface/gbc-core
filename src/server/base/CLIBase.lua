@@ -24,10 +24,10 @@ THE SOFTWARE.
 
 local type = type
 
-local ActionDispatcher = import(".ActionDispatcher")
+local AppBase = import(".AppBase")
 local Constants = import(".Constants")
 
-local CLIBase = class("CLIBase", ActionDispatcher)
+local CLIBase = class("CLIBase", AppBase)
 
 function CLIBase:ctor(config, arg)
     CLIBase.super.ctor(self, config)
