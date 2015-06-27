@@ -615,23 +615,6 @@ function table.length(t)
     return count
 end
 
-local string_split
-function table.fetch(t, key, def)
-    local keys = string_split(key, ".")
-    for _, key in ipairs(keys) do
-        if t[key] then
-            t = t[key]
-        else
-            if type(def) ~= "nil" then
-                return def
-            else
-                return nil
-            end
-        end
-    end
-    return t
-end
-
 local _htmlSpecialCharsTable = {}
 _htmlSpecialCharsTable["&"] = "&amp;"
 _htmlSpecialCharsTable["\""] = "&quot;"
@@ -682,7 +665,6 @@ function string.split(input, delimiter)
     end
     return arr
 end
-string_split = string.split
 
 local _trimChars = " \t\n\r"
 function string.ltrim(input, chars)
