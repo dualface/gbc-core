@@ -40,6 +40,7 @@ NGINX_DIR           = ROOT_DIR .. "/bin/openresty/nginx"
 REDIS_DIR           = ROOT_DIR .. "/bin/redis"
 TMP_DIR             = ROOT_DIR .. "/tmp"
 CONF_DIR            = ROOT_DIR .. "/conf"
+DB_DIR              = ROOT_DIR .. "/db"
 
 CONF_PATH           = CONF_DIR .. "/config.lua"
 NGINX_CONF_PATH     = CONF_DIR .. "/nginx.conf"
@@ -219,7 +220,11 @@ end
 function getBeanstalkdArgs()
     local config = checkVarConfig()
 
-    local args = {"-F"}
+    local args = {
+        string.format("-b %s", DB_DIR), -- binlog dest dir
+        "-f 100", -- fsync at most once every 100 milliseconds
+    }
+
     local host = getValue(config, "server.beanstalkd.host")
     local port = getValue(config, "server.beanstalkd.port")
 
