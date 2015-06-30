@@ -216,7 +216,8 @@ function AppBase:getJobs()
         self._beans:connect()
     end
     if not self._jobs then
-        self._jobs = self:getService("job", self:getRedis(), self._beans, self.config.app)
+        self._jobs = self:getService("job", self._beans)
+        self._jobs:use(string_format("job-%d", self.config.app.appIndex))
     end
     return self._jobs
 end

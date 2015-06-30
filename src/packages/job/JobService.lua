@@ -22,7 +22,6 @@ THE SOFTWARE.
 
 ]]
 
-local pairs = pairs
 local json_encode = json.encode
 local json_decode = json.decode
 local string_format = string.format
@@ -32,22 +31,39 @@ local JobService = class("JobService")
 JobService.DEFAULT_PRIORITY = 5000
 JobService.DEFAULT_TTR      = 120
 
-function JobService:ctor(beans, config)
+function JobService:ctor(beans)
     if not beans then
         throw("job service is initialized failed: beans is invalid.")
     end
-    if not config then
-        throw("job service is initialized failed: config is invalid.")
-    end
     self._beans = beans
+end
 
-    self._tube = string.format("job-%d", config.appIndex)
-    self._beans:command("use", self._tube)
+function JobService:use(tube)
+    local ok, err = self._beans:command("use", tube)
+    if not ok then
+        throw("JobService:use() failed, %s", err)
+    end
+end
+
+function JobService:watch(tube)
+    local size, err = self._beans:command("watch", tube)
+    if not size then
+        throw("JobService:watch() failed, %s", err)
+    end
+    return tonumber(size)
+end
+
+function JobService:ignore(tube)
+    local size, err = self._beans:command("ignore", tube)
+    if not size then
+        throw("JobService:ignore() failed, %s", err)
+    end
+    return tonumber(size)
 end
 
 function JobService:add(action, data, delay, priority, ttr)
     if type(action) ~= "string" then
-        throw("add job failed, invalid action name")
+        throw("JobService:add() failed, invalid action name")
     end
 
     if type(delay) ~= "number" then
@@ -70,7 +86,7 @@ function JobService:add(action, data, delay, priority, ttr)
 
     local id, line = self._beans:command("put", json_encode(job), priority, delay, ttr)
     if not id then
-        throw(string_format("add job failed, %s", line))
+        throw(string_format("JobService:add() failed, %s", line))
     end
 
     job.id = id
@@ -79,38 +95,23 @@ function JobService:add(action, data, delay, priority, ttr)
 end
 
 function JobService:query(jobId)
-    local id, line = self._beans:command("peek", jobId)
-    
+    local id, data = self._beans:command("peek", jobId)
+    if not id then
+        throw(string_format("JobService:query() failed, %s", data))
+    end
+
+    local job = json_decode(data)
+    if type(job) ~= "table" then
+        throw(string_format("JobService:query() failed, invalid job data"))
+    end
+    return job
 end
 
 function JobService:remove(jobId)
-    local redis = self._redis
-    local beans = self._beans
-
-    local job, err = redis:command("HGET", _JOB_HASH, jobId)
-    if not job then
-        return nil, string_format("job service remove failed: can't get job from db, %s", err)
-    end
-    if ngx and jobStr == ngx.null then
-        return nil, string_format("job service remove failed: job[%d] does not exist.", jobId)
-    end
-
-    -- delete it from redis
-    redis:command("HDEL", _JOB_HASH, jobId)
-
-    job, err = json_decode(job)
-    if not job then
-        return nil, string_format("job service remove, the contents of job[%d] is invalid.", jobId)
-    end
-
-    -- delete it from beanstalkd
-    local bid = job.bid
-    local ok, err = beans:command("delete", tonumber(bid))
+    local ok, err = beans:command("delete", jobId)
     if not ok then
-        return nil, string_format("job service remove failed: %s", err)
+        throw(string_format("JobService:remove() failed, %s", err))
     end
-
-    return true, nil
 end
 
 return JobService
