@@ -56,8 +56,9 @@ declare -i REDIS=0
 OPENRESTY_VER=1.7.7.1
 LUASOCKET_VER=3.0-rc1
 LUASEC_VER=0.5
-REDIS_VAR=2.6.16
+REDIS_VER=2.6.16
 BEANSTALKD_VER=1.9
+LUABSON_VER=20150709
 
 if [ $OSTYPE == "MACOS" ]; then
     gcc -o $CUR_DIR/shells/getopt_long $CUR_DIR/shells/src/getopt_long.c
@@ -262,14 +263,30 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     tar zxf luainspect.tar.gz
     cp -f inspect.lua $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
 
+    # install luabson
+    cd $BUILD_DIR
+    tar zxf luabson-$LUABSON_VER.tar.gz
+    cd lua-bson
+    if [ $OSTYPE == "MACOS" ]; then
+        $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" ./Makefile
+    else
+        $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib#g" ./Makefile
+    fi
+
+    make clean && make
+
+    cp -f ./bson.so $DEST_BIN_DIR/openresty/lualib/.
+    cp -f ./bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
+
+
     echo "Install Openresty and GameBox Cloud Core DONE"
 fi
 
 #install redis
 if [ $ALL -eq 1 ] || [ $REDIS -eq 1 ] ; then
     cd $BUILD_DIR
-    tar zxf redis-$REDIS_VAR.tar.gz
-    cd redis-$REDIS_VAR
+    tar zxf redis-$REDIS_VER.tar.gz
+    cd redis-$REDIS_VER
     mkdir -p $DEST_BIN_DIR/redis/bin
 
     make
