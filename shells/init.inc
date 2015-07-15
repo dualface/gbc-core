@@ -263,6 +263,7 @@ fi
 cd $ROOT_DIR
 
 LUA_BIN=$ROOT_DIR/bin/openresty/luajit/bin/lua
+RESTY_BIN=$ROOT_DIR/bin/openresty/bin/resty
 NGINX_DIR=$ROOT_DIR/bin/openresty/nginx
 REDIS_DIR=$ROOT_DIR/bin/redis
 

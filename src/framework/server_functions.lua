@@ -25,6 +25,7 @@ THE SOFTWARE.
 local string_gsub = string.gsub
 
 function strip_luafile_paths(str)
-    str = string_gsub(str, "/.*/(.*lua:%d+:)", "%1")
-    return string_gsub(str, "'/.*/(.*lua)'", "'%1'")
+    return string_gsub(str, "[./%a]+/(%a+.lua:%d+:) ", "%1 ")
+    -- str = string_gsub(str, "/.*/(.*lua:%d+:)", "%1")
+    -- return string_gsub(str, "'/.*/(.*lua)'", "'%1'")
 end

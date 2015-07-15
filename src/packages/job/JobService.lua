@@ -78,7 +78,7 @@ function JobService:add(action, data, delay, priority, ttr)
 
     local job = {
         action   = action,
-        data     = data,
+        data     = clone(data),
         delay    = delay,
         priority = priority,
         ttr      = ttr,
@@ -90,13 +90,15 @@ function JobService:add(action, data, delay, priority, ttr)
     end
 
     job.id = id
-    job.line = line
     return job
 end
 
 function JobService:query(jobId)
     local id, data = self._beans:command("peek", jobId)
     if not id then
+        if data == "NOT_FOUND" then
+            return nil
+        end
         throw(string_format("JobService:query() failed, %s", data))
     end
 
@@ -104,11 +106,13 @@ function JobService:query(jobId)
     if type(job) ~= "table" then
         throw(string_format("JobService:query() failed, invalid job data"))
     end
+
+    job.id = jobId
     return job
 end
 
 function JobService:remove(jobId)
-    local ok, err = beans:command("delete", jobId)
+    local ok, err = self._beans:command("delete", jobId)
     if not ok then
         throw(string_format("JobService:remove() failed, %s", err))
     end

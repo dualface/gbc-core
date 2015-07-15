@@ -10,6 +10,7 @@ Constants.WORKER_REQUEST_TYPE    = "worker"
 -- action
 Constants.ACTION_PACKAGE_NAME                   = 'actions'
 Constants.DEFAULT_ACTION_MODULE_SUFFIX          = 'Action'
+Constants.DEFAULT_ACTION_METHOD_SUFFIX          = 'Action'
 Constants.MESSAGE_FORMAT_JSON                   = "json"
 Constants.MESSAGE_FORMAT_TEXT                   = "text"
 Constants.DEFAULT_MESSAGE_FORMAT                = Constants.MESSAGE_FORMAT_JSON

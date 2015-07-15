@@ -24,6 +24,6 @@ THE SOFTWARE.
 
 local _P = {}
 
-_P.service = import(".service")
+_P.service = import(".BeanstalkdService")
 
 return _P

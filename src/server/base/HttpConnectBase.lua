@@ -122,9 +122,13 @@ function HttpConnectBase:runEventLoop()
         -- error message need return to client
     end)
     if err then
-        return nil, string.format("run action \"%s\" error, %s", actionName, err)
+        return nil, self:_formatError(actionName, err)
     end
     return result
+end
+
+function HttpConnectBase:_formatError(actionName, err)
+    return string.format("run action \"%s\" error, %s", actionName, err)
 end
 
 function HttpConnectBase:_genOutput(result, err)

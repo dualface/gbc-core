@@ -90,6 +90,27 @@ function _M.watch(self, tube)
     return 0, line
 end
 
+function _M.ignore(self, tube)
+    local sock = self.sock
+    if not sock then
+        return nil, "not initialized"
+    end
+    local cmd = {"ignore", " ", tube, "\r\n"}
+    local bytes, err = sock:send(tabconcat(cmd))
+    if not bytes then
+        return nil, "failed to ignore tube, send data error: " .. err
+    end
+    local line, err = sock:receive()
+    if not line then
+        return nil, "failed to ignore tube, receive data error: " .. err
+    end
+    local size = strmatch(line, "^WATCHING (%d+)$")
+    if size then
+        return size, line
+    end
+    return 0, line
+end
+
 function _M.put(self, body, pri, delay, ttr)
     local sock = self.sock
     if not sock then

@@ -43,6 +43,7 @@ function AppBase:ctor(config)
 
     self.config.app.actionPackage      = self.config.app.actionPackage or Constants.ACTION_PACKAGE_NAME
     self.config.app.actionModuleSuffix = config.app.actionModuleSuffix or Constants.DEFAULT_ACTION_MODULE_SUFFIX
+    self.config.app.actionMethodSuffix = config.app.actionMethodSuffix or Constants.DEFAULT_ACTION_METHOD_SUFFIX
     self.config.app.autoloads          = config.app.autoloads or {}
 
     self._actionModules = {}
@@ -60,7 +61,7 @@ end
 function AppBase:runAction(actionName, data)
     -- parse actionName
     local actionModuleName, actionMethodName = self:normalizeActionName(actionName)
-    actionMethodName = actionMethodName .. self.config.app.actionModuleSuffix
+    actionMethodName = actionMethodName .. self.config.app.actionMethodSuffix
 
     local action -- instance
     -- check registered action module before load module

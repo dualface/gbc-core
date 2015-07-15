@@ -23,14 +23,14 @@ THE SOFTWARE.
 ]]
 
 local appKeys = SERVER_APP_KEYS
-local defaultAppConfig = SERVER_CONFIG.app
 local defaultPackagePath = package.path
 
 -- load apps config, cached in SERVER_APP_CONFIGS
 local appConfigs = {}
 
 for appRootPath, opts in pairs(appKeys) do
-    local appConfig = clone(defaultAppConfig)
+    local config = clone(SERVER_CONFIG)
+    local appConfig = config.app
     appConfig.rootPath = appRootPath
     appConfig.appKey   = opts.key
     appConfig.appIndex = opts.index
@@ -42,10 +42,6 @@ for appRootPath, opts in pairs(appKeys) do
         local appCustomConfig = loadfile(appRootPath .. "/app_config.lua")()
         table.merge(appConfig, appCustomConfig)
     end
-
-    local config = clone(SERVER_CONFIG)
-    config.apps = nil
-    config.app = appConfig
 
     appConfigs[appRootPath] = config
 end

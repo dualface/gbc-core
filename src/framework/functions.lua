@@ -115,13 +115,14 @@ local function _dump_value(v)
     return tostring(v)
 end
 
-function dump(value, desciption, nesting)
+function dump(value, desciption, nesting, _print)
     if type(nesting) ~= "number" then nesting = 3 end
+    _print = _print or print
 
     local lookup = {}
     local result = {}
     local traceback = string.split(debug_traceback("", 2), "\n")
-    print("dump from: " .. string.trim(traceback[3]))
+    _print("dump from: " .. string.trim(traceback[3]))
 
     local function _dump(value, desciption, indent, nest, keylen)
         desciption = desciption or "<var>"
@@ -167,7 +168,7 @@ function dump(value, desciption, nesting)
     _dump(value, desciption, "- ", 1)
 
     for i, line in ipairs(result) do
-        print(line)
+        _print(line)
     end
 end
 
