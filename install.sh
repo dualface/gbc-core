@@ -59,7 +59,6 @@ LUASEC_VER=0.5
 REDIS_VER=2.6.16
 BEANSTALKD_VER=1.9
 LUABSON_VER=20150709
-PROTOBUF_VER=2.6.1
 LUAPBC_VER=20150714
 
 if [ $OSTYPE == "MACOS" ]; then
@@ -280,28 +279,16 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     cp -f ./bson.so $DEST_BIN_DIR/openresty/lualib/.
     cp -f ./bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
 
-    #install google protobuf
-    cd $BUILD_DIR
-    tar zxf protobuf-$PROTOBUF_VER.tar.gz
-    cd protobuf-$PROTOBUF_VER
-    if [ $OSTYPE == "UBUNTU" ]; then
-        ./configure --prefix=/usr
-    else
-        ./configure
-    fi
-
-    make clean && make && make check && make install
-
     #install lua pbc
     cd $BUILD_DIR
     tar zxf luapbc-$LUAPBC_VER.tar.gz
     cd pbc
-    make clean && make
+    make clean && make lib
     cd ./binding/lua
     if [ $OSTYPE == "MACOS" ]; then
         $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" ./Makefile
     else
-        $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib#g" ./Makefile
+        $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1#g" ./Makefile
     fi
     make clean && make
 
