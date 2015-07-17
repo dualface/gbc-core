@@ -122,7 +122,7 @@ function dump(value, desciption, nesting, _print)
     local lookup = {}
     local result = {}
     local traceback = string.split(debug_traceback("", 2), "\n")
-    _print("dump from: " .. string.trim(traceback[3]))
+    _print("dump from: " .. string.trim(traceback[2]))
 
     local function _dump(value, desciption, indent, nest, keylen)
         desciption = desciption or "<var>"

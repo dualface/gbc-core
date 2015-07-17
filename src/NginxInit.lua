@@ -22,37 +22,11 @@ THE SOFTWARE.
 
 ]]
 
-local appKeys = SERVER_APP_KEYS
-local defaultPackagePath = package.path
-
--- load apps config, cached in SERVER_APP_CONFIGS
-local appConfigs = {}
-
-for appRootPath, opts in pairs(appKeys) do
-    local config = clone(SERVER_CONFIG)
-    local appConfig = config.app
-    appConfig.rootPath = appRootPath
-    appConfig.appKey   = opts.key
-    appConfig.appIndex = opts.index
-    appConfig.appName  = opts.name
-    appConfig.packagePath = appRootPath .. "/?.lua;" .. defaultPackagePath
-
-    local appConfigPath = appRootPath .. "/app_config.lua"
-    if io.exists(appConfigPath) then
-        local appCustomConfig = loadfile(appRootPath .. "/app_config.lua")()
-        table.merge(appConfig, appCustomConfig)
-    end
-
-    appConfigs[appRootPath] = config
-end
-
-SERVER_APP_CONFIGS = appConfigs
-
---
-
 local Factory = require("server.base.Factory")
 local req_get_headers = ngx.req.get_headers
 local string_lower = string.lower
+
+local appConfigs = Factory.makeAppConfigs(SERVER_APP_KEYS, SERVER_CONFIG, package.path)
 
 function processRequest(appRootPath)
     local headers = req_get_headers()
@@ -74,6 +48,6 @@ function processRequest(appRootPath)
         end
     end
 
-    local connect = Factory.create(appRootPath, classNamePrefix)
+    local connect = Factory.create(appConfig, classNamePrefix)
     connect:run()
 end

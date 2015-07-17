@@ -25,6 +25,7 @@ THE SOFTWARE.
 local json_encode = json.encode
 local json_decode = json.decode
 local string_format = string.format
+local _check_posint
 
 local JobService = class("JobService")
 
@@ -89,16 +90,15 @@ function JobService:add(action, data, delay, priority, ttr)
         throw(string_format("JobService:add() failed, %s", line))
     end
 
-    job.id = id
+    job.id = _check_posint(id)
     return job
 end
 
 function JobService:query(jobId)
+    jobId = _check_posint(jobId)
     local id, data = self._beans:command("peek", jobId)
     if not id then
-        if data == "NOT_FOUND" then
-            return nil
-        end
+        if data == "NOT_FOUND" then return nil end
         throw(string_format("JobService:query() failed, %s", data))
     end
 
@@ -112,10 +112,17 @@ function JobService:query(jobId)
 end
 
 function JobService:remove(jobId)
+    jobId = _check_posint(jobId)
     local ok, err = self._beans:command("delete", jobId)
     if not ok then
         throw(string_format("JobService:remove() failed, %s", err))
     end
+end
+
+_check_posint = function(x)
+    local _x = tonumber(x)
+    assert(type(_x) == "number" and math.floor(_x) == _x and _x >= 0, string_format("value expected is positive integer, actual is %s", tostring(x)))
+    return _x
 end
 
 return JobService

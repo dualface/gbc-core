@@ -27,8 +27,53 @@ local type = type
 local tostring = tostring
 local string_format = string.format
 local string_upper = string.upper
+local checktable = checktable
 
 local haricot = require("3rd.beanstalkd.haricot")
+
+local _result_or_err
+local _job_or_err
+
+local _convertors = {
+    -- connection
+    -- connect = connect, -- (server,port) -> ok
+
+    -- producer
+    put = function(arg, method, instance)
+        -- (pri,delay,ttr,data) -> ok,[id|err]
+        return  _result_or_err(method(instance, arg[2], arg[3], arg[4], arg[1]))
+    end,
+    --use = use, -- (tube) -> ok,[err]
+
+    -- consumer
+    -- reserve = reserve, -- () -> ok,[job|err]
+    -- reserve_with_timeout = reserve_with_timeout, -- () -> ok,[job|nil|err]
+    -- delete = delete, -- (id) -> ok,[err]
+    -- release = release, -- (id,pri,delay) -> ok,[err]
+    -- bury = bury, -- (id,pri) -> ok,[err]
+    -- touch = touch, -- (id) -> ok,[err]
+    -- watch = watch, -- (tube) -> ok,[count|err]
+    -- ignore = ignore, -- (tube) -> ok,[count|err]
+
+    -- other
+    peek = function(arg, method, instance)
+        -- (id) -> ok,[job|nil|err]
+        return _job_or_err(method(instance, arg[1]))
+    end,
+    -- peek_ready = make_peek("ready"), -- () -> ok,[job|nil|err]
+    -- peek_delayed = make_peek("delayed"), -- () -> ok,[job|nil|err]
+    -- peek_buried = make_peek("buried"), -- () -> ok,[job|nil|err]
+    -- kick = kick, -- (bound) -> ok,[count|err]
+    -- kick_job = kick_job, -- (id) -> ok,[err]
+    -- stats_job = stats_job, -- (id) -> ok,[yaml|err]
+    -- stats_tube = stats_tube, -- (tube) -> ok,[yaml|err]
+    -- stats = stats, -- () -> ok,[yaml|err]
+    -- list_tubes = list_tubes, -- () -> ok,[yaml|err]
+    -- list_tube_used = list_tube_used, -- () -> ok,[tube|err]
+    -- list_tubes_watched = list_tubes_watched, -- () -> ok,[tube|err]
+    -- quit = quit, -- () -> ok
+    -- pause_tube = pause_tube, -- (tube,delay) -> ok,[err]
+}
 
 local BeanstalkdHaricotAdapter = class("BeanstalkdHaricotAdapter")
 
@@ -48,14 +93,34 @@ end
 function BeanstalkdHaricotAdapter:command(command, ...)
     local method = self._instance[command]
     if type(method) ~= "function" then
-        local err = string_format("invalid beanstalkd command \"%s\"", string_upper(command))
-        printError("%s", err)
-        return nil, err
+        return nil, string_format("invalid beanstalkd command \"%s\"", string_upper(command))
     end
 
-    local ok, result = method(self._instance, ...)
-    if ok then return result end
-    return nil, result
+    local convertor = _convertors[command]
+    if convertor then
+        return convertor({...}, method, self._instance)
+    else
+        return method(self._instance, ...)
+    end
+end
+
+_result_or_err = function(ok, ...)
+    if ok then
+        return ...
+    else
+        return false, ...
+    end
+end
+
+_job_or_err = function(ok, res)
+    if ok then
+        if res == nil then
+            return false, "NOT_FOUND"
+        end
+        return res.id, res.data
+    else
+        return false, res
+    end
 end
 
 return BeanstalkdHaricotAdapter

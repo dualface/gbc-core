@@ -24,10 +24,10 @@ THE SOFTWARE.
 
 local Factory = class("Factory")
 
-function Factory.create(appRootPath, classNamePrefix, ...)
-    printInfo(appRootPath)
-    local config = SERVER_APP_CONFIGS[appRootPath]
-    package.path = config.app.packagePath
+function Factory.create(config, classNamePrefix, ...)
+    if config.app.packagePath then
+        package.path = config.app.packagePath
+    end
 
     local tagretClass
     local ok, _tagretClass = pcall(require, classNamePrefix)
@@ -40,6 +40,30 @@ function Factory.create(appRootPath, classNamePrefix, ...)
     end
 
     return tagretClass:create(config, ...)
+end
+
+function Factory.makeAppConfigs(appKeys, serverConfig, defaultPackagePath)
+    local appConfigs = {}
+
+    for appRootPath, opts in pairs(appKeys) do
+        local config = clone(serverConfig)
+        local appConfig = config.app
+        appConfig.rootPath = appRootPath
+        appConfig.appKey   = opts.key
+        appConfig.appIndex = opts.index
+        appConfig.appName  = opts.name
+        appConfig.packagePath = appRootPath .. "/?.lua;" .. defaultPackagePath
+
+        local appConfigPath = appRootPath .. "/app_config.lua"
+        if io.exists(appConfigPath) then
+            local appCustomConfig = loadfile(appRootPath .. "/app_config.lua")()
+            table.merge(appConfig, appCustomConfig)
+        end
+
+        appConfigs[appRootPath] = config
+    end
+
+    return appConfigs
 end
 
 return Factory

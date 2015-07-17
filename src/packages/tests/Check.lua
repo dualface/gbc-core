@@ -1,3 +1,26 @@
+--[[
+
+Copyright (c) 2015 gameboxcloud.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+]]
 
 local rawget = rawget
 local rawequal = rawequal
@@ -10,47 +33,54 @@ local _dump_result_arr
 local _M = {}
 
 -- nil, "", {} is empty
-function _M.empty(v, msg, ...)
-    if not _empty(v) then
-        throw(string_format(msg or "expected result is empty", ...))
-    end
+function _M.empty(v, msg)
+    if _empty(v) then return end
+    throw(string_format("expected is empty, %s", msg))
 end
 
-function _M.notEmpty(v, msg, ...)
-    if _empty(v) then
-        throw(string_format(msg or "expected result is not empty", ...))
-    end
+function _M.notEmpty(v, msg)
+    if not _empty(v) then return end
+    throw(string_format("expected is not empty, %s", msg))
 end
 
-function _M.isNil(v, msg, ...)
-    if type(v) ~= "nil" then
-        throw(string_format(msg or "expected result is nil", ...))
-    end
+function _M.isNil(v, msg)
+    if type(v) == "nil" then return end
+    throw(string_format("expected is nil, actual is %s, %s", type(v), msg))
 end
 
-function _M.isTable(v, msg, ...)
-    if type(v) ~= "table" then
-        throw(string_format(msg or "expected result is table", ...))
-    end
+function _M.isTable(v, msg)
+    if type(v) == "table" then return end
+    throw(string_format("expected is table, actual is %s, %s", type(v), msg))
 end
 
-function _M.equals(actual, expected, msg, ...)
-    if not _equals(actual, expected) then
-        local msgs = {
-            string_format(msg or "not equals", ...),
-            _dump_result(actual, "actual"),
-            _dump_result(expected, "expected"),
-        }
-        throw(table.concat(msgs, "\n"))
-    end
+function _M.isInt(v, msg)
+    if type(v) == "number" and math.floor(v) == v then return end
+    throw(string_format("expected is integer, actual is %s, %s", tostring(v), msg))
 end
 
-function _M.notEquals(actual, expected, msg, ...)
-    if _equals(actual, expected) then
-        dump(actual, "actual")
-        dump(expected, "expected")
-        throw(string_format(msg, ...))
-    end
+function _M.isPosInt(v, msg)
+    if type(v) == "number" and math.floor(v) == v and v > 0 then return end
+    throw(string_format("expected is positive integer, actual is %s, %s", tostring(v), msg))
+end
+
+function _M.equals(actual, expected, msg)
+    if _equals(actual, expected) then return end
+    local msgs = {
+        string_format("should be equals, %s", msg),
+        _dump_result(actual, "actual"),
+        _dump_result(expected, "expected"),
+    }
+    throw(table.concat(msgs, "\n"))
+end
+
+function _M.notEquals(actual, expected, msg)
+    if not _equals(actual, expected) then return end
+    local msgs = {
+        string_format("should be not equals, %s", msg),
+        _dump_result(actual, "actual"),
+        _dump_result(expected, "expected"),
+    }
+    throw(table.concat(msgs, "\n"))
 end
 
 _empty = function(v)

@@ -22,59 +22,27 @@ THE SOFTWARE.
 
 ]]
 
-local type = type
+local string_format = string.format
 
-local AppBase = import(".AppBase")
 local Constants = import(".Constants")
 
+local AppBase = import(".AppBase")
 local CLIBase = class("CLIBase", AppBase)
 
 function CLIBase:ctor(config, arg)
     CLIBase.super.ctor(self, config)
-
     self._requestType = Constants.CLI_REQUEST_TYPE
     self._requestParameters = checktable(arg)
 end
 
-function CLIBase:getRequestType()
-    return self._requestType or "unknow"
-end
-
 function CLIBase:run()
-    local ok, res = xpcall(function()
-        return self:runEventLoop()
-    end, function(err)
-        err = tostring(err)
-        printError(err)
-    end)
-
-    if ok then
-        if type(res) ~= "table" then
-            printf(res)
-        else
-            dump(res)
-        end
+    local actionName = self._requestParameters.action or ""
+    local result = self:runAction(actionName, self._requestParameters)
+    if type(result) ~= "table" then
+        print(result)
+    else
+        dump(result)
     end
-
-    printInfo("DONE")
-end
-
-function CLIBase:runEventLoop()
-    local actionName = self._requestParameters[1]
-    if actionName == nil or actionName == "help" then
-        self:_showHelp()
-        return
-    end
-
-    return self:runAction(actionName, self._requestParameters)
-end
-
-function CLIBase:getActionModulePath(actionModuleName)
-    return string_format("%s.%s%s", "tools.actions", actionModuleName, self.config.actionModuleSuffix)
-end
-
-function CLIBase:_showHelp()
-    printf("usage: tools [ActionModule.Action] [args]")
 end
 
 return CLIBase

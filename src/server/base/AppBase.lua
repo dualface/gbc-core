@@ -46,6 +46,7 @@ function AppBase:ctor(config)
     self.config.app.actionMethodSuffix = config.app.actionMethodSuffix or Constants.DEFAULT_ACTION_METHOD_SUFFIX
     self.config.app.autoloads          = config.app.autoloads or {}
 
+    self._requestType = "unknown"
     self._actionModules = {}
     self._requestParameters = nil
     self._services = {}
@@ -56,6 +57,10 @@ function AppBase:ctor(config)
         local package = packageClass.new(packageConfig, self)
         self[packageName .. "_"] = package
     end
+end
+
+function AppBase:getRequestType()
+    return self._requestType or "unknown"
 end
 
 function AppBase:runAction(actionName, data)
@@ -140,7 +145,6 @@ function AppBase:registerActionModule(actionModuleName, actionModule)
 end
 
 function AppBase:normalizeActionName(actionName)
-    local actionName = actionName
     if not actionName or actionName == "" then
         actionName = "index.index"
     end
