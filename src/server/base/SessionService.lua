@@ -50,7 +50,7 @@ function SessionService.load(redis, sid, expired, remoteAddr)
         data.__addr = nil
         return SessionService:create(redis, sid, expired, remoteAddr, data)
     else
-        printWarn("found invalid session by sid \"%s\"", sid)
+        printwarn("found invalid session by sid \"%s\"", sid)
         redis:command("DEL", key)
     end
 end

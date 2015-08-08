@@ -72,7 +72,7 @@ function RedisLuaAdapter:command(command, ...)
     if DEBUG > 1 then
         local a = {}
         table_walk({...}, function(v) a[#a + 1] = tostring(v) end)
-        printInfo("RedisLuaAdapter:command() - command %s: %s", string_upper(command), table_concat(a, ", "))
+        printinfo("RedisLuaAdapter:command() - command %s: %s", string_upper(command), table_concat(a, ", "))
     end
 
     local arg = {...}
@@ -95,11 +95,11 @@ end
 function RedisLuaAdapter:commitPipeline(commands)
     return pcall(function()
         self._instance:pipeline(function()
-            printInfo("RedisLuaAdapter:commitPipeline() - init pipeline")
+            printinfo("RedisLuaAdapter:commitPipeline() - init pipeline")
             for _, arg in ipairs(commands) do
                 self:command(arg[1], unpack(arg[2]))
             end
-            printInfo("RedisLuaAdapter:commitPipeline() - commit pipeline")
+            printinfo("RedisLuaAdapter:commitPipeline() - commit pipeline")
         end)
     end)
 end

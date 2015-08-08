@@ -222,7 +222,7 @@ function AppBase:getJobs()
     end
     if not self._jobs then
         self._jobs = self:getService("job", self._beans)
-        self._jobs:use(string_format("job-%d", self.config.app.appIndex))
+        self._jobs:useChannel(string_format("job-%d", self.config.app.appIndex))
     end
     return self._jobs
 end

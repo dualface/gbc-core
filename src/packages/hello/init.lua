@@ -3,7 +3,7 @@ local Hello = class("Hello")
 
 function Hello:ctor(config, app)
     if app then
-        printInfo("package Hello created by autoloads")
+        printinfo("package Hello created by autoloads")
     end
 end
 

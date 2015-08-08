@@ -37,7 +37,7 @@ function MysqlLuaAdapter:ctor(config)
 
     local env, err = mysql.mysql()
     if err then
-        printWarn("MysqlLuaAdapter:ctor() - failed to instantiate mysql: %s", err)
+        printwarn("MysqlLuaAdapter:ctor() - failed to instantiate mysql: %s", err)
         return db, err
     end
 
@@ -61,14 +61,14 @@ function MysqlLuaAdapter:query(queryStr)
 
     local cur, err = self.db_:execute(queryStr)
     if err then
-        printWarn("MysqlLuaAdapter:query() - failed to query mysql: %s", err)
+        printwarn("MysqlLuaAdapter:query() - failed to query mysql: %s", err)
         return cur, err
     end
 
     if type(cur) == "userdata" then
         local row, err = cur:fetch ({}, "a")
         if err then
-            printWarn("MysqlLuaAdapter:query() - failed to query mysql: %s", err)
+            printwarn("MysqlLuaAdapter:query() - failed to query mysql: %s", err)
             return row, err
         end
 

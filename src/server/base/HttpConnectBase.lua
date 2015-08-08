@@ -78,7 +78,7 @@ function HttpConnectBase:ctor(config)
             if body then
                 local data, err = json.decode(body)
                 if err then
-                    printWarn("HttpConnectBase:ctor() - invalid JSON content, %s", err)
+                    printwarn("HttpConnectBase:ctor() - invalid JSON content, %s", err)
                 else
                     table_merge(self._requestParameters, data)
                 end
@@ -108,7 +108,7 @@ function HttpConnectBase:runEventLoop()
     local actionName = self._requestParameters.action or ""
     actionName = tostring(actionName)
     if DEBUG > 1 then
-        printInfo("HTTP request, action: %s, data: %s", actionName, json_encode(self._requestParameters))
+        printinfo("HTTP action: %s, data: %s", actionName, json_encode(self._requestParameters))
     end
 
     local err = nil
@@ -117,7 +117,7 @@ function HttpConnectBase:runEventLoop()
     end, function(_err)
         err = _err
         if DEBUG > 1 then
-            printWarn("HTTP request, action: %s, %s", actionName, err .. debug.traceback("", 4))
+            printwarn("HTTP action: %s, %s", actionName, err .. debug.traceback("", 4))
         end
         -- error message need return to client
     end)

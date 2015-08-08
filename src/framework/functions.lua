@@ -67,7 +67,7 @@ function throw(fmt, ...)
 end
 
 -- internal function, advise you not to call it directly.
-function printLog(tag, fmt, ...)
+function printlog(tag, fmt, ...)
     if ngx_log then
         if tag == "ERR" and DEBUG > 1 then
             ngx_log(ngx.ERR, string_format(tostring(fmt), ...) .. "\n" .. debug_traceback("", 3))
@@ -88,25 +88,30 @@ function printLog(tag, fmt, ...)
     end
     print(table.concat(t))
 end
+printLog = printlog
 
-function printError(fmt, ...)
-    printLog("ERR", fmt, ...)
+function printerror(fmt, ...)
+    printlog("ERR", fmt, ...)
 end
+printError = printerror
 
-function printDebug(fmt, ...)
+function printdebug(fmt, ...)
     if DEBUG < 3 then return end
-    printLog("DEBUG", fmt, ...)
+    printlog("DEBUG", fmt, ...)
 end
+printDebug = printdebug
 
-function printInfo(fmt, ...)
+function printinfo(fmt, ...)
     if DEBUG < 2 then return end
-    printLog("INFO", fmt, ...)
+    printlog("INFO", fmt, ...)
 end
+printInfo = printinfo
 
-function printWarn(fmt, ...)
+function printwarn(fmt, ...)
     if DEBUG < 1 then return end
-    printLog("WARN", fmt, ...)
+    printlog("WARN", fmt, ...)
 end
+printWarn = printwarn
 
 local function _dump_value(v)
     if type(v) == "string" then
@@ -283,8 +288,8 @@ function class(classname, ...)
         setmetatable(cls, {__index = function(_, key)
             local supers = cls.__supers
             for i = 1, #supers do
-                local super = supers[i]
-                if super[key] then return super[key] end
+                local m = supers[i][key]
+                if m then return m end
             end
         end})
     end

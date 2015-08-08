@@ -57,7 +57,7 @@ function WorkerBase:run()
         self:runEventLoop()
     end, function(err)
         err = tostring(err)
-        printError(err)
+        printerror(err)
     end)
 end
 
@@ -71,7 +71,7 @@ function WorkerBase:runEventLoop()
     while true do
         local job, err = beans:command("reserve")
         if not job then
-            printWarn("reserve beanstalkd job failed: %s", err)
+            printwarn("reserve beanstalkd job failed: %s", err)
             if err == "NOT_CONNECTED" then
                 throw("beanstalkd NOT_CONNECTED")
             end
@@ -80,12 +80,12 @@ function WorkerBase:runEventLoop()
 
         local data, err = json_decode(job.data)
         if not data then
-            printWarn("job bid: %s,  contents: \"%s\" is invalid: %s", job.id, job.data, err)
+            printwarn("job bid: %s,  contents: \"%s\" is invalid: %s", job.id, job.data, err)
             beans:command("delete", job.id)
             goto reserve_next_job
         end
 
-        printInfo("get a job, jobId: %s, contents: %s", tostring(data.id), job.data)
+        printinfo("get a job, jobId: %s, contents: %s", tostring(data.id), job.data)
 
         -- remove redis data, which is related to this job
         jobService:remove(data.id)
@@ -97,13 +97,13 @@ function WorkerBase:runEventLoop()
             res = json_encode(res)
         end
 
-        printInfo("finish job, jobId: %s, joined_time: %s, reserved_time:%s, result: %s", tostring(data.id), os_date("%Y-%m-%d %H:%M:%S", data.joined_time), os_date("%Y-%m-%d %H:%M:%S"), res)
+        printinfo("finish job, jobId: %s, joined_time: %s, reserved_time:%s, result: %s", tostring(data.id), os_date("%Y-%m-%d %H:%M:%S", data.joined_time), os_date("%Y-%m-%d %H:%M:%S"), res)
 
         io_flush()
 ::reserve_next_job::
     end
 
-    printInfo("DONE")
+    printinfo("DONE")
 end
 
 function WorkerBase:getActionModulePath(actionModuleName)

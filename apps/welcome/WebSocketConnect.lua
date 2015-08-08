@@ -6,7 +6,7 @@ local ConnectIdService = cc.load("connectid").service
 local OnlineService = cc.load("online").service
 
 function WebSocketConnect:ctor(config)
-    printInfo("new WebSocketConnect instance")
+    printinfo("new WebSocketConnect instance")
     WebSocketConnect.super.ctor(self, config)
 end
 

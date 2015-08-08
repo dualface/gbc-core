@@ -46,10 +46,6 @@ function cc.load(...)
             local cls = require(packageName)
             assert(cls, string_format("cc.load() - package class \"%s\" load failed", packageName))
             loaded_packages[name] = cls
-
-            if DEBUG > 1 then
-                printInfo("cc.load() - load module \"packages.%s.init\"", name)
-            end
         end
         packages[#packages + 1] = loaded_packages[name]
     end

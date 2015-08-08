@@ -83,7 +83,7 @@ function ConnectBase:_loadSession(sid)
     local session = SessionService.load(redis, sid, self.config.app.sessionExpiredTime, ngx.var.remote_addr)
     if session then
         session:setKeepAlive()
-        printInfo("load session \"%s\"", sid)
+        printinfo("load session \"%s\"", sid)
     end
     return session
 end

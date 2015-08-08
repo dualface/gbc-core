@@ -241,9 +241,9 @@ function Monitor:_getPerfomance()
 
     if DEBUG >= 1 then
         for k, v in pairs(self._procData) do
-            printInfo("%s pid %s: cpu %s, mem %s", k, v.pid, v.cpu, v.mem)
+            printinfo("%s pid %s: cpu %s, mem %s", k, v.pid, v.cpu, v.mem)
             if tonumber(v.cpu) > 100 then
-                printWarn("cpu usage %s of %s is large than 100", v.cpu, k)
+                printwarn("cpu usage %s of %s is large than 100", v.cpu, k)
             end
         end
     end
@@ -324,7 +324,7 @@ function Monitor:_getConnNums(procName)
         if res.body then
             return string_match(res.body, "connections: (%d+)")
         else
-            printWarn("access nginx_status failed, err: %s", res.err)
+            printwarn("access nginx_status failed, err: %s", res.err)
             return -1
         end
     end
@@ -353,7 +353,7 @@ function Monitor:_recoverJobs()
 
     local res, err = redis:command("HGETALL", _JOB_HASH)
     if not res then
-        printWarn("recover jobs from db faild: %s", err)
+        printwarn("recover jobs from db faild: %s", err)
         return
     end
 
@@ -371,17 +371,17 @@ function Monitor:_recoverJobs()
                 local id
                 id, err = jobService:add(job.action, job.arg, job.delay, job.priority, job.ttr)
                 if id then
-                    printInfo("recover job success, old job id: %s, new job id: %s", k, tostring(id))
+                    printinfo("recover job success, old job id: %s, new job id: %s", k, tostring(id))
                 end
             end
 
             if err then
-                printWarn("recover job failed: %s. job id: %s, contents: %s", err, k, v)
+                printwarn("recover job failed: %s. job id: %s, contents: %s", err, k, v)
             end
         end
     end
 
-    printInfo("recover jobs finished.")
+    printinfo("recover jobs finished.")
 end
 
 function Monitor:_getBeans()

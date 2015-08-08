@@ -94,7 +94,7 @@ function RestyRedisAdapter:command(command, ...)
     end
 
     if DEBUG > 1 then
-        printInfo("%s command \"%s\": %s", self:_instancename(), string_upper(command), _formatCommandArgs({...}))
+        printinfo("%s command \"%s\": %s", self:_instancename(), string_upper(command), _formatCommandArgs({...}))
     end
 
     local res, err = method(self._instance, ...)
@@ -103,7 +103,7 @@ function RestyRedisAdapter:command(command, ...)
     if err then
         err = string_format("%s command \"%s\" failed, %s", self:_instancename(), string_upper(command), err)
     elseif DEBUG > 1 then
-        printInfo("%s command \"%s\", result = %s", self:_instancename(), string_upper(command), tostring(res))
+        printinfo("%s command \"%s\", result = %s", self:_instancename(), string_upper(command), tostring(res))
     end
 
     return res, err
@@ -127,15 +127,15 @@ function RestyRedisAdapter:pubsub(subscriptions)
     local function _subscribe(f, channels, command)
         for _, channel in ipairs(channels) do
             if DEBUG > 1 then
-                printInfo("%s command \"%s\": %s", self:_instancename(), string_upper(command), channel)
+                printinfo("%s command \"%s\": %s", self:_instancename(), string_upper(command), channel)
             end
             local res, err = f(self._instance, channel)
             if err then
-                printWarn("%s command \"%s\" failed, %s", self:_instancename(), string_upper(command), err)
+                printwarn("%s command \"%s\" failed, %s", self:_instancename(), string_upper(command), err)
             else
                 subscribeMessages[#subscribeMessages + 1] = res
                 if DEBUG > 1 then
-                    printInfo("%s command \"%s\", result = %s", self:_instancename(), string_upper(command), _formatCommandArgs(res))
+                    printinfo("%s command \"%s\", result = %s", self:_instancename(), string_upper(command), _formatCommandArgs(res))
                 end
             end
         end
@@ -144,7 +144,7 @@ function RestyRedisAdapter:pubsub(subscriptions)
     local function _unsubscribe(f, channels, command)
         for _, channel in ipairs(channels) do
             if DEBUG > 1 then
-                printInfo("%s command \"%s\": %s", self:_instancename(), string_upper(command), channel)
+                printinfo("%s command \"%s\": %s", self:_instancename(), string_upper(command), channel)
             end
             f(self._instance, channel)
         end

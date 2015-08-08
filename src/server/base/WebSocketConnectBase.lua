@@ -76,7 +76,7 @@ function WebSocketConnectBase:run()
 end
 
 function WebSocketConnectBase:runEventLoop()
-    printInfo("websocket [beforeConnectReady]")
+    printinfo("websocket [beforeConnectReady]")
     self:beforeConnectReady()
 
     local server = require("resty.websocket.server")
@@ -106,7 +106,7 @@ function WebSocketConnectBase:runEventLoop()
 
     -- event callback
     self:afterConnectReady()
-    printInfo("websocket [afterConnectReady], connect id: %s", tostring(self._connectId))
+    printinfo("websocket [afterConnectReady], connect id: %s", tostring(self._connectId))
 
     -- event loop
     local retryCount = 0
@@ -133,7 +133,7 @@ function WebSocketConnectBase:runEventLoop()
         local frame, ftype, err = socket:recv_frame()
         -- check session
         if not self._session:checkAlive() then
-            printWarn("session is lost")
+            printwarn("session is lost")
             break
         end
 
@@ -147,7 +147,7 @@ function WebSocketConnectBase:runEventLoop()
                 goto recv_next_message
             end
 
-            printWarn("failed to receive frame, type \"%s\", %s", ftype, err)
+            printwarn("failed to receive frame, type \"%s\", %s", ftype, err)
             break
         end
 
@@ -163,17 +163,17 @@ function WebSocketConnectBase:runEventLoop()
         elseif ftype == "ping" then
             local bytes, err = socket:send_pong()
             if err then
-                printWarn("failed to send pong, %s", err)
+                printwarn("failed to send pong, %s", err)
             end
         elseif ftype == "pong" then
             -- client ponged
         elseif ftype == "text" or ftype == "binary" then
             local ok, err = self:_processMessage(frame, ftype)
             if err then
-                printError("process %s message failed, %s", ftype, err)
+                printerror("process %s message failed, %s", ftype, err)
             end
         else
-            printWarn("unknwon frame type \"%s\"", tostring(ftype))
+            printwarn("unknwon frame type \"%s\"", tostring(ftype))
         end
 
 ::recv_next_message::
@@ -182,7 +182,7 @@ function WebSocketConnectBase:runEventLoop()
 
     -- end the subscribe thread
     self:_unsubscribeChannel()
-    printInfo("websocket [beforeConnectClose]")
+    printinfo("websocket [beforeConnectClose]")
     self:beforeConnectClose()
 
     -- close connect
@@ -190,7 +190,7 @@ function WebSocketConnectBase:runEventLoop()
     self._socket = nil
 
     self:afterConnectClose()
-    printInfo("websocket [afterConnectClose]")
+    printinfo("websocket [afterConnectClose]")
 end
 
 function WebSocketConnectBase:getConnectId()
@@ -221,7 +221,7 @@ function WebSocketConnectBase:subscribeChannel(channelName, callback)
     end
 
     if sub.enabled then
-        printWarn("already subscribed channel \"%s\"", sub.name)
+        printwarn("already subscribed channel \"%s\"", sub.name)
         return
     end
 
@@ -248,10 +248,10 @@ function WebSocketConnectBase:subscribeChannel(channelName, callback)
 
             if msg then
                 if msg.kind == "subscribe" then
-                    printInfo("channel \"%s\" subscribed", channel)
+                    printinfo("channel \"%s\" subscribed", channel)
                 elseif msg.kind == "message" then
                     local payload = msg.payload
-                    printInfo("channel \"%s\" message \"%s\"", channel, payload)
+                    printinfo("channel \"%s\" message \"%s\"", channel, payload)
                     if callback(payload) == false then
                         sub.running = false
                         abort()
@@ -271,25 +271,25 @@ function WebSocketConnectBase:subscribeChannel(channelName, callback)
             -- if an error leads to an exiting, retry to subscribe channel
             if sub.retryCount < self.config.app.maxSubscribeRetryCount then
                 sub.retryCount = sub.retryCount + 1
-                printWarn("subscribe channel \"%s\" loop ended, try [%d]", channel, sub.retryCount)
+                printwarn("subscribe channel \"%s\" loop ended, try [%d]", channel, sub.retryCount)
                 self:subscribeChannel(channel, callback)
             else
-                printWarn("subscribe channel \"%s\" loop ended, max try", channel)
+                printwarn("subscribe channel \"%s\" loop ended, max try", channel)
                 self._subscribeChannels[channel] = nil
             end
         end
     end
 
     local thread = ngx_thread_spawn(_subscribe)
-    printInfo("spawn subscribe thread \"%s\"", tostring(thread))
+    printinfo("spawn subscribe thread \"%s\"", tostring(thread))
 end
 
 function WebSocketConnectBase:unsubscribeChannel(channelName)
     local sub = self._subscribeChannels[channelName]
     if not sub then
-        printInfo("not subscribe channel \"%s\"", channelName)
+        printinfo("not subscribe channel \"%s\"", channelName)
     else
-        printInfo("unsubscribe channel \"%s\"", channelName)
+        printinfo("unsubscribe channel \"%s\"", channelName)
         sub.running = false
     end
 end
@@ -335,14 +335,14 @@ function WebSocketConnectBase:_processMessage(rawMessage, messageType)
     if rtype == "nil" then return end
     if rtype ~= "table" then
         if msgid then
-            printWarn("action \"%s\" return invalid result for message [__id:\"%s\"]", actionName, msgid)
+            printwarn("action \"%s\" return invalid result for message [__id:\"%s\"]", actionName, msgid)
         else
-            printWarn("action \"%s\" return invalid result", actionName)
+            printwarn("action \"%s\" return invalid result", actionName)
         end
     end
 
     if not msgid then
-        printWarn("action \"%s\" return unused result", actionName)
+        printwarn("action \"%s\" return unused result", actionName)
         return true
     end
 
