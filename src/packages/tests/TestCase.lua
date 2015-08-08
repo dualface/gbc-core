@@ -22,11 +22,24 @@ THE SOFTWARE.
 
 ]]
 
+local string_sub = string.sub
+
 local TestCase = class("TestCase")
 
 function TestCase:ctor(connect)
     self.connect = connect
-    self:setup()
+
+    local mt = getmetatable(self)
+    for name, method in pairs(mt.__index) do
+        if type(method) == "function" and string_sub(name, -4) == "Test" then
+            self[name] = function(...)
+                self:setup()
+                local res = {method(self, ...)}
+                self:teardown()
+                return unpack(res)
+            end
+        end
+    end
 end
 
 function TestCase:setup()
