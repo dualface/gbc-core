@@ -25,6 +25,8 @@ THE SOFTWARE.
 local json_encode = json.encode
 local json_decode = json.decode
 local string_format = string.format
+local string_sub = string.sub
+local string_lower = string.lower
 local os_tmpname = os.tmpname
 local os_execute = os.execute
 local os_remove = os.remove
@@ -34,9 +36,7 @@ local Factory = require("server.base.Factory")
 --
 
 local TEST_CASES = {
-    "jobs.add",
-    "jobs.query",
-    "jobs.remove",
+    "JobsTestCase",
 }
 
 local CURL_PATTERN = "curl -s --no-keepalive -o '%s' '%s'"
@@ -56,7 +56,9 @@ local function runTest(testfun, arg, action)
         err = _err .. debug.traceback("", 4)
     end)
 
-    if type(contents) == "table" then
+    if contents == true then
+        result = {ok = true}
+    elseif type(contents) == "table" then
         result = contents
     else
         result = json_decode(tostring(contents))
@@ -70,7 +72,7 @@ local function runTest(testfun, arg, action)
 
     if result.err then
         print(string_format("[%s] \27[31mfailed\27[0m: %s", action, result.err))
-    elseif result.ok == true then
+    elseif tostring(result.ok) == "true" or tostring(result.result) == "true" then
         print(string_format("[%s] \27[32mok\27[0m", action))
         return true
     else
@@ -97,13 +99,31 @@ end
 
 appConfigs = Factory.makeAppConfigs(SERVER_APP_KEYS, SERVER_CONFIG, package.path)
 
-for _, action in ipairs(TEST_CASES) do
-    if not runTest(testInServer, {action}, "SERVER " .. action) then
-        break
-    end
-    if not runTest(testInCLI, {action}, "CLI    " .. action) then
-        break
-    end
-end
+package.path = TESTS_APP_ROOT .. "/?.lua;" .. package.path
 
-print("")
+for _, testCaseClassName in ipairs(TEST_CASES) do
+    local testCaseClass = require("cases." .. testCaseClassName)
+    local actionPackageName = string_lower(string_sub(testCaseClassName, 1, -9))
+    local tests = {}
+    for methodName, _2 in pairs(testCaseClass) do
+        if string_sub(methodName, -4) == "Test" then
+            tests[#tests + 1] = actionPackageName .. "." .. string_lower(string_sub(methodName, 1, -5))
+        end
+    end
+
+    table.sort(tests)
+
+    print(string_format("## Test Case : %s", actionPackageName))
+
+    for _3, action in ipairs(tests) do
+        if not runTest(testInServer, {action}, "SERVER " .. action) then
+            break
+        end
+        if not runTest(testInCLI, {action}, "CLI    " .. action) then
+            break
+        end
+    end
+
+    print("")
+
+end

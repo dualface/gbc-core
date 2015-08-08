@@ -22,15 +22,22 @@ THE SOFTWARE.
 
 ]]
 
-local json_encode = json.encode
-local json_decode = json.decode
+local json_encode   = json.encode
+local json_decode   = json.decode
 local string_format = string.format
+local string_gsub   = string.gsub
+local string_split  = string.split
+local table_filter  = table.filter
+local clone = clone
+
 local _check_posint
+local _export_yaml_arr
 
 local JobService = class("JobService")
 
-JobService.DEFAULT_PRIORITY = 5000
-JobService.DEFAULT_TTR      = 120
+local DEFAULT_PRIORITY = 5000
+local DEFAULT_TTR      = 120
+local DEFAULT_DELAY    = 0
 
 function JobService:ctor(beans)
     if not beans then
@@ -39,65 +46,87 @@ function JobService:ctor(beans)
     self._beans = beans
 end
 
-function JobService:use(tube)
-    local ok, err = self._beans:command("use", tube)
+function JobService:useChannel(tube)
+    local ok, err = self._beans:use(tube)
     if not ok then
         throw("JobService:use() failed, %s", err)
     end
 end
 
-function JobService:watch(tube)
-    local size, err = self._beans:command("watch", tube)
-    if not size then
-        throw("JobService:watch() failed, %s", err)
+function JobService:getUsedChannel()
+    local tube, err = self._beans:listTubeUsed()
+    if not tube then
+        throw("JobService:getUsedTube() failed, %s", err)
     end
-    return tonumber(size)
+    return tube
 end
 
-function JobService:ignore(tube)
-    local size, err = self._beans:command("ignore", tube)
-    if not size then
-        throw("JobService:ignore() failed, %s", err)
-    end
-    return tonumber(size)
-end
-
-function JobService:add(action, data, delay, priority, ttr)
-    if type(action) ~= "string" then
+function JobService:add(job)
+    if type(job.action) ~= "string" then
         throw("JobService:add() failed, invalid action name")
     end
 
-    if type(delay) ~= "number" then
-        delay = 0
+    if type(job.priority) ~= "number" then
+        job.priority = DEFAULT_PRIORITY
     end
-    if type(priority) ~= "number" then
-        priority = JobService.DEFAULT_PRIORITY
+    if type(job.delay) ~= "number" then
+        job.delay = DEFAULT_DELAY
     end
-    if type(ttr) ~= "number" then
-        ttr = JobService.DEFAULT_TTR
+    if type(job.ttr) ~= "number" then
+        job.ttr = DEFAULT_TTR
     end
 
-    local job = {
-        action   = action,
-        data     = clone(data),
-        delay    = delay,
-        priority = priority,
-        ttr      = ttr,
-    }
-
-    local id, line = self._beans:command("put", json_encode(job), priority, delay, ttr)
+    local id, line = self._beans:put(json_encode(job), job.priority, job.delay, job.ttr)
     if not id then
         throw(string_format("JobService:add() failed, %s", line))
     end
 
-    job.id = _check_posint(id)
+    job.id = id
     return job
 end
 
-function JobService:query(jobId)
-    jobId = _check_posint(jobId)
-    local id, data = self._beans:command("peek", jobId)
+function JobService:reserve(timeout)
+    local id, data = self._beans:reserve(timeout)
     if not id then
+        if data == "NOT_FOUND" then return nil end
+        throw(string_format("JobService:reserve() failed, %s", data))
+    end
+
+    local job = json_decode(data)
+    if type(job) ~= "table" then
+        throw(string_format("JobService:reserve() failed, invalid job data"))
+    end
+
+    job.id = id
+    return job
+end
+
+function JobService:release(job)
+    local id = _check_posint(job.id)
+    if type(job.delay) ~= "number" then
+        job.delay = DEFAULT_DELAY
+    end
+    if type(job.priority) ~= "number" then
+        job.priority = DEFAULT_PRIORITY
+    end
+    local ok, err = self._beans:release(id, job.priority, job.delay)
+    if not ok then
+        throw(string_format("JobService:release() failed, %s", err))
+    end
+end
+
+function JobService:remove(id)
+    id = _check_posint(id)
+    local ok, err = self._beans:delete(id)
+    if not ok then
+        throw(string_format("JobService:remove() failed, %s", err))
+    end
+end
+
+function JobService:query(id)
+    id = _check_posint(id)
+    local _id, data = self._beans:peek(id)
+    if not _id then
         if data == "NOT_FOUND" then return nil end
         throw(string_format("JobService:query() failed, %s", data))
     end
@@ -107,22 +136,65 @@ function JobService:query(jobId)
         throw(string_format("JobService:query() failed, invalid job data"))
     end
 
-    job.id = jobId
+    job.id = _check_posint(_id)
     return job
 end
 
-function JobService:remove(jobId)
-    jobId = _check_posint(jobId)
-    local ok, err = self._beans:command("delete", jobId)
-    if not ok then
-        throw(string_format("JobService:remove() failed, %s", err))
+function JobService:queryNext(state)
+    if type(state) ~= "string" then
+        throw("JobService:queryNext() failed, invalid state")
     end
+
+    local _id, data = self._beans:peek(state)
+    if not _id then
+        if data == "NOT_FOUND" then return nil end
+        throw(string_format("JobService:query() failed, %s", data))
+    end
+
+    local job = json_decode(data)
+    if type(job) ~= "table" then
+        throw(string_format("JobService:query() failed, invalid job data"))
+    end
+
+    job.id = _check_posint(_id)
+    return job
+end
+
+function JobService:watchChannel(tube)
+    local size, err = self._beans:watch(tube)
+    if not size then
+        throw("JobService:watch() failed, %s", err)
+    end
+    return tonumber(size)
+end
+
+function JobService:ignoreChannel(tube)
+    local size, err = self._beans:ignore(tube)
+    if not size then
+        throw("JobService:ignore() failed, %s", err)
+    end
+    return tonumber(size)
+end
+
+function JobService:getWatchedChannels()
+    local result, err = self._beans:listTubesWatched()
+    if not result then
+        throw("JobService:getWatchedChannels() failed, %s", err)
+    end
+    return _export_yaml_arr(result)
 end
 
 _check_posint = function(x)
     local _x = tonumber(x)
     assert(type(_x) == "number" and math.floor(_x) == _x and _x >= 0, string_format("value expected is positive integer, actual is %s", tostring(x)))
     return _x
+end
+
+_export_yaml_arr = function(yaml)
+    local values = string_gsub(yaml, "%-%-%-", "")
+    values = string_gsub(values, "%- ", "")
+    values = string_split(values, "\n")
+    return table_filter(values, function(n) return n ~= "" end)
 end
 
 return JobService

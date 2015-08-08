@@ -31,31 +31,81 @@ JobsTestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
 
 function JobsTestCase:setup()
     self._jobs = self.connect:getJobs()
+    self._jobs:useChannel("default")
+    self._jobs:watchChannel(self._jobs:getUsedChannel())
 end
 
 function JobsTestCase:teardown()
+    self._jobs:useChannel("default")
+    self:_flush()
+end
+
+function JobsTestCase:channelTest()
+    local channel = "channel-" .. tostring(math.random(1, 100))
+    self._jobs:useChannel(channel)
+
+    local usedChannel = self._jobs:getUsedChannel()
+    check.equals(usedChannel, channel)
+
+    local countWatched = self._jobs:watchChannel(usedChannel)
+    check.greaterThan(countWatched, 0)
+
+    local channels = self._jobs:getWatchedChannels()
+    check.isTable(channels)
+    check.equals(countWatched, #channels)
+    check.contains(channel, channels)
+
+    local countWatched2 = self._jobs:ignoreChannel(usedChannel)
+    check.equals(countWatched2, countWatched - 1)
+
+    return true
 end
 
 function JobsTestCase:addTest()
     local action, data, job = self:_addJob()
-    check.isTable(job, "addTest() - job")
-    check.notEmpty(job.id, "addTest() - job.id")
-    check.isPosInt(job.id, "addTest() - job.id")
-    check.equals(job.action, action, "addTest() - job.action")
-    check.equals(job.data, data, "addTest() - job.data")
+    check.isTable(job)
+    check.notEmpty(job.id)
+    check.isPosInt(job.id)
+    check.equals(job.action, action)
+    check.equals(job.data, data)
 
-    data.number = data.number + 1
-    check.notEquals(job.data, data, "after data changed, job.data should be is not equals")
-
-    return {ok = true}
+    return true
 end
 
-function JobsTestCase:queryTest()
+function JobsTestCase:reserveTest()
     local action, data, job = self:_addJob()
-    local queryResult = self._jobs:query(job.id)
-    check.equals(queryResult, job, "queryTest() - job")
+    local job = self._jobs:reserve()
 
-    return {ok = true}
+    check.isTable(job)
+    check.notEmpty(job.id)
+    check.isPosInt(job.id)
+
+    return true
+end
+
+function JobsTestCase:reservedelayTest()
+    local delay = 1
+    local action, data, job = self:_addJob(delay)
+    local job = self._jobs:reserve(delay + 1) -- waiting for delay + 1s
+
+    check.isTable(job)
+    check.notEmpty(job.id)
+    check.isPosInt(job.id)
+
+    return true
+end
+
+function JobsTestCase:releaseTest()
+    local action, data, job = self:_addJob()
+    local job = self._jobs:reserve()
+
+    self._jobs:release(job)
+    local jobAgain = self._jobs:reserve()
+
+    check.isTable(job)
+    check.equals(jobAgain, job)
+
+    return true
 end
 
 function JobsTestCase:removeTest()
@@ -64,13 +114,48 @@ function JobsTestCase:removeTest()
     local queryResult = self._jobs:query(job.id)
     check.empty(queryResult)
 
-    return {ok = true}
+    return true
 end
 
-function JobsTestCase:_addJob()
+function JobsTestCase:queryTest()
+    local action, data, job = self:_addJob()
+    local queryResult = self._jobs:query(job.id)
+    check.equals(queryResult, job)
+
+    return true
+end
+
+function JobsTestCase:querynextTest()
+    local _, __, readyJob = self:_addJob() -- add 1 ready job
+    local queryReadyJob = self._jobs:queryNext("ready")
+    check.equals(queryReadyJob, readyJob)
+
+    local delay = 1
+    local _, __, delayedJob = self:_addJob(delay) -- add 1 delayed job
+    local queryDelayedJob = self._jobs:queryNext("delayed")
+    check.equals(queryDelayedJob, delayedJob)
+
+    return true
+end
+
+-- add random job
+function JobsTestCase:_addJob(delay)
     local action = "jobtests.hello"
     local data = {number = math.random(), str = "hello"}
-    return action, data, self._jobs:add(action, data)
+    local job = {action = action, data = data, delay = delay}
+    return action, data, self._jobs:add(job)
+end
+
+-- remove all jobs
+function JobsTestCase:_flush()
+    local states = {"ready", "delayed", "buried"}
+    for _, state in ipairs(states) do
+        while true do
+            local job = self._jobs:queryNext(state)
+            if not job then break end
+            self._jobs:remove(job.id)
+        end
+    end
 end
 
 return JobsTestCase
