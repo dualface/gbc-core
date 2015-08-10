@@ -50,7 +50,7 @@ function getBeanstalkdArgs()
 
 function startNginx()
 {
-    pgrep nginx > /dev/null
+    pgrep -F $TMP_DIR/nginx.pid &> /dev/null
     if [ $? -ne 0 ]; then
         echo "[CMD] nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH"
         $NGINX_DIR/sbin/nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH
@@ -66,7 +66,7 @@ function startNginx()
 
 function stopNginx()
 {
-    pgrep nginx > /dev/null
+    pgrep -F $TMP_DIR/nginx.pid &> /dev/null
     if [ $? -eq 0 ]; then
         echo "[CMD] nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH -s stop"
         $NGINX_DIR/sbin/nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH -s stop
@@ -82,7 +82,7 @@ function stopNginx()
 
 function reloadNginx()
 {
-    pgrep nginx > /dev/null
+    pgrep -F $TMP_DIR/nginx.pid &> /dev/null
     if [ $? -eq 0 ]; then
         echo "[CMD] nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH -s reload"
         $NGINX_DIR/sbin/nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH -s reload
@@ -100,7 +100,7 @@ function reloadNginx()
 
 function startRedis()
 {
-    pgrep redis-server > /dev/null
+    pgrep -F $TMP_DIR/redis.pid &> /dev/null
     if [ $? -ne 0 ]; then
         echo "[CMD] redis-server $VAR_REDIS_CONF_PATH"
         $REDIS_DIR/bin/redis-server $VAR_REDIS_CONF_PATH
@@ -116,8 +116,7 @@ function startRedis()
 
 function stopRedis()
 {
-    # check redis process
-    pgrep redis-server > /dev/null
+    pgrep -F $TMP_DIR/redis.pid &> /dev/null
     if [ $? -eq 0 ]; then
         REDIS_ARGS=$(getRedisArgs)
         echo "[CMD] redis-cli $REDIS_ARGS SHUTDOWN SAVE"
@@ -133,7 +132,7 @@ function stopRedis()
 
 function startBeanstalkd()
 {
-    pgrep beanstalkd > /dev/null
+    pgrep -F $TMP_DIR/beanstalkd.pid &> /dev/null
     if [ $? -ne 0 ]; then
         BEANS_ARGS=$(getBeanstalkdArgs)
         echo "[CMD] beanstalkd $BEANS_ARGS"
@@ -141,6 +140,7 @@ function startBeanstalkd()
         if [ $? -ne 0 ]; then
             exit $?
         fi
+        echo $! > $TMP_DIR/beanstalkd.pid
         echo "Start Beanstalkd DONE"
     else
         echo "Beanstalkd is already started"
@@ -150,8 +150,10 @@ function startBeanstalkd()
 
 function stopBeanstalkd()
 {
-    BEANS_PID=`pgrep beanstalkd`
+    pgrep -F $TMP_DIR/beanstalkd.pid &> /dev/null
     if [ $? -eq 0 ]; then
+        BEANS_PID=`cat $TMP_DIR/beanstalkd.pid`
+        rm -f $TMP_DIR/beanstalkd.pid
         echo "[CMD] kill $BEANS_PID"
         kill $BEANS_PID
         echo "Stop Beanstalkd DONE"
