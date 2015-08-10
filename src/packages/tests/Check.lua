@@ -107,6 +107,18 @@ function _M.contains(needle, arr, msg)
     throw(table.concat(msgs, "\n"))
 end
 
+function _M.notContains(needle, arr, msg)
+    if type(arr) ~= "table" then
+        throw(string_format("exected is array, actual is '%s'", tostring(arr)) .. _format_msg(msg))
+    end
+    if not _contains(needle, arr) then return end
+    local msgs = {
+        string_format("expected not contains '%s'", tostring(needle)) .. _format_msg(msg),
+        _dump_result(arr, "actual"),
+    }
+    throw(table.concat(msgs, "\n"))
+end
+
 _empty = function(v)
     local t = type(v)
     local test = true

@@ -31,16 +31,17 @@ JobsTestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
 
 function JobsTestCase:setup()
     self._jobs = self.connect:getJobs()
-    self._jobs:useChannel("default")
-    self._jobs:watchChannel(self._jobs:getUsedChannel())
+    local currentChannel = self._jobs:getUsedChannel()
+    self._jobs:watchChannel(currentChannel)
 end
 
 function JobsTestCase:teardown()
-    self._jobs:useChannel("default")
     self:_flush()
 end
 
 function JobsTestCase:channelTest()
+    local currentChannel = self._jobs:getUsedChannel()
+
     local channel = "channel-" .. tostring(math.random(1, 100))
     self._jobs:useChannel(channel)
 
@@ -57,6 +58,11 @@ function JobsTestCase:channelTest()
 
     local countWatched2 = self._jobs:ignoreChannel(usedChannel)
     check.equals(countWatched2, countWatched - 1)
+
+    local channels = self._jobs:getWatchedChannels()
+    check.notContains(channel, channels)
+
+    self._jobs:useChannel(currentChannel)
 
     return true
 end
@@ -80,6 +86,9 @@ function JobsTestCase:reserveTest()
     check.notEmpty(job.id)
     check.isPosInt(job.id)
 
+    self._jobs:remove(job.id)
+    -- printf("- remove job %s [reserved]", job.id)
+
     return true
 end
 
@@ -92,6 +101,9 @@ function JobsTestCase:reservedelayTest()
     check.notEmpty(job.id)
     check.isPosInt(job.id)
 
+    self._jobs:remove(job.id)
+    -- printf("- remove job %s [reserved]", job.id)
+
     return true
 end
 
@@ -101,6 +113,8 @@ function JobsTestCase:releaseTest()
 
     self._jobs:release(job)
     local jobAgain = self._jobs:reserve()
+    self._jobs:remove(jobAgain.id)
+    -- printf("- remove job %s [reserved]", jobAgain.id)
 
     check.isTable(job)
     check.equals(jobAgain, job)
@@ -143,16 +157,25 @@ function JobsTestCase:_addJob(delay)
     local action = "jobtests.hello"
     local data = {number = math.random(), str = "hello"}
     local job = {action = action, data = data, delay = delay}
-    return action, data, self._jobs:add(job)
+    self._jobs:add(job)
+    -- printf("- add job %s", job.id)
+    return action, data, job
 end
 
 -- remove all jobs
 function JobsTestCase:_flush()
+    -- local currentChannel = self._jobs:getUsedChannel()
+    -- printf("currentChannel = %s", currentChannel)
+
+    -- local watchedChannels = self._jobs:getWatchedChannels()
+    -- printf("watchedChannels = %s", table.concat(watchedChannels, ", "))
+
     local states = {"ready", "delayed", "buried"}
     for _, state in ipairs(states) do
         while true do
             local job = self._jobs:queryNext(state)
             if not job then break end
+            -- printf("- remove job %s [%s]", job.id, state)
             self._jobs:remove(job.id)
         end
     end
