@@ -167,6 +167,7 @@ function stopBeanstalkd()
 
 function startJobWorkers()
 {
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); startJobWorkers()"
     # ps -ef | grep -i "start_workers.*sh" | grep -v "grep" > /dev/null
     # if [ $? -ne 0 ]; then
     #     I=0

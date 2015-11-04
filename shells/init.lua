@@ -69,7 +69,7 @@ function checkVarConfig()
         os.exit(1)
     end
 
-    local config = loadfile(VAR_CONF_PATH)()
+    local config = dofile(VAR_CONF_PATH)
     if type(config) ~= "table" then
         print(string.format("[ERR] Invalid config file: %s", VAR_CONF_PATH))
         os.exit(1)
@@ -237,6 +237,7 @@ function getBeanstalkdArgs()
 
     return table.concat(args, " ")
 end
+
 
 --
 
@@ -514,3 +515,15 @@ function md5.sum(s)
   return hex2binary(md5.sumhexa(s))
 end
 
+
+
+
+function startJobWorkers()
+    local config = checkVarConfig()
+    local appkeys = dofile(VAR_APP_KEYS_PATH)
+
+    for path, opts in pairs(appkeys) do
+        local appConfig = config.apps[opts.name]
+
+    end
+end
