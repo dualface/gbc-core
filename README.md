@@ -40,4 +40,6 @@ GameBox Cloud Core 为开发者提供一个稳定可靠，可伸缩的服务端�
 -   [更多文档](http://gameboxcloud.com/docs/)
 -   [版本日志](http://gameboxcloud.com/docs/core/changelog/)
 -   [源代码仓库](https://github.com/dualface/gbc-core)
+-   [项目管理](https://www.pivotaltracker.com/n/projects/1474648)
+-   [Bug 报告](https://github.com/dualface/gbc-core/issues)
 -   技术支持: QQ群 <424776815>
