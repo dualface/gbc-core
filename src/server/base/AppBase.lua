@@ -91,7 +91,7 @@ function AppBase:runAction(actionName, data)
         throw("failed to load action module \"%s\"", actionModulePath or actionModuleName)
     end
 
-    local acceptedRequestType = rawget(actionModule, "ACCEPTED_REQUEST_TYPE") or self.config.app.defaultAcceptedRequestType
+    local acceptedRequestType = actionModule.ACCEPTED_REQUEST_TYPE or self.config.app.defaultAcceptedRequestType
     local currentRequestType = self:getRequestType()
     if not self:checkActionTypes(currentRequestType, acceptedRequestType) then
         throw("can't access this action via \"%s\"", currentRequestType)
