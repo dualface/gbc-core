@@ -11,12 +11,12 @@ function showHelp()
 
 # start
 ROOT_DIR=$(cd "$(dirname $0)" && pwd)
-source $ROOT_DIR/init.inc
+source $ROOT_DIR/bin/init.inc
 
 if [ $? -ne 0 ] ; then echo "Terminating..." >&2; exit 1; fi
 
 if [ $OS_TYPE == "MACOS" ]; then
-    ARGS=$($ROOT_DIR/tmp/getopt_long "$@")
+    ARGS=$($ROOT_DIR/bin/getopt_long "$@")
 else
     ARGS=$(getopt -o vh --long debug,version,help -n 'Start GameBox Cloud Core' -- "$@")
 fi

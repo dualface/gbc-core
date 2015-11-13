@@ -19,7 +19,7 @@ apt-get install -y mysql-server mysql-client
 cd /vagrant/
 sudo ./install.sh
 
-cd /opt/gbc_core
+cd /opt/gbc-core
 ./start_server --debug
 
 # done

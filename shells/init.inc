@@ -16,17 +16,17 @@ function getVersion()
 
 function updateConfig()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); updateConfig()"
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); updateConfig()"
 }
 
 function updateNginxConf()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); updateNginxConfig()"
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); updateNginxConfig()"
 }
 
 function updateRedisConf()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); updateRedisConfig()"
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); updateRedisConfig()"
 }
 
 function updateAllConfigs()
@@ -38,12 +38,12 @@ function updateAllConfigs()
 
 function getRedisArgs()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); print(getRedisArgs())"
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); print(getRedisArgs())"
 }
 
 function getBeanstalkdArgs()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); print(getBeanstalkdArgs())"
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); print(getBeanstalkdArgs())"
 }
 
 # --
@@ -167,7 +167,7 @@ function stopBeanstalkd()
 
 function startJobWorkers()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/init.lua')(); startJobWorkers()"
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); startJobWorkers()"
     # ps -ef | grep -i "start_workers.*sh" | grep -v "grep" > /dev/null
     # if [ $? -ne 0 ]; then
     #     I=0

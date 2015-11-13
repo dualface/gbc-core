@@ -10,7 +10,7 @@ function showHelp()
     echo -e "\t -b | --beanstalkd \t install beanstalkd"
     echo -e "\t -h | --help \t\t show this help"
     echo "if the option is not specified, default option is \"--all(-a)\"."
-    echo "if the \"--prefix\" is not specified, default path is \"/opt/gbc_core\"."
+    echo "if the \"--prefix\" is not specified, default path is \"/opt/gbc-core\"."
 }
 
 function checkOSType()
@@ -45,8 +45,8 @@ fi
 
 OSTYPE=$(checkOSType)
 CUR_DIR=$(cd "$(dirname $0)" && pwd)
-BUILD_DIR=/tmp/install_gbc_core
-DEST_DIR=/opt/gbc_core
+BUILD_DIR=/tmp/install_gbc-core
+DEST_DIR=/opt/gbc-core
 
 declare -i ALL=0
 declare -i BEANS=0
@@ -128,6 +128,7 @@ while true ; do
 done
 
 DEST_BIN_DIR=$DEST_DIR/bin
+OPENRESETY_CONFIGURE_ARGS=""
 
 if [ $OSTYPE == "UBUNTU" ] ; then
     apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip
@@ -137,12 +138,14 @@ elif [ $OSTYPE == "CENTOS" ]; then
 elif [ $OSTYPE == "MACOS" ]; then
     type "brew" > /dev/null 2> /dev/null
     if [ $? -ne 0 ]; then
-        echo "pleas install brew, with this command:"
+        echo "Please install brew, with this command:"
         echo -e "\033[33mruby -e \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\" \033[0m"
         exit 0
     else
-        su $(users) -c "brew install pcre"
+        sudo -u $SUDO_USER brew install pcre
     fi
+
+    OPENRESETY_CONFIGURE_ARGS="--without-http_ssl_module --without-http_encrypted_session_module"
 
     type "gcc" > /dev/null 2> /dev/null
     if [ $? -ne 0 ]; then
@@ -182,7 +185,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     mkdir -p $DEST_BIN_DIR/openresty
 
     # install openresty
-    ./configure \
+    ./configure $OPENRESETY_CONFIGURE_ARGS \
         --prefix=$DEST_BIN_DIR/openresty \
         --with-luajit \
         --with-http_stub_status_module \
@@ -200,13 +203,14 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
 
     # deploy tool script
     cd $CUR_DIR/shells/
-    cp -f start_server stop_server check_server init.inc init.lua $DEST_DIR
+    cp -f start_server stop_server check_server $DEST_DIR
+    cp -f init.inc init.lua $DEST_BIN_DIR
     mkdir -p $DEST_DIR/apps/welcome/tools/actions
     mkdir -p $DEST_DIR/apps/welcome/workers/actions
     cp -f tools.sh $DEST_DIR/apps/welcome/.
     # if it in Mac OS X, getopt_long should be deployed.
     if [ $OSTYPE == "MACOS" ]; then
-        cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/tmp
+        cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/bin
         rm $CUR_DIR/shells/getopt_long
     fi
 

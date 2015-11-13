@@ -167,7 +167,7 @@ function updateRedisConfig()
         if string.sub(socket, 1, 5) == "unix:" then
             socket = string.sub(socket, 6)
         end
-        contents = string.gsub(contents, "[# \t]*unixsocket[ \t]+[%a\\/\\.]+",
+        contents = string.gsub(contents, "[# \t]*unixsocket[ \t]+[^\n]+",
                 string.format("unixsocket %s", socket))
     else
         contents = string.gsub(contents, "[# \t]*unixsocket[ \t]+", "# unixsocket")
