@@ -9,6 +9,23 @@ CUR_DIR=$(cd "$(dirname $0)" && pwd)
 PARENT_DIR=$(dirname "$CUR_DIR")
 DEST_DIR="$PARENT_DIR/gbc-instance"
 
+if [ -d "$DEST_DIR" ]; then
+    cd "$DEST_DIR"
+    rm -f apps
+    rm -f conf
+    rm -f src
+    rm -f tests
+    rm -f start_server
+    rm -f stop_server
+    rm -f check_server
+    rm -f bin/init.inc
+    rm -f bin/init.lua
+fi
+
+echo "Maybe need enter your sudo password !"
+echo ""
+echo "sudo $CUR_DIR/install.sh --prefix=$DEST_DIR"
+echo ""
 sudo "$CUR_DIR/install.sh" --prefix="$DEST_DIR"
 
 cd "$DEST_DIR"

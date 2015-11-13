@@ -246,7 +246,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
         $SED_BIN "s#LUAINC_linux_base?=/usr/include#LUAINC_linux_base?=$DEST_BIN_DIR/openresty/luajit/include#g" src/makefile
         $SED_BIN "s#\$(LUAINC_linux_base)/lua/\$(LUAV)#\$(LUAINC_linux_base)/luajit-2.1#g" src/makefile
     fi
-    make clean && make && make install
+    make clean && make && make install-unix
     cp -f src/serial.so src/unix.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/socket/.
 
     # install luasec
