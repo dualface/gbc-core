@@ -36,6 +36,18 @@ local Factory = require("server.base.Factory")
 --
 
 local TEST_CASES = {
+    "redis.ConnectionTestCase",
+    "redis.GeoTestCase",
+    "redis.HashesTestCase",
+    "redis.KeysTestCase",
+    "redis.ListsTestCase",
+    "redis.PubsubTestCase",
+    "redis.ServerTestCase",
+    "redis.SetsTestCase",
+    "redis.SortedsetsTestCase",
+    "redis.StringsTestCase",
+    "redis.TransactionsTestCase",
+
     "JobsTestCase",
 }
 
