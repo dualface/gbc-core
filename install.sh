@@ -45,7 +45,7 @@ fi
 
 OSTYPE=$(checkOSType)
 CUR_DIR=$(cd "$(dirname $0)" && pwd)
-BUILD_DIR=/tmp/install_gbc-core
+BUILD_DIR=/tmp/install-gbc-core
 DEST_DIR=/opt/gbc-core
 
 declare -i ALL=0
@@ -53,12 +53,14 @@ declare -i BEANS=0
 declare -i NGINX=0
 declare -i REDIS=0
 
-OPENRESTY_VER=1.7.7.1
+OPENRESTY_VER=1.9.3.1
 LUASOCKET_VER=3.0-rc1
 LUASEC_VER=0.5
-REDIS_VER=2.6.16
-BEANSTALKD_VER=1.9
-LUABSON_VER=20150709
+REDIS_VER=3.0.5
+BEANSTALKD_VER=1.10
+# https://github.com/cloudwu/lua-bson
+LUABSON_VER=20151114
+# https://github.com/cloudwu/pbc
 LUAPBC_VER=20150714
 
 if [ $OSTYPE == "MACOS" ]; then
@@ -167,7 +169,7 @@ set -e
 
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
-cp -f $CUR_DIR/installation/*.tar.gz $BUILD_DIR
+cp -f $CUR_DIR/dists/*.tar.gz $BUILD_DIR
 
 mkdir -p $DEST_DIR
 mkdir -p $DEST_BIN_DIR
@@ -268,11 +270,6 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     cp -f httpclient.lua $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
     cp -rf httpclient $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
 
-    # install inspect
-    cd $BUILD_DIR
-    tar zxf luainspect.tar.gz
-    cp -f inspect.lua $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
-
     # install luabson
     cd $BUILD_DIR
     tar zxf luabson-$LUABSON_VER.tar.gz
@@ -283,7 +280,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
         $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib#g" ./Makefile
     fi
 
-    make clean && make
+    make clean && make linux
 
     cp -f ./bson.so $DEST_BIN_DIR/openresty/lualib/.
     cp -f ./bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
