@@ -10,7 +10,7 @@ function showHelp()
     echo -e "\t -b | --beanstalkd \t install beanstalkd"
     echo -e "\t -h | --help \t\t show this help"
     echo "if the option is not specified, default option is \"--all(-a)\"."
-    echo "if the \"--prefix\" is not specified, default path is \"/opt/gbc_core\"."
+    echo "if the \"--prefix\" is not specified, default path is \"/opt/gbc-core\"."
 }
 
 function checkOSType()
@@ -45,20 +45,22 @@ fi
 
 OSTYPE=$(checkOSType)
 CUR_DIR=$(cd "$(dirname $0)" && pwd)
-BUILD_DIR=/tmp/install_gbc_core
-DEST_DIR=/opt/gbc_core
+BUILD_DIR=/tmp/install-gbc-core
+DEST_DIR=/opt/gbc-core
 
 declare -i ALL=0
 declare -i BEANS=0
 declare -i NGINX=0
 declare -i REDIS=0
 
-OPENRESTY_VER=1.7.7.1
+OPENRESTY_VER=1.9.3.1
 LUASOCKET_VER=3.0-rc1
 LUASEC_VER=0.5
-REDIS_VER=2.6.16
-BEANSTALKD_VER=1.9
-LUABSON_VER=20150709
+REDIS_VER=3.0.5
+BEANSTALKD_VER=1.10
+# https://github.com/cloudwu/lua-bson
+LUABSON_VER=20151114
+# https://github.com/cloudwu/pbc
 LUAPBC_VER=20150714
 
 if [ $OSTYPE == "MACOS" ]; then
@@ -128,6 +130,7 @@ while true ; do
 done
 
 DEST_BIN_DIR=$DEST_DIR/bin
+OPENRESETY_CONFIGURE_ARGS=""
 
 if [ $OSTYPE == "UBUNTU" ] ; then
     apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip
@@ -137,12 +140,14 @@ elif [ $OSTYPE == "CENTOS" ]; then
 elif [ $OSTYPE == "MACOS" ]; then
     type "brew" > /dev/null 2> /dev/null
     if [ $? -ne 0 ]; then
-        echo "pleas install brew, with this command:"
+        echo "Please install brew, with this command:"
         echo -e "\033[33mruby -e \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\" \033[0m"
         exit 0
     else
-        su $(users) -c "brew install pcre"
+        sudo -u $SUDO_USER brew install pcre
     fi
+
+    OPENRESETY_CONFIGURE_ARGS="--without-http_ssl_module --without-http_encrypted_session_module"
 
     type "gcc" > /dev/null 2> /dev/null
     if [ $? -ne 0 ]; then
@@ -164,7 +169,7 @@ set -e
 
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
-cp -f $CUR_DIR/installation/*.tar.gz $BUILD_DIR
+cp -f $CUR_DIR/dists/*.tar.gz $BUILD_DIR
 
 mkdir -p $DEST_DIR
 mkdir -p $DEST_BIN_DIR
@@ -182,7 +187,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     mkdir -p $DEST_BIN_DIR/openresty
 
     # install openresty
-    ./configure \
+    ./configure $OPENRESETY_CONFIGURE_ARGS \
         --prefix=$DEST_BIN_DIR/openresty \
         --with-luajit \
         --with-http_stub_status_module \
@@ -200,13 +205,14 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
 
     # deploy tool script
     cd $CUR_DIR/shells/
-    cp -f start_server stop_server check_server init.inc init.lua $DEST_DIR
+    cp -f start_server stop_server check_server $DEST_DIR
+    cp -f init.inc init.lua $DEST_BIN_DIR
     mkdir -p $DEST_DIR/apps/welcome/tools/actions
     mkdir -p $DEST_DIR/apps/welcome/workers/actions
     cp -f tools.sh $DEST_DIR/apps/welcome/.
     # if it in Mac OS X, getopt_long should be deployed.
     if [ $OSTYPE == "MACOS" ]; then
-        cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/tmp
+        cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/bin
         rm $CUR_DIR/shells/getopt_long
     fi
 
@@ -242,7 +248,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
         $SED_BIN "s#LUAINC_linux_base?=/usr/include#LUAINC_linux_base?=$DEST_BIN_DIR/openresty/luajit/include#g" src/makefile
         $SED_BIN "s#\$(LUAINC_linux_base)/lua/\$(LUAV)#\$(LUAINC_linux_base)/luajit-2.1#g" src/makefile
     fi
-    make clean && make && make install
+    make clean && make && make install-unix
     cp -f src/serial.so src/unix.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/socket/.
 
     # install luasec
@@ -264,11 +270,6 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     cp -f httpclient.lua $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
     cp -rf httpclient $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
 
-    # install inspect
-    cd $BUILD_DIR
-    tar zxf luainspect.tar.gz
-    cp -f inspect.lua $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
-
     # install luabson
     cd $BUILD_DIR
     tar zxf luabson-$LUABSON_VER.tar.gz
@@ -279,7 +280,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
         $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib#g" ./Makefile
     fi
 
-    make clean && make
+    make clean && make linux
 
     cp -f ./bson.so $DEST_BIN_DIR/openresty/lualib/.
     cp -f ./bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.

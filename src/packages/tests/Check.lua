@@ -27,7 +27,7 @@ local rawequal = rawequal
 local string_format = string.format
 local _empty
 local _equals
-local _contains
+local _contains, _containsInTable
 local _dump_result
 local _dump_result_arr
 local _format_msg
@@ -48,6 +48,11 @@ end
 function _M.isTrue(v, msg)
     if v == true then return end
     throw(string_format("expected is true, actual is '%s'", tostring(v)) .. _format_msg(msg))
+end
+
+function _M.isFalse(v, msg)
+    if v == false then return end
+    throw(string_format("expected is false, actual is '%s'", tostring(v)) .. _format_msg(msg))
 end
 
 function _M.isNil(v, msg)
@@ -95,26 +100,22 @@ function _M.notEquals(actual, expected, msg)
     throw(table.concat(msgs, "\n"))
 end
 
-function _M.contains(needle, arr, msg)
-    if type(arr) ~= "table" then
-        throw(string_format("exected is array, actual is '%s'", tostring(arr)) .. _format_msg(msg))
-    end
-    if _contains(needle, arr) then return end
+function _M.contains(actual, expected, msg)
+    if _contains(actual, expected) then return end
     local msgs = {
-        string_format("expected contains '%s'", tostring(needle)) .. _format_msg(msg),
-        _dump_result(arr, "actual"),
+        string_format("expected contains '%s'", tostring(expected)) .. _format_msg(msg),
+        _dump_result(actual, "actual"),
+        _dump_result(expected, "expected"),
     }
     throw(table.concat(msgs, "\n"))
 end
 
-function _M.notContains(needle, arr, msg)
-    if type(arr) ~= "table" then
-        throw(string_format("exected is array, actual is '%s'", tostring(arr)) .. _format_msg(msg))
-    end
-    if not _contains(needle, arr) then return end
+function _M.notContains(actual, expected, msg)
+    if not _contains(actual, expected) then return end
     local msgs = {
         string_format("expected not contains '%s'", tostring(needle)) .. _format_msg(msg),
-        _dump_result(arr, "actual"),
+        _dump_result(actual, "actual"),
+        _dump_result(expected, "expected"),
     }
     throw(table.concat(msgs, "\n"))
 end
@@ -165,10 +166,14 @@ _equals = function(actual, expected)
     end
 end
 
-_contains = function(needle, arr)
-    if type(arr) ~= "table" then
-        return false
+_contains = function(actual, expected)
+    if type(expected) == "table" then
+        return _containsInTable(actual, expected)
     end
+    return string.find(tostring(actual), tostring(expected), 1, true)
+end
+
+_containsInTable = function(needle, arr)
     for _, v in pairs(arr) do
         if needle == v then return true end
     end

@@ -4,7 +4,7 @@ _DIR=$(cd "$(dirname $0)" && pwd)
 _DIR=`dirname $_DIR`
 
 ROOT_DIR=`dirname $_DIR`
-source $ROOT_DIR/init.inc quiet
+source $ROOT_DIR/bin/init.inc quiet
 
 # start
 

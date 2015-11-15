@@ -2,7 +2,7 @@
 
 ROOT_DIR=$(cd "$(dirname $0)" && pwd)
 ROOT_DIR=$(dirname "$ROOT_DIR")
-source "$ROOT_DIR/init.inc"
+source "$ROOT_DIR/bin/init.inc"
 
 if [ $? -ne 0 ] ; then echo "Terminating..." >&2; exit 1; fi
 

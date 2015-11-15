@@ -36,6 +36,7 @@ local Factory = require("server.base.Factory")
 --
 
 local TEST_CASES = {
+    "RedisTestCase",
     "JobsTestCase",
 }
 
@@ -87,7 +88,7 @@ local function testInServer(action)
     os_execute(cmd)
     local contents = io.readfile(tmpfile)
     os_remove(tmpfile)
-    return contents
+    return string.rtrim(contents)
 end
 
 local function testInCLI(action)
@@ -101,6 +102,9 @@ appConfigs = Factory.makeAppConfigs(SERVER_APP_KEYS, SERVER_CONFIG, package.path
 
 package.path = TESTS_APP_ROOT .. "/?.lua;" .. package.path
 
+local NO_STOP_ON_FAILED = NO_STOP_ON_FAILED
+
+local pass
 for _, testCaseClassName in ipairs(TEST_CASES) do
     local testCaseClass = require("cases." .. testCaseClassName)
     local actionPackageName = string_lower(string_sub(testCaseClassName, 1, -9))
@@ -116,14 +120,20 @@ for _, testCaseClassName in ipairs(TEST_CASES) do
     print(string_format("## Test Case : %s", actionPackageName))
 
     for _3, action in ipairs(tests) do
-        if not runTest(testInServer, {action}, "SERVER " .. action) then
+        pass = runTest(testInServer, {action}, "SERVER " .. action)
+        if (not pass) and (not NO_STOP_ON_FAILED) then
             break
         end
-        if not runTest(testInCLI, {action}, "CLI    " .. action) then
+        pass = runTest(testInCLI, {action}, "CLI    " .. action)
+        if (not pass) and (not NO_STOP_ON_FAILED) then
             break
         end
     end
 
     print("")
+
+    if (not pass) and (not NO_STOP_ON_FAILED) then
+        break
+    end
 
 end

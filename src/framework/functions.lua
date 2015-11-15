@@ -57,6 +57,9 @@ local debug_getlocal = debug.getlocal
 
 if type(DEBUG) ~= "number" then DEBUG = 2 end
 
+-- null value
+null = function() return "null" end
+
 function throw(fmt, ...)
     local msg = string.format(fmt, ...)
     if DEBUG > 1 then
@@ -383,14 +386,6 @@ function handler(obj, method)
     end
 end
 
-function math.newrandomseed()
-    math_randomseed(os_time())
-    math_random()
-    math_random()
-    math_random()
-    math_random()
-end
-
 function math.round(value)
     value = checknumber(value)
     return math_floor(value + 0.5)
@@ -502,6 +497,13 @@ function io.filesize(path)
         io_close(file)
     end
     return size
+end
+
+local ok, table_new = pcall(require, "table.new")
+if not ok or type(table_new) ~= "function" then
+    function table.new(narr, nrec)
+        return {}
+    end
 end
 
 function table.keys(hashtable)
