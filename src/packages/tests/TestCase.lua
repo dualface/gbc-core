@@ -40,6 +40,8 @@ function TestCase:ctor(connect)
             end
         end
     end
+
+    math.newrandomseed()
 end
 
 function TestCase:setup()

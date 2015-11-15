@@ -57,6 +57,9 @@ local debug_getlocal = debug.getlocal
 
 if type(DEBUG) ~= "number" then DEBUG = 2 end
 
+-- null value
+null = function() return "null" end
+
 function throw(fmt, ...)
     local msg = string.format(fmt, ...)
     if DEBUG > 1 then
