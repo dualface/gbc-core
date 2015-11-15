@@ -37,7 +37,7 @@ local Factory = require("server.base.Factory")
 
 local TEST_CASES = {
     "RedisTestCase",
-    "JobsTestCase",
+    "BeanstalkdTestCase",
 }
 
 local CURL_PATTERN = "curl -s --no-keepalive -o '%s' '%s'"

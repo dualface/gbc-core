@@ -75,6 +75,11 @@ function _M.isPosInt(v, msg)
     throw(string_format("expected is positive integer, actual is '%s'", tostring(v)) .. _format_msg(msg))
 end
 
+function _M.isString(v, msg)
+    if type(v) == "string" then return end
+    throw(string_format("expected is string, actual is '%s'", tostring(v)) .. _format_msg(msg))
+end
+
 function _M.greaterThan(actual, expected, msg)
     if type(actual) == "number" and type(expected) == "number" and actual > expected then return end
     throw(string_format("expected is '%s' > '%s'", tostring(actual), tostring(expected)) .. _format_msg(msg))
@@ -119,6 +124,8 @@ function _M.notContains(actual, expected, msg)
     }
     throw(table.concat(msgs, "\n"))
 end
+
+-- private
 
 _empty = function(v)
     local t = type(v)
@@ -167,13 +174,13 @@ _equals = function(actual, expected)
 end
 
 _contains = function(actual, expected)
-    if type(expected) == "table" then
+    if type(actual) == "table" then
         return _containsInTable(actual, expected)
     end
     return string.find(tostring(actual), tostring(expected), 1, true)
 end
 
-_containsInTable = function(needle, arr)
+_containsInTable = function(arr, needle)
     for _, v in pairs(arr) do
         if needle == v then return true end
     end
