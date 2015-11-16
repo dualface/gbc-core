@@ -36,3 +36,36 @@ cc.server = {VERSION = "GameBox Cloud Core 0.7.0"}
 
 -- register the build-in packages
 cc.register("event", require("framework.packages.event.init"))
+
+-- export global variable
+local __g = _G
+cc.exports = {}
+setmetatable(cc.exports, {
+    __newindex = function(_, name, value)
+        rawset(__g, name, value)
+    end,
+
+    __index = function(_, name)
+        return rawget(__g, name)
+    end
+})
+
+local string_split = string.split
+local table_concat = table.concat
+
+-- disable create unexpected global variable
+function cc.disable_global()
+    setmetatable(__g, {
+        __newindex = function(_, name, value)
+            local msg = string.format("USE \"cc.exports.%s = <value>\" INSTEAD OF SET GLOBAL VARIABLE", name)
+            local lines = string_split(debug.traceback(msg, 4), "\n")
+            local c = #lines
+            if c > 4 then c = 4 end
+            print(table_concat(lines, "\n", 1, c))
+            print("")
+            rawset(__g, name, value)
+        end
+    })
+end
+
+cc.disable_global()
