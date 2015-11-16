@@ -86,27 +86,44 @@ function Beanstalkd:connect(host, port)
 end
 
 function Beanstalkd:setTimeout(timeout)
-    if not self._socket then
+    local socket = self._socket
+    if not socket then
         return nil, "not initialized"
     end
-    return self._socket:settimeout(timeout * TIME_MULTIPLY)
+    return socket:settimeout(timeout * TIME_MULTIPLY)
 end
 
 function Beanstalkd:setKeepAlive(...)
+    local socket = self._socket
+    if not socket then
+        return nil, "not initialized"
+    end
+
+    self._socket = nil
     if not ngx then
-        return self:close()
+        return socket:close()
     else
-        local socket = self._socket
-        self._socket = nil
-        return socket:setKeepAlive(...)
+        return socket:setkeepalive(...)
+    end
+end
+
+function Beanstalkd:getReusedTimes()
+    local socket = self._socket
+    if not socket then
+        return nil, "not initialized"
+    end
+    if socket.getreusedtimes then
+        return socket:getreusedtimes()
+    else
+        return 0
     end
 end
 
 function Beanstalkd:close()
-    if not self._socket then
+    local socket = self._socket
+    if not socket then
         return nil, "not initialized"
     end
-    local socket = self._socket
     self._socket = nil
     return socket:close()
 end

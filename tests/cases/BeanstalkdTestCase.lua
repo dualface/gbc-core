@@ -185,13 +185,13 @@ end
 
 -- private
 
-_createBeanstalkd = function (config)
+_createBeanstalkd = function(config)
     local beanstalkd = Beanstalkd:create()
     beanstalkd:connect(config.host, config.port)
     return beanstalkd
 end
 
-_flush = function (bean)
+_flush = function(bean)
     bean:kick(10000)
 
     while true do
@@ -201,7 +201,7 @@ _flush = function (bean)
     end
 end
 
-_sleep = function (n)
+_sleep = function(n)
     os.execute("sleep " .. tonumber(n))
 end
 
