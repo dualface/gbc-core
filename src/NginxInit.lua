@@ -28,7 +28,7 @@ local string_lower = string.lower
 
 local appConfigs = Factory.makeAppConfigs(SERVER_APP_KEYS, SERVER_CONFIG, package.path)
 
-function processRequest(appRootPath)
+local function processRequest(appRootPath)
     local headers = req_get_headers()
     local val = headers.upgrade
     if type(val) == "table" then
@@ -51,3 +51,5 @@ function processRequest(appRootPath)
     local connect = Factory.create(appConfig, classNamePrefix)
     connect:run()
 end
+
+cc.exports.processRequest = processRequest

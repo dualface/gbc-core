@@ -28,26 +28,90 @@ if ngx and ngx.socket then
     tcp = ngx.socket.tcp
     TIME_MULTIPLY = 1000
 else
-    local socket = require "socket"
+    local socket = require("socket")
     tcp = socket.tcp
 end
 
+local string_byte   = string.byte
 local string_format = string.format
 local string_match  = string.match
+local string_split  = string.split
 local string_sub    = string.sub
-local string_len    = string.len
-local string_upper  = string.upper
+local string_find   = string.find
 local table_concat  = table.concat
-local tonumber      = tonumber
+local table_new     = table.new
+local table_remove  = table.remove
 local type          = type
 
-local BeanstalkdService = class("BeanstalkdService")
+local Beanstalkd = class("Beanstalkd")
 
-BeanstalkdService.VERSION = "0.01"
+Beanstalkd.VERSION = "0.5"
+Beanstalkd.ERRORS = {
+    OUT_OF_MEMORY   = "OUT_OF_MEMORY",
+    INTERNAL_ERROR  = "INTERNAL_ERROR",
+    BAD_FORMAT      = "BAD_FORMAT",
+    UNKNOWN_COMMAND = "UNKNOWN_COMMAND",
+    EXPECTED_CRLF   = "EXPECTED_CRLF",
+    JOB_TOO_BIG     = "JOB_TOO_BIG",
+    DEADLINE_SOON   = "DEADLINE_SOON",
+    TIMED_OUT       = "TIMED_OUT",
+    NOT_FOUND       = "NOT_FOUND",
+    BURIED          = "BURIED",
+    INVALID_YML     = "INVALID_YML",
+}
 
+setmetatable(Beanstalkd.ERRORS, {
+    __newindex = function()
+        throw("Beanstalkd.ERRORS is readonly table")
+    end,
+    __index = function(t, key)
+        throw("Beanstalkd.ERRORS not found key: %s", key)
+    end
+})
+
+local ERRORS = Beanstalkd.ERRORS
+
+local DEFAULT_HOST = "localhost"
+local DEFAULT_PORT = 11300
+
+local _req, _reqstate, _reqvalue, _reqyml
+local _readreply, _getvalue, _getjob, _getyml
+
+function Beanstalkd:ctor()
+end
+
+function Beanstalkd:connect(host, port)
+    self._socket = tcp()
+    return self._socket:connect(host or DEFAULT_HOST, port or DEFAULT_PORT)
+end
+
+function Beanstalkd:setTimeout(timeout)
+    if not self._socket then
+        return nil, "not initialized"
+    end
+    return self._socket:settimeout(timeout * TIME_MULTIPLY)
+end
+
+function Beanstalkd:setKeepAlive(...)
+    if not ngx then
+        return self:close()
+    else
+        local socket = self._socket
+        self._socket = nil
+        return socket:setKeepAlive(...)
+    end
+end
+
+function Beanstalkd:close()
+    if not self._socket then
+        return nil, "not initialized"
+    end
+    local socket = self._socket
+    self._socket = nil
+    return socket:close()
+end
 
 --[[
-
 = Beanstalk Protocol =
 
 Protocol
@@ -62,10 +126,9 @@ nonnegative.
 
 Names, in this protocol, are ASCII strings. They may contain letters (A-Z and
 a-z), numerals (0-9), hyphen ("-"), plus ("+"), slash ("/"), semicolon (";"),
-dot ("."), dollar-sign ("$"), underscore ("_"), and parentheses ("(" and ")"),
-but they may not begin with a hyphen. They are terminated by white space
-(either a space char or end of line). Each name must be at least one character
-long.
+dot ("."), dollar-sign ("$"), and parentheses ("(" and ")"), but they may not
+begin with a hyphen. They are terminated by white space (either a space char or
+end of line). Each name must be at least one character long.
 
 The protocol contains two kinds of data: text lines and unstructured chunks of
 data. Text lines are used for client commands and server responses. Chunks are
@@ -74,11 +137,11 @@ sequence of bytes. The server never inspects or modifies a job body and always
 sends it back in its original form. It is up to the clients to agree on a
 meaningful interpretation of job bodies.
 
-The client may issue the "quit" command, or simply close the TCP connection
-when it no longer has use for the server. However, beanstalkd performs very
-well with a large number of open connections, so it is usually better for the
-client to keep its connection open and reuse it as much as possible. This also
-avoids the overhead of establishing new TCP connections.
+There is no command to close the connection -- the client may simply close the
+TCP connection when it no longer has use for the server. However, beanstalkd
+performs very well with a large number of open connections, so it is usually
+better for the client to keep its connection open and reuse it as much as
+possible. This also avoids the overhead of establishing new TCP connections.
 
 If a client violates the protocol (such as by sending a request that is not
 well-formed or a command that does not exist) or if the server has an error,
@@ -90,6 +153,10 @@ the server will reply with one of the following error messages:
  - "INTERNAL_ERROR\r\n" This indicates a bug in the server. It should never
    happen. If it does happen, please report it at
    http://groups.google.com/group/beanstalk-talk.
+
+ - "DRAINING\r\n" This means that the server has been put into "drain mode"
+   and is no longer accepting new jobs. The client should try another server
+   or disconnect and try again later.
 
  - "BAD_FORMAT\r\n" The client sent a command line that was not well-formed.
    This can happen if the line does not end with \r\n, if non-numeric
@@ -166,56 +233,11 @@ live in the tube named "default".
 Tubes are created on demand whenever they are referenced. If a tube is empty
 (that is, it contains no ready, delayed, or buried jobs) and no client refers
 to it, it will be deleted.
-
 ]]
-
-function BeanstalkdService:ctor(config)
-    if type(config) ~= "table" then
-        throw("invalid beanstalkd config")
-    end
-    self._config = clone(config)
-    self._config.host = self._config.host or "localhost"
-    self._config.port = self._config.port or 11300
-    self._config.timeout = self._config.timeout or 10
-end
-
-function BeanstalkdService:connect(host, port, timeout)
-    local host = host or self._config.host
-    local port = port or self._config.port
-    self._socket = tcp()
-    local ok, err = self._socket:connect(host, port)
-    if not ok then
-        return false, err
-    end
-
-    self:setTimeout(timeout or self._config.timeout)
-    return true
-end
-
-function BeanstalkdService:close()
-    if self._socket then
-        self._socket:close()
-        self._socket = nil
-    end
-end
-
-function BeanstalkdService:setTimeout(timeout)
-    if self._socket then
-        self._socket:settimeout(timeout * TIME_MULTIPLY)
-    end
-end
-
-function BeanstalkdService:setKeepAlive()
-    if self._socket and self._socket.setkeepalive then
-        self._socket:setkeepalive()
-    end
-    self._socket = nil
-end
 
 -- Producer Commands
 
 --[[
-
 The "put" command is for any process that wants to insert a job into the queue.
 It comprises a command line followed by the job body:
 
@@ -227,7 +249,7 @@ below).
 
  - <pri> is an integer < 2**32. Jobs with smaller priority values will be
    scheduled before jobs with larger priorities. The most urgent priority is 0;
-   the least urgent priority is 4,294,967,295.
+   the least urgent priority is 4294967295.
 
  - <delay> is an integer number of seconds to wait before putting the job in
    the ready queue. The job will be in the "delayed" state during this time.
@@ -263,26 +285,28 @@ may be:
 
  - "JOB_TOO_BIG\r\n" The client has requested to put a job with a body larger
    than max-job-size bytes.
-
- - "DRAINING\r\n" This means that the server has been put into "drain mode"
-   and is no longer accepting new jobs. The client should try another server
-   or disconnect and try again later.
-
 ]]
-function BeanstalkdService:put(data, priority, delay, ttr)
-    local bytes = #data
-    local cmd = table_concat({
-        table.concat({"put", priority, delay, ttr, bytes}, " "),
-        "\r\n",
-        data,
-        "\r\n"})
-    self._socket:send(cmd)
-    local result = self:_readLine(self)
-    return self:_getIntByWord(result, "INSERTED")
+function Beanstalkd:put(data, pri, delay, ttr)
+    local socket = self._socket
+    local res, err = _req(socket, data, {"put", pri, delay, ttr, #data})
+    if not res then
+        return nil, err
+    end
+
+    local id = _getvalue(res, "INSERTED", true)
+    if id then
+        return id
+    end
+
+    id = _getvalue(res, "BURIED", true)
+    if id then
+        return id, ERRORS.BURIED
+    end
+
+    return nil, res
 end
 
 --[[
-
 The "use" command is for producers. Subsequent put commands will put jobs into
 the tube specified by this command. If no use command has been issued, jobs
 will be put into the tube named "default".
@@ -297,26 +321,15 @@ The only reply is:
 USING <tube>\r\n
 
  - <tube> is the name of the tube now being used.
-
 ]]
-function BeanstalkdService:use(tube)
-    local result, err = self:_call("use", tube)
-    if not result then
-        return false, err
-    end
-
-    local _tube = string_match(result, "^USING ([%w-_+/;.$()]+)$")
-    if _tube ~= tube then
-        return false, string_format("return invalid tube name, expected is %s, actual is %s", tostring(tube), tostring(_tube))
-    end
-
-    return true
+function Beanstalkd:use(tube)
+    return _reqvalue(self._socket, {"use", tube}, "USING")
 end
+
 
 -- Worker Commands
 
 --[[
-
 A process that wants to consume jobs from the queue uses "reserve", "delete",
 "release", and "bury". The first worker command, "reserve", looks like this:
 
@@ -332,10 +345,6 @@ job is reserved for the client, the client has limited time to run (TTR) the
 job before the job times out. When the job times out, the server will put the
 job back into the ready queue. Both the TTR and the actual time left can be
 found in response to the stats-job command.
-
-If more than one job is ready, beanstalkd will choose the one with the
-smallest priority value. Within each priority, it will choose the one that
-was received first.
 
 A timeout value of 0 will cause the server to immediately return either a
 response or TIMED_OUT.  A positive value of timeout will limit the amount of
@@ -356,8 +365,7 @@ the server automatically releases it.
 TIMED_OUT\r\n
 
 If a non-negative timeout was specified and the timeout exceeded before a job
-became available, or if the client's connection is half-closed, the server
-will respond with TIMED_OUT.
+became available, the server will respond with TIMED_OUT.
 
 Otherwise, the only other response to this command is a successful reservation
 in the form of a text line followed by the job body:
@@ -374,28 +382,32 @@ RESERVED <id> <bytes>\r\n
  - <data> is the job body -- a sequence of bytes of length <bytes> from the
    previous line. This is a verbatim copy of the bytes that were originally
    sent to the server in the put command for this job.
-
 ]]
-function BeanstalkdService:reserve(timeout)
-    local result, err
-    if type(timeout) == "number" then
-        result, err = self:_call("reserve-with-timeout", timeout)
+function Beanstalkd:reserve(timeout)
+    local socket = self._socket
+    local res, err
+    if timeout then
+        res, err = _req(socket, {"reserve-with-timeout", timeout})
     else
-        result, err = self:_call("reserve")
+        res, err = _req(socket, {"reserve"})
     end
-    if not result then
-        return false, err
+    if not res then
+        return nil, err
     end
 
-    return self:_getDataByWord(result, "RESERVED")
+    local data, err = _getjob(socket, res, "RESERVED")
+    if not data then
+        return nil, err
+    end
+
+    return data
 end
 
 --[[
-
 The delete command removes a job from the server entirely. It is normally used
 by the client when the job has successfully run to completion. A client can
-delete jobs that it has reserved, ready jobs, delayed jobs, and jobs that are
-buried. The delete command looks like this:
+delete jobs that it has reserved, ready jobs, and jobs that are buried. The
+delete command looks like this:
 
 delete <id>\r\n
 
@@ -408,19 +420,12 @@ The client then waits for one line of response, which may be:
  - "NOT_FOUND\r\n" if the job does not exist or is not either reserved by the
    client, ready, or buried. This could happen if the job timed out before the
    client sent the delete command.
-
 ]]
-function BeanstalkdService:delete(id)
-    local result, err = self:_call("delete", id)
-    if not result then
-        return false, err
-    end
-
-    return self:_checkWordFromResult(result, "DELETED")
+function Beanstalkd:delete(id)
+    return _reqstate(self._socket, {"delete", id}, "DELETED")
 end
 
 --[[
-
 The release command puts a reserved job back into the ready queue (and marks
 its state as "ready") to be run by any client. It is normally used when the job
 fails because of a transitory error. It looks like this:
@@ -442,19 +447,12 @@ The client expects one line of response, which may be:
    queue data structure.
 
  - "NOT_FOUND\r\n" if the job does not exist or is not reserved by the client.
-
 ]]
-function BeanstalkdService:release(id, priority, delay)
-    local result, err = self:_call("release", id, priority, delay)
-    if not result then
-        return false, err
-    end
-
-    return self:_checkWordFromResult(result, "RELEASED")
+function Beanstalkd:release(id, priority, delay)
+    return _reqstate(self._socket, {"release", id, priority, delay}, "RELEASED")
 end
 
 --[[
-
 The bury command puts a job into the "buried" state. Buried jobs are put into a
 FIFO linked list and will not be touched by the server again until a client
 kicks them with the "kick" command.
@@ -472,25 +470,12 @@ There are two possible responses:
  - "BURIED\r\n" to indicate success.
 
  - "NOT_FOUND\r\n" if the job does not exist or is not reserved by the client.
-
 ]]
-function BeanstalkdService:bury(id, priority)
-    local result, err = self:_call("bury", id, priority)
-    if not result then
-        return false, err
-    end
-
-    return self:_checkWordFromResult(result, "BURIED")
+function Beanstalkd:bury(id, priority)
+    return _reqstate(self._socket, {"bury", id, priority}, "BURIED")
 end
 
 --[[
-The "touch" command allows a worker to request more time to work on a job.
-This is useful for jobs that potentially take a long time, but you still want
-the benefits of a TTR pulling a job away from an unresponsive worker.  A worker
-may periodically tell the server that it's still alive and processing a job
-(e.g. it may do this on DEADLINE_SOON). The command postpones the auto
-release of a reserved job until TTR seconds from when the command is issued.
-
 The touch command looks like this:
 
 touch <id>\r\n
@@ -503,13 +488,8 @@ There are two possible responses:
 
  - "NOT_FOUND\r\n" if the job does not exist or is not reserved by the client.
 ]]
-function BeanstalkdService:touch(id)
-    local result, err = self:_call("touch", id)
-    if not result then
-        return false, err
-    end
-
-    return self:_checkWordFromResult(result, "TOUCHED")
+function Beanstalkd:touch(id)
+    return _reqstate(self._socket, {"touch", id}, "TOUCHED")
 end
 
 --[[
@@ -529,8 +509,8 @@ WATCHING <count>\r\n
 
  - <count> is the integer number of tubes currently in the watch list.
 ]]
-function BeanstalkdService:watch(tube)
-    return self:_watchOrIgnore("watch", tube)
+function Beanstalkd:watch(tube)
+    return _reqvalue(self._socket, {"watch", tube}, "WATCHING", true)
 end
 
 --[[
@@ -548,8 +528,8 @@ The reply is one of:
  - "NOT_IGNORED\r\n" if the client attempts to ignore the only tube in its
    watch list.
 ]]
-function BeanstalkdService:ignore(tube)
-    return self:_watchOrIgnore("ignore", tube)
+function Beanstalkd:ignore(tube)
+    return _reqvalue(self._socket, {"ignore", tube}, "WATCHING", true)
 end
 
 -- Other Commands
@@ -584,20 +564,26 @@ FOUND <id> <bytes>\r\n
  - <data> is the job body -- a sequence of bytes of length <bytes> from the
    previous line.
 ]]
-function BeanstalkdService:peek(id)
+function Beanstalkd:peek(id)
+    local socket = self._socket
+    local res, err
     local _id = tonumber(id)
-    local result, err
     if type(_id) == "number" then
-        result, err = self:_call("peek", id)
+        res, err = _req(socket, {"peek", id})
     else
         -- id is state
-        result, err = self:_call("peek-" .. id)
+        res, err = _req(socket, {"peek-" .. id})
     end
-    if not result then
-        return false, err
+    if not res then
+        return nil, err
     end
 
-    return self:_getDataByWord(result, "FOUND")
+    local data, err = _getjob(socket, res, "FOUND")
+    if not data then
+        return nil, err
+    end
+
+    return data
 end
 
 --[[
@@ -616,37 +602,8 @@ KICKED <count>\r\n
 
  - <count> is an integer indicating the number of jobs actually kicked.
 ]]
-function BeanstalkdService:kick(bound)
-    local result, err = self:_call("kick", bound)
-    if not result then
-        return false, err
-    end
-    return self:_getIntByWord(result, "KICKED")
-end
-
---[[
-The kick-job command is a variant of kick that operates with a single job
-identified by its job id. If the given job id exists and is in a buried or
-delayed state, it will be moved to the ready queue of the the same tube where it
-currently belongs. The syntax is:
-
-kick-job <id>\r\n
-
- - <id> is the job id to kick.
-
-The response is one of:
-`
- - "NOT_FOUND\r\n" if the job does not exist or is not in a kickable state. This
-   can also happen upon internal errors.
-
- - "KICKED\r\n" when the operation succeeded.
-]]
-function BeanstalkdService:kickJob(id)
-    local result, err = self:_call("kick-job", id)
-    if not result then
-        return false, err
-    end
-    return self:_checkWordFromResult(result, "KICKED")
+function Beanstalkd:kick(bound)
+    return _reqvalue(self._socket, {"kick", bound}, "KICKED", true)
 end
 
 --[[
@@ -686,11 +643,6 @@ to scalars. It contains these keys:
    reserved or delayed. If the job is reserved and this amount of time
    elapses before its state changes, it is considered to have timed out.
 
- - "file" is the number of the earliest binlog file containing this job.
-   If -b wasn't used, this will be 0.
-
- - "reserves" is the number of times this job has been reserved.
-
  - "timeouts" is the number of times this job has timed out during a
    reservation.
 
@@ -701,18 +653,11 @@ to scalars. It contains these keys:
 
  - "kicks" is the number of times this job has been kicked.
  ]]
-function BeanstalkdService:statsJob(id)
-    local result, err = self:_call("stats-job", id)
-    if not result then
-        return false, err
-    end
-    return self:_getDataFromResult(result)
+function Beanstalkd:statsJob(id)
+    return _reqyml(self._socket, {"stats-job", id})
 end
 
 --[[
-The stats-tube command gives statistical information about the specified tube
-if it exists. Its form is:
-
 stats-tube <tube>\r\n
 
  - <tube> is a name at most 200 bytes. Stats will be returned for this tube.
@@ -745,33 +690,13 @@ to scalars. It contains these keys:
 
  - "current-jobs-buried" is the number of buried jobs in this tube.
 
- - "total-jobs" is the cumulative count of jobs created in this tube in
-   the current beanstalkd process.
-
- - "current-using" is the number of open connections that are currently
-   using this tube.
+ - "total-jobs" is the cumulative count of jobs created in this tube.
 
  - "current-waiting" is the number of open connections that have issued a
    reserve command while watching this tube but not yet received a response.
-
- - "current-watching" is the number of open connections that are currently
-   watching this tube.
-
- - "pause" is the number of seconds the tube has been paused for.
-
- - "cmd-delete" is the cumulative number of delete commands for this tube
-
- - "cmd-pause-tube" is the cumulative number of pause-tube commands for this
-   tube.
-
- - "pause-time-left" is the number of seconds until the tube is un-paused.
 ]]
-function BeanstalkdService:statsTube(tube)
-    local result, err = self:_call("stats-tube", tube)
-    if not result then
-        return false, err
-    end
-    return self:_getDataFromResult(result)
+function Beanstalkd:statsTube(tube)
+    return _reqyml(self._socket, {"stats-tube", tube})
 end
 
 --[[
@@ -791,8 +716,7 @@ OK <bytes>\r\n
    is a YAML file with statistical information represented a dictionary.
 
 The stats data for the system is a YAML file representing a single dictionary
-of strings to scalars. Entries described as "cumulative" are reset when the
-beanstalkd process starts; they are not stored on disk with the -b flag.
+of strings to scalars. It contains these keys:
 
  - "current-jobs-urgent" is the number of ready jobs with priority < 1024.
 
@@ -843,8 +767,6 @@ beanstalkd process starts; they are not stored on disk with the -b flag.
  - "cmd-list-tubes-watched" is the cumulative number of list-tubes-watched
    commands.
 
- - "cmd-pause-tube" is the cumulative number of pause-tube commands.
-
  - "job-timeouts" is the cumulative count of times a job has timed out.
 
  - "total-jobs" is the cumulative count of jobs created.
@@ -870,40 +792,25 @@ beanstalkd process starts; they are not stored on disk with the -b flag.
 
  - "version" is the version string of the server.
 
- - "rusage-utime" is the cumulative user CPU time of this process in seconds
+ - "rusage-utime" is the accumulated user CPU time of this process in seconds
    and microseconds.
 
- - "rusage-stime" is the cumulative system CPU time of this process in
+ - "rusage-stime" is the accumulated system CPU time of this process in
    seconds and microseconds.
 
- - "uptime" is the number of seconds since this server process started running.
+ - "uptime" is the number of seconds since this server started running.
 
  - "binlog-oldest-index" is the index of the oldest binlog file needed to
-   store the current jobs.
+   store the current jobs
 
  - "binlog-current-index" is the index of the current binlog file being
-   written to. If binlog is not active this value will be 0.
+   written to. If binlog is not active this value will be 0
 
  - "binlog-max-size" is the maximum size in bytes a binlog file is allowed
-   to get before a new binlog file is opened.
-
- - "binlog-records-written" is the cumulative number of records written
-   to the binlog.
-
- - "binlog-records-migrated" is the cumulative number of records written
-   as part of compaction.
-
- - "id" is a random id string for this server process, generated when each
-   beanstalkd process starts.
-
- - "hostname" the hostname of the machine as determined by uname.
+   to get before a new binlog file is opened
 ]]
-function BeanstalkdService:stats()
-    local result, err = self:_call("stats")
-    if not result then
-        return false, err
-    end
-    return self:_getDataFromResult(result)
+function Beanstalkd:stats()
+    return _reqyml(self._socket, {"stats"})
 end
 
 --[[
@@ -921,12 +828,8 @@ OK <bytes>\r\n
  - <data> is a sequence of bytes of length <bytes> from the previous line. It
    is a YAML file containing all tube names as a list of strings.
 ]]
-function BeanstalkdService:listTubes()
-    local result, err = self:_call("list-tubes")
-    if not result then
-        return false, err
-    end
-    return self:_getDataFromResult(result)
+function Beanstalkd:listTubes()
+    return _reqyml(self._socket, {"list-tubes"})
 end
 
 --[[
@@ -941,18 +844,8 @@ USING <tube>\r\n
 
  - <tube> is the name of the tube being used.
 ]]
-function BeanstalkdService:listTubeUsed()
-    local result, err = self:_call("list-tube-used")
-    if not result then
-        return false, err
-    end
-
-    local tube = string_match(result, "^USING ([%w-_+/;.$()]+)$")
-    if not tube then
-        return false, result
-    end
-
-    return tube
+function Beanstalkd:listTubeUsed()
+    return _reqvalue(self._socket, {"list-tube-used"}, "USING")
 end
 
 --[[
@@ -971,131 +864,160 @@ OK <bytes>\r\n
  - <data> is a sequence of bytes of length <bytes> from the previous line. It
    is a YAML file containing watched tube names as a list of strings.
 ]]
-function BeanstalkdService:listTubesWatched()
-    local result, err = self:_call("list-tubes-watched")
-    if not result then
-        return false, err
-    end
-    return self:_getDataFromResult(result)
+function Beanstalkd:listTubesWatched()
+    return _reqyml(self._socket, {"list-tubes-watched"})
 end
 
---[[
-The quit command simply closes the connection. Its form is:
+-- private
 
-quit\r\n
-]]
-function BeanstalkdService:quit()
-    self._call("quit")
-end
-
---[[
-The pause-tube command can delay any new job being reserved for a given time. Its form is:
-
-pause-tube <tube-name> <delay>\r\n
-
- - <tube> is the tube to pause
-
- - <delay> is an integer number of seconds to wait before reserving any more
-   jobs from the queue
-
-There are two possible responses:
-
- - "PAUSED\r\n" to indicate success.
-
- - "NOT_FOUND\r\n" if the tube does not exist.
-]]
-function BeanstalkdService:pauseTube(tube, delay)
-    local result, err = self:_call("pause-tube", tube, delay)
-    if not result then
-        return false, err
+_req = function(socket, data, args)
+    if type(data) == "table" then
+        args = data
+        data = nil
     end
 
-    return self:_checkWordFromResult(result, "PAUSED")
+    local n = 2
+    if data then n = 4 end
+    local req = table_new(n, 0)
+    req[1] = table_concat(args, " ")
+    req[2] = "\r\n"
+    if data then
+        req[3] = data
+        req[4] = "\r\n"
+    end
+
+    local bytes, err = socket:send(table_concat(req))
+    if not bytes then
+        return nil, err
+    end
+
+    return _readreply(socket)
 end
 
-function BeanstalkdService:_call(...)
-    self._socket:send(table_concat({...}, " "))
-    self._socket:send("\r\n")
-    return self:_readLine()
-end
+_reqstate = function(socket, args, word)
+    local res, err = _req(socket, args)
+    if not res then
+        return nil, err
+    end
 
-function BeanstalkdService:_checkWordFromResult(result, word)
-    word = tostring(word)
-    if not string_match(result, string_format("^%s$", word)) then
-        return false, result
+    if res ~= word then
+        return nil, res
     end
 
     return true
 end
 
-function BeanstalkdService:_getIntByWord(result, word)
-    local id = tonumber(string_match(result, string_format("^%s (%%d+)$", word)))
-    if type(id) ~= "number" then
-        return false, result
+_reqvalue = function(socket, args, word, isnumber)
+    local res, err = _req(socket, args)
+    if not res then
+        return nil, err
     end
 
-    return id
+    local value = _getvalue(res, word, isnumber)
+    if not value then
+        return nil, res
+    end
+
+    return value
 end
 
-function BeanstalkdService:_getDataByWord(result, word)
-    local pattern = string_format("^%s (%%d+) (%%d+)$", string_upper(word))
-    local id, bytes = string_match(result, pattern)
-    if (not id) or (not bytes) then
-        return false, result
+_reqyml = function(socket, args)
+    local res, err = _req(socket, args)
+    if not res then
+        return nil, err
     end
 
-    id, bytes = tonumber(id), tonumber(bytes)
-    local result, err = self:_readBytes(bytes)
-    if not result then
-        return false, err
-    end
-
-    return id, result
-end
-
-function BeanstalkdService:_getDataFromResult(result)
-    local bytes = tonumber(string_match(result, "^OK (%d+)$"))
-    if type(bytes) ~= "number" then
-        return false, result
-    end
-
-    local data, err = self:_readBytes(bytes)
+    local data, err = _getyml(socket, res, "OK")
     if not data then
-        return false, err
-    end
-
-    if #data ~= bytes then
-        return false, string_format("read bytes from redis failed, expected length is %s, actual is %s", tostring(bytes), tostring(#data))
+        return nil, err
     end
 
     return data
 end
 
-function BeanstalkdService:_readBytes(bytes)
-    local result, err, partial = self._socket:receive(bytes + 2)
-    if not result then
-        return nil, err, partial
-    end
+_readreply = function(socket, bytes)
+    if bytes then
+        local res, err = socket:receive(bytes + 2)
+        if not res then
+            return nil, err
+        end
 
-    return string_sub(result, 1, -3)
+        return string_sub(res, 1, -3)
+    else
+        local res, err = socket:receive("*l")
+        if not res then
+            return nil, err
+        end
+
+        return res
+    end
 end
 
-function BeanstalkdService:_readLine()
-    local result, err, partial = self._socket:receive("*l")
-    if not result then
-        return nil, err, partial
+_getvalue = function(res, word, isnumber)
+    local value = string_match(res, string_format("^%s (.+)$", word))
+    if not value then
+        return nil, res
     end
 
-    return result
-end
-
-function BeanstalkdService:_watchOrIgnore(command, tube)
-    local result, err = self:_call(command, tube)
-    if not result then
-        return false, err
+    if isnumber then
+        value = tonumber(value)
     end
 
-    return self:_getIntByWord(result, "WATCHING")
+    return value
 end
 
-return BeanstalkdService
+_getjob = function(socket, res, word)
+    local pattern = string_format("^%s (%%d+) (%%d+)$", word)
+    local id, bytes = string_match(res, pattern)
+    if (not id) or (not bytes) then
+        return nil, res
+    end
+
+    id, bytes = tonumber(id), tonumber(bytes)
+    local res, err = _readreply(socket, bytes)
+    if not res then
+        return nil, err
+    end
+
+    return {id = id, data = res}
+end
+
+_getyml = function(socket, res, word)
+    local pattern = string_format("^%s (%%d+)$", word)
+    local bytes = string_match(res, pattern)
+    if not bytes then
+        return nil, res
+    end
+
+    local res, err = _readreply(socket, bytes)
+    if not res then
+        return nil, err
+    end
+
+    if string_sub(res, 1, 3) ~= "---" then
+        return nil, ERRORS.INVALID_YML
+    end
+
+    -- convert yml to table
+    local yml = {}
+    local offset = 5
+    while true do
+        local colon = string_find(res, ":", offset, true)
+        local nl = string_find(res, "\n", offset, true)
+        if colon then
+            yml[string_sub(res, offset, colon - 1)] = string_sub(res, colon + 2, nl - 1)
+        elseif nl then
+            if string_byte(res, offset) == 45 then
+                offset = offset + 2
+            end
+            yml[#yml + 1] = string_sub(res, offset, nl - 1)
+        else
+            break
+        end
+        offset = nl + 1
+    end
+
+    return yml
+end
+
+return Beanstalkd

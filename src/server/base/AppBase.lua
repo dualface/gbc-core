@@ -160,7 +160,7 @@ function AppBase:normalizeActionName(actionName)
         return string_ucfirst(parts[1]), "index"
     end
     -- method = "say"
-    method = parts[c]
+    local method = parts[c]
     table_remove(parts, c)
     c = c - 1
     -- mdoule = "demo.Hello"
