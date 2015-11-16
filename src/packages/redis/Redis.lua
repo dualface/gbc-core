@@ -117,89 +117,97 @@ local _UNSUB_COMMANDS = {
 }
 
 local null = null or function() return "null" end
-local type = type
 local pairs = pairs
-local tostring = tostring
-local tonumber = tonumber
-local string_lower = string.lower
-local string_upper = string.upper
 local string_byte = string.byte
+local string_format = string.format
+local string_lower = string.lower
 local string_sub = string.sub
+local string_upper = string.upper
 local table_concat = table.concat
 local table_new = table.new
+local tonumber = tonumber
+local tostring = tostring
+local type = type
 
 local RedisService = class("RedisService")
 
 RedisService.VERSION = "0.5"
 RedisService.null = null
 
-local _checkSubscribed
+local DEFAULT_HOST = "localhost"
+local DEFAULT_PORT = 6379
 
-function RedisService:ctor(config)
-    if type(config) ~= "table" then
-        throw("RedisService:ctor() - invalid config")
-    end
-    self._config = {}
-    self._config.host = config.host or "localhost"
-    self._config.port = config.port or 6379
-    self._config.timeout = config.timeout or 10
-    self._config.socket = config.socket
+local _genreq, _readreply, _checksub
+
+function RedisService:ctor()
 end
 
-function RedisService:connect()
-    local socket_file = self._config.socket
-    if socket_file and unix_socket then
-        if string_sub(socket_file, 1, 5) == "unix:" then
-            socket_file = string_sub(socket_file, 6)
+function RedisService:connect(host, port)
+    local socket_file, socket, ok, err
+    host = host or DEFAULT_HOST
+    if string_sub(host, 1, 5) == "unix:" then
+        socket_file = host
+        if unix_socket then
+            socket_file = string_sub(host, 6)
+            socket = unix_socket()
         else
-            socket_file = "unix:" .. socket_file
+            socket = tcp()
         end
-        self._socket = unix_socket()
+        ok, err = socket:connect(socket_file)
     else
-        self._socket = tcp()
-    end
-
-    local ok, err
-    if socket_file then
-        ok, err = self._socket:connect(socket_file)
-    else
-        ok, err = self._socket:connect(self._config.host, self._config.port)
+        socket = tcp()
+        ok, err = socket:connect(host, port or DEFAULT_PORT)
     end
 
     if not ok then
-        self._socket = nil
-    else
-        self:setTimeout(self._config.timeout)
+        return nil, err
     end
+
+    self._socket = socket
+    return 1
 end
 
 function RedisService:setTimeout(timeout)
-    if self._socket then
-        self._socket:settimeout(timeout * _TIME_MULTIPLY)
+    local socket = self._socket
+    if not socket then
+        return nil, "not initialized"
     end
+    return socket:settimeout(timeout * TIME_MULTIPLY)
 end
 
 function RedisService:setKeepAlive(...)
+    local socket = self._socket
+    if not socket then
+        return nil, "not initialized"
+    end
+
+    self._socket = nil
     if not ngx then
-        self:close()
+        return socket:close()
     else
-        self._socket:setKeepAlive(...)
+        return socket:setkeepalive(...)
     end
 end
 
 function RedisService:getReusedTimes()
-    if self._socket and self._socket.getreusedtimes then
-        return self._socket:getreusedtimes()
+    local socket = self._socket
+    if not socket then
+        return nil, "not initialized"
+    end
+    if socket.getreusedtimes then
+        return socket:getreusedtimes()
     else
         return 0
     end
 end
 
 function RedisService:close()
-    if self._socket then
-        self._socket:close()
-        self._socket = nil
+    local socket = self._socket
+    if not socket then
+        return nil, "not initialized"
     end
+    self._socket = nil
+    return socket:close()
 end
 
 function RedisService:doCommand(...)
@@ -207,30 +215,110 @@ function RedisService:doCommand(...)
     local cmd = args[1] or "<unknown command>"
     local socket = self._socket
     if not socket then
-        throw("RedisService:%s() - not initialized", cmd)
+        return nil, string_format('"%s" failed, not initialized', cmd)
     end
 
-    local req = self:generateRequest(args)
+    local req = _genreq(args)
     local reqs = self._reqs
     if reqs then
         reqs[#reqs + 1] = req
-        return
+        return "OK"
     end
 
     local bytes, err = socket:send(req)
     if not bytes then
-        throw("RedisService:%s() - %s", cmd, err)
+        return nil, string_format('"%s" failed, %s', cmd, err)
     end
 
-    local res, err = self:readReplyRaw(self, socket)
-    if err then
-        throw("RedisService:%s() - %s", cmd, err)
+    local res, err = _readreply(self, socket)
+    if not res then
+        return nil, string_format('"%s" failed, %s', cmd, err)
     end
 
     return res
 end
 
-function RedisService:generateRequest(args)
+function RedisService:initPipeline(numberOfCommands)
+    self._reqs = table_new(numberOfCommands or 4, 0)
+end
+
+function RedisService:cancelPipeline()
+    self._reqs = nil
+end
+
+function RedisService:commitPipeline()
+    local socket = self._socket
+    if not socket then
+        return nil, "not initialized"
+    end
+
+    local reqs = self._reqs
+    if not reqs then
+        return nil, "no pipeline"
+    end
+    self._reqs = nil
+
+    local bytes, err = socket:send(table_concat(reqs))
+    if not bytes then
+        return nil, err
+    end
+
+    local nvals = 0
+    local nreqs = #reqs
+    local vals = table_new(nreqs, 0)
+    for i = 1, nreqs do
+        local res, err = _readreply(self, socket)
+        if res then
+            nvals = nvals + 1
+            vals[nvals] = res
+        elseif res == nil then
+            if err == "timeout" then
+                self:close()
+            end
+            return nil, err
+        else
+            -- be a valid redis error value
+            nvals = nvals + 1
+            vals[nvals] = {false, err}
+        end
+    end
+
+    return vals
+end
+
+function RedisService:readReply()
+    local res, err = _readreply(self, self._socket)
+    if not res then
+        return nil, err
+    end
+
+    _checksub(self, res)
+    return res
+end
+
+function RedisService:hashToArray(hash)
+    local arr = {}
+    local i = 0
+    for k, v in pairs(hash) do
+        arr[i + 1] = k
+        arr[i + 2] = v
+        i = i + 2
+    end
+    return arr
+end
+
+function RedisService:arrayToHash(arr)
+    local c = #arr
+    local hash = table_new(0, c / 2)
+    for i = 1, c, 2 do
+        hash[arr[i]] = arr[i + 1]
+    end
+    return hash
+end
+
+-- private
+
+_genreq = function(args)
     local nargs = #args
     local req = table_new(nargs + 1, 0)
     req[1] = "*" .. nargs .. "\r\n"
@@ -254,73 +342,7 @@ function RedisService:generateRequest(args)
     return table_concat(req)
 end
 
-function RedisService:initPipeline(numberOfCommands)
-    self._reqs = table_new(numberOfCommands or 4, 0)
-end
-
-function RedisService:cancelPipeline()
-    self._reqs = nil
-end
-
-function RedisService:commitPipeline()
-    local reqs = self._reqs
-    if not reqs then
-        throw("RedisService:commitPipeline() - no pipeline")
-    end
-    self._reqs = nil
-
-    if not self._socket then
-        throw("RedisService:commitPipeline() - not initialized")
-    end
-
-    local bytes, err = self._socket:send(table_concat(reqs))
-    if not bytes then
-        throw("RedisService:commitPipeline() - %s", err)
-    end
-
-    local nvals = 0
-    local nreqs = #reqs
-    local vals = table_new(nreqs, 0)
-    for i = 1, nreqs do
-        local res, err = self:readReplyRaw()
-        if res then
-            nvals = nvals + 1
-            vals[nvals] = res
-        elseif res == nil then
-            if err == "timeout" then
-                self:close()
-            end
-            throw("RedisService:commitPipeline() - %s", err)
-        else
-            -- be a valid redis error value
-            nvals = nvals + 1
-            vals[nvals] = {false, err}
-        end
-    end
-
-    return vals
-end
-
-function RedisService:readReply()
-    if not self._socket then
-        throw("RedisService:readReply() - not initialized")
-    end
-
-    if not self._subscribed then
-        throw("RedisService:readReply() - not subscribed")
-    end
-
-    local res, err = self:readReplyRaw()
-    if err then
-        throw("RedisService:readReply() - %s", err)
-    end
-
-    _checkSubscribed(self, res)
-    return res
-end
-
-function RedisService:readReplyRaw()
-    local socket = self._socket
+_readreply = function(self, socket)
     local line, err = socket:receive()
     if not line then
         if err == "timeout" and not self._subscribed then
@@ -367,7 +389,7 @@ function RedisService:readReplyRaw()
         local vals = table_new(n, 0)
         local nvals = 0
         for i = 1, n do
-            local res, err = self:readReplyRaw()
+            local res, err = _readreply(self, socket)
             if res then
                 nvals = nvals + 1
                 vals[nvals] = res
@@ -395,29 +417,7 @@ function RedisService:readReplyRaw()
     end
 end
 
-function RedisService:hashToArray(hash)
-    local arr = {}
-    local i = 0
-    for k, v in pairs(hash) do
-        arr[i + 1] = k
-        arr[i + 2] = v
-        i = i + 2
-    end
-    return arr
-end
-
-function RedisService:arrayToHash(arr)
-    local c = #arr
-    local hash = table_new(0, c / 2)
-    for i = 1, c, 2 do
-        hash[arr[i]] = arr[i + 1]
-    end
-    return hash
-end
-
--- private methods
-
-_checkSubscribed = function (self, res)
+_checksub = function(self, res)
     if type(res) == "table"
             and (res[1] == "unsubscribe" or res[1] == "punsubscribe")
             and res[3] == 0 then
@@ -428,22 +428,22 @@ end
 -- add commands
 
 for _, cmd in ipairs(_COMMANDS) do
-    RedisService[cmd] = function (self, ...)
+    RedisService[cmd] = function(self, ...)
         return self:doCommand(cmd, ...)
     end
 end
 
 for _, cmd in ipairs(_SUB_COMMANDS) do
-    RedisService[cmd] = function (self, ...)
+    RedisService[cmd] = function(self, ...)
         self._subscribed = true
         return self:doCommand(cmd, ...)
     end
 end
 
 for _, cmd in ipairs(_UNSUB_COMMANDS) do
-    RedisService[cmd] = function (self, ...)
+    RedisService[cmd] = function(self, ...)
         local res = self:doCommand(cmd, ...)
-        _checkSubscribed(self, res)
+        _checksub(self, res)
         return res
     end
 end

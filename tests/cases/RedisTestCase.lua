@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 local tests = cc.load("tests")
 local check = tests.Check
-local RedisService = cc.load("redis").service
+local Redis = cc.load("redis")
 
 local RedisTestCase = class("RedisTestCase", tests.TestCase)
 
@@ -61,12 +61,7 @@ function RedisTestCase:typesTest()
     check.equals(redis:ping(), "PONG")
 
     -- Errors
-    local err
-    xpcall(function()
-        redis:auth("INVALID_PASSWORD")
-    end, function(_err)
-        err = _err
-    end)
+    local ok, err = redis:auth("INVALID_PASSWORD")
     check.contains(string.lower(err), "no password is set")
 
     -- Integers
@@ -139,6 +134,7 @@ function RedisTestCase:pipelineTest()
     redis:initPipeline()
     _doCommands(redis, commands)
     local vals = redis:commitPipeline()
+    check.isTable(vals)
     _checkResult(vals)
 
     -- test cancel pipeline
@@ -149,6 +145,7 @@ function RedisTestCase:pipelineTest()
     redis:initPipeline() -- start again
     _doCommands(redis, commands)
     local vals = redis:commitPipeline()
+    check.isTable(vals)
     _checkResult(vals)
 
     return true
@@ -198,15 +195,21 @@ end
 
 -- private methods
 
-_createRedis = function (config)
-    local redis = RedisService:create(config)
-    redis:connect()
+_createRedis = function(config)
+    local redis = Redis:create()
+    local ok, err
+    if config.socket then
+        ok, err = redis:connect(config.socket)
+    else
+        ok, err = redis:connect(config.host, config.port)
+    end
+    check.isNil(err, err)
     redis:select(RedisTestCase.TEST_DB_INDEX)
     redis:eval(RedisTestCase.CLEANUP_CODE, 0)
     return redis
 end
 
-_doCommands = function (redis, commands)
+_doCommands = function(redis, commands)
     local res = {}
     for i, args in ipairs(commands) do
         res[i] = redis:doCommand(unpack(args))

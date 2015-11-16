@@ -186,7 +186,7 @@ function updateRedisConfig()
         contents = string.gsub(contents, "\n[# \t]*port[ \t]+[%d]+",
                 string.format("\nport %s", tostring(port)))
     else
-        contents = string.gsub(contents, "\n[# \t]*port[ \t]+[%d]+", "\nport 0")
+        contents = string.gsub(contents, "\n[# \t]*port[ \t]+[%d]+", "\nport 6379")
     end
 
     writefile(VAR_REDIS_CONF_PATH, contents)

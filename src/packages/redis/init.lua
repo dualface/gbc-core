@@ -22,8 +22,7 @@ THE SOFTWARE.
 
 ]]
 
-local _P = {}
-
-_P.service = import(".RedisService")
+local _P = import(".Redis")
 
 return _P
+
