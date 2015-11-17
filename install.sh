@@ -53,11 +53,13 @@ declare -i BEANS=0
 declare -i NGINX=0
 declare -i REDIS=0
 
-OPENRESTY_VER=1.9.3.1
+OPENRESTY_VER=1.9.3.1-luajit-2.1-beta1
 LUASOCKET_VER=3.0-rc1
 LUASEC_VER=0.5
 REDIS_VER=3.0.5
 BEANSTALKD_VER=1.10
+# https://github.com/keplerproject/luafilesystem
+# LUAFILESYSTEM_VER=1.6.3
 # https://github.com/cloudwu/lua-bson
 LUABSON_VER=20151114
 # https://github.com/cloudwu/pbc
@@ -197,7 +199,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     make install
 
     # install GameBox Cloud Core source and tools
-    ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-alpha $DEST_BIN_DIR/openresty/luajit/bin/lua
+    ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-beta1 $DEST_BIN_DIR/openresty/luajit/bin/lua
     cp -rf $CUR_DIR/src $DEST_DIR
     cp -rf $CUR_DIR/apps $DEST_DIR
     mkdir -p $DEST_BIN_DIR/instrument
@@ -284,6 +286,21 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
 
     cp -f ./bson.so $DEST_BIN_DIR/openresty/lualib/.
     cp -f ./bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
+
+    # install luafilesystem
+    # cd $BUILD_DIR
+    # tar zxf luafilesystem-$LUAFILESYSTEM_VER.tar.gz
+    # cd luafilesystem-$LUAFILESYSTEM_VER
+    # $SED_BIN "s#PREFIX=/usr/local#PREFIX=$DEST_BIN_DIR/openresty/luajit#g" ./config
+    # $SED_BIN "s#/include#/include/luajit-2.1#g" ./config
+    # $SED_BIN "s#LIB_OPTION= -shared#\#LIB_OPTION= -shared#g" ./config
+    # $SED_BIN "s#\#LIB_OPTION= -bundle#LIB_OPTION= -bundle#g" ./config
+    # $SED_BIN "s#MACOSX_DEPLOYMENT_TARGET=\"10.3\"; export MACOSX_DEPLOYMENT_TARGET;##g" ./Makefile
+    # $SED_BIN "s#-o src/lfs.so#-o src/lfs.so -lluajit-5.1#g" ./Makefile
+    # make clean && make
+
+    # cp -f ./src/lfs.so $DEST_BIN_DIR/openresty/lualib/
+    # cp -f ./src/lfs.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/
 
     #install lua pbc
     cd $BUILD_DIR
