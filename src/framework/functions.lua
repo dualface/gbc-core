@@ -430,6 +430,26 @@ function math.newrandomseed()
     math.random()
 end
 
+function os.gettimezone()
+    local now = os.time()
+    return os.difftime(now, os.time(os.date("!*t", now))) / 3600
+end
+
+function os.gettime(date, utc)
+    local time = os.time({
+        year = date[1],
+        month = date[2],
+        day = date[3],
+        hour = date[4],
+        min = date[5],
+        sec = date[6]})
+    if utc ~= false then
+        time = time + os.gettimezone() * 3600
+    end
+
+    return time
+end
+
 function io.exists(path)
     local file = io_open(path, "r")
     if file then
