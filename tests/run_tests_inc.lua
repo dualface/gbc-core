@@ -22,37 +22,146 @@ THE SOFTWARE.
 
 ]]
 
-local json_encode = json.encode
 local json_decode = json.decode
-local string_format = string.format
-local string_sub = string.sub
-local string_lower = string.lower
-local os_tmpname = os.tmpname
+local json_encode = json.encode
 local os_execute = os.execute
 local os_remove = os.remove
+local os_tmpname = os.tmpname
+local string_format = string.format
+local string_lower = string.lower
+local string_sub = string.sub
 
 local Factory = require("server.base.Factory")
 
---
+local Tests = class("Tests")
 
-local TEST_CASES = {
-    "RedisTestCase",
-    "BeanstalkdTestCase",
-}
+local _CURL_PATTERN = "curl -s --no-keepalive -o '%s' '%s'"
+local _REQUEST_PATTERN = string_format("http://localhost:%s/tests/?action=%%s", tostring(SERVER_CONFIG.server.nginx.port))
 
-local CURL_PATTERN = "curl -s --no-keepalive -o '%s' '%s'"
-local REQUEST_PATTERN = string_format("http://localhost:%s/tests/?action=%%s", tostring(SERVER_CONFIG.server.nginx.port))
+local _parseargs, _findtests
+local _runtest, _testsrv, _testcli
+local _help
 
-local appConfigs
+function Tests:ctor()
+    package.path = TESTS_APP_ROOT .. "/?.lua;" .. package.path
+end
 
---
+function Tests:run(args)
+    local opts, err = _parseargs(args)
+    if not opts then
+        _help()
+        return
+    end
 
-local function runTest(testfun, arg, action)
+    local appConfigs = Factory.makeAppConfigs(SERVER_APP_KEYS, SERVER_CONFIG, package.path)
+    local appConfig = appConfigs[TESTS_APP_ROOT]
+
+    if #opts.tests == 0 then
+        local casesDir= TESTS_APP_ROOT .. "/cases"
+        opts.tests = _findtests(casesDir)
+    end
+
+    local pass
+    for _, casename in ipairs(opts.tests) do
+        if string.sub(casename, -8) ~= "TestCase" then
+            casename = string.ucfirst(string.lower(casename)) .. "TestCase"
+        end
+
+        local ok, testCaseClass = pcall(require, "cases." .. casename)
+        if not ok then
+            printf("ERR: not found test '%s'", casename)
+            break
+        end
+        local actionPackageName = string_lower(string_sub(casename, 1, -9))
+        local tests = {}
+        for methodName, _2 in pairs(testCaseClass) do
+            if string_sub(methodName, -4) == "Test" then
+                tests[#tests + 1] = actionPackageName .. "." .. string_lower(string_sub(methodName, 1, -5))
+            end
+        end
+
+        table.sort(tests)
+
+        print(string_format("## Test Case : %s", actionPackageName))
+
+        for _3, action in ipairs(tests) do
+            if opts.testsrv then
+                pass = _runtest(appConfig, _testsrv, {action}, "SERVER " .. action)
+                if (not pass) and (not opts.continue) then
+                    break
+                end
+            end
+
+            if opts.testcli then
+                pass = _runtest(appConfig, _testcli, {action}, "CLI    " .. action)
+                if (not pass) and (not opts.continue) then
+                    break
+                end
+            end
+        end
+
+        print("")
+
+        if (not pass) and (not opts.continue) then
+            break
+        end
+
+    end
+end
+
+-- private
+
+_parseargs = function(args)
+    local opts = {
+        continue = false,
+        testsrv = true,
+        testcli = true,
+        tests = {}
+    }
+    for _, arg in ipairs(string.split(args, " ")) do
+        if arg == "-h" then
+            return
+        elseif arg == "-c" then
+            opts.continue = true
+        elseif arg == "-ns" then
+            opts.testsrv = false
+        elseif arg == "-nc" then
+            opts.testcli = false
+        elseif string.sub(arg, 1, 1) == "-" then
+            print("Invalid options")
+            return
+        else
+            opts.tests[#opts.tests + 1] = arg
+        end
+    end
+
+    return opts
+end
+
+_findtests = function(rootdir)
+    local command = string.format('ls "%s"', rootdir)
+    local h = io.popen(command)
+    local res = h:read("*a")
+    h:close()
+
+    local cases = {}
+    for _, file in ipairs(string.split(res, "\n")) do
+        if string.sub(file, -12) == "TestCase.lua" then
+            cases[#cases + 1] = string.sub(file, 1, -5)
+        end
+    end
+
+    table.sort(cases)
+
+    return cases
+end
+
+_runtest = function(appConfig, testfun, arg, action)
     local result
     local err
 
     local ok, contents = xpcall(function()
-        return testfun(unpack(arg))
+        return testfun(appConfig, unpack(arg))
     end, function(_err)
         err = _err .. debug.traceback("", 4)
     end)
@@ -81,59 +190,39 @@ local function runTest(testfun, arg, action)
     end
 end
 
-local function testInServer(action)
+_testsrv = function(_, action)
     local tmpfile = os_tmpname()
-    local url = string_format(REQUEST_PATTERN, action)
-    local cmd = string_format(CURL_PATTERN, tmpfile, url)
+    local url = string_format(_REQUEST_PATTERN, action)
+    local cmd = string_format(_CURL_PATTERN, tmpfile, url)
     os_execute(cmd)
     local contents = io.readfile(tmpfile)
     os_remove(tmpfile)
     return string.rtrim(contents)
 end
 
-local function testInCLI(action)
-    local cmd = Factory.create(appConfigs[TESTS_APP_ROOT], "CLI", arg)
+_testcli = function(appConfig, action)
+    local cmd = Factory.create(appConfig, "CLI", arg)
     return cmd:runAction(action)
 end
 
---
+_help = function()
+    print [[
 
-appConfigs = Factory.makeAppConfigs(SERVER_APP_KEYS, SERVER_CONFIG, package.path)
+$ run_tests.sh [options] [test case name ...]
 
-package.path = TESTS_APP_ROOT .. "/?.lua;" .. package.path
+options:
+-h: show help
+-c: continue when test failed
+-ns: skip server tests
+-nc: skip cli tests
 
-local NO_STOP_ON_FAILED = NO_STOP_ON_FAILED
+examples:
 
-local pass
-for _, testCaseClassName in ipairs(TEST_CASES) do
-    local testCaseClass = require("cases." .. testCaseClassName)
-    local actionPackageName = string_lower(string_sub(testCaseClassName, 1, -9))
-    local tests = {}
-    for methodName, _2 in pairs(testCaseClass) do
-        if string_sub(methodName, -4) == "Test" then
-            tests[#tests + 1] = actionPackageName .. "." .. string_lower(string_sub(methodName, 1, -5))
-        end
-    end
+# run JobsTestCase and RedisTestCase
+run_tests.sh jobs redis
 
-    table.sort(tests)
-
-    print(string_format("## Test Case : %s", actionPackageName))
-
-    for _3, action in ipairs(tests) do
-        pass = runTest(testInServer, {action}, "SERVER " .. action)
-        if (not pass) and (not NO_STOP_ON_FAILED) then
-            break
-        end
-        pass = runTest(testInCLI, {action}, "CLI    " .. action)
-        if (not pass) and (not NO_STOP_ON_FAILED) then
-            break
-        end
-    end
-
-    print("")
-
-    if (not pass) and (not NO_STOP_ON_FAILED) then
-        break
-    end
+]]
 
 end
+
+return Tests
