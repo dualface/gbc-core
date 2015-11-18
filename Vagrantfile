@@ -74,5 +74,6 @@ Vagrant.configure(2) do |config|
   # restart nginx on the guest after the guest starts
   config.trigger.after :up do
     run_remote "/opt/gbc-core/start_server --debug"
+    puts "\nplease use browser open http://localhost:18088/\n"
   end
 end

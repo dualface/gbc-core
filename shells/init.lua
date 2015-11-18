@@ -45,26 +45,31 @@ DB_DIR              = ROOT_DIR .. "/db"
 CONF_PATH           = CONF_DIR .. "/config.lua"
 NGINX_CONF_PATH     = CONF_DIR .. "/nginx.conf"
 REDIS_CONF_PATH     = CONF_DIR .. "/redis.conf"
+SUPERVISORD_CONF_PATH = CONF_DIR .. "/supervisord.conf"
 
 VAR_CONF_PATH       = TMP_DIR .. "/config.lua"
 VAR_NGINX_CONF_PATH = TMP_DIR .. "/nginx.conf"
 VAR_REDIS_CONF_PATH = TMP_DIR .. "/redis.conf"
 VAR_BEANS_LOG_PATH  = TMP_DIR .. "/beanstalkd.log"
 VAR_APP_KEYS_PATH   = TMP_DIR .. "/app_keys.lua"
+VAR_SUPERVISORD_CONF_PATH = TMP_DIR .. "/supervisord.conf"
 
 
 local ARGS = {...}
 
-local exists
-local readfile
-local writefile
-local split
-local md5
+local _exists, _readfile, _writefile, _split, _md5
 
 --
 
+function updateConfigs()
+    updateCoreConfig()
+    updateNginxConfig()
+    updateRedisConfig()
+    updateSupervisordConfig()
+end
+
 function checkVarConfig()
-    if not exists(VAR_CONF_PATH) then
+    if not _exists(VAR_CONF_PATH) then
         print(string.format("[ERR] Not found file: %s", VAR_CONF_PATH))
         os.exit(1)
     end
@@ -79,7 +84,7 @@ function checkVarConfig()
 end
 
 function getValue(t, key, def)
-    local keys = split(key, ".")
+    local keys = _split(key, ".")
     for _, key in ipairs(keys) do
         if t[key] then
             t = t[key]
@@ -91,10 +96,10 @@ function getValue(t, key, def)
     return t
 end
 
-function updateConfig()
-    local contents = readfile(CONF_PATH)
+function updateCoreConfig()
+    local contents = _readfile(CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
-    writefile(VAR_CONF_PATH, contents)
+    _writefile(VAR_CONF_PATH, contents)
 
     -- update all apps key and index
     local config = checkVarConfig()
@@ -108,18 +113,18 @@ function updateConfig()
     for index, name in ipairs(names) do
         local path = apps[name]
         contents[#contents + 1] = string.format('keys["%s"] = {name = "%s", index = %d, key = "%s"}',
-                path, name, index, md5.sumhexa(path))
+                path, name, index, _md5.sumhexa(path))
     end
     contents[#contents + 1] = "return keys"
     contents[#contents + 1] = ""
 
-    writefile(VAR_APP_KEYS_PATH, table.concat(contents, "\n"))
+    _writefile(VAR_APP_KEYS_PATH, table.concat(contents, "\n"))
 end
 
 function updateNginxConfig()
     local config = checkVarConfig()
 
-    local contents = readfile(NGINX_CONF_PATH)
+    local contents = _readfile(NGINX_CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
     contents = string.gsub(contents, "listen[ \t]+[0-9]+",
             string.format("listen %d", getValue(config, "server.nginx.port", 8088)))
@@ -142,24 +147,24 @@ function updateNginxConfig()
     for name, path in pairs(apps) do
         local entryPath = string.format("%s/app_entry.conf", path)
         local varEntryPath = string.format("%s/app_%s_entry.conf", TMP_DIR, name)
-        if exists(entryPath) then
-            local entry = readfile(entryPath)
+        if _exists(entryPath) then
+            local entry = _readfile(entryPath)
             entry = string.gsub(entry, "_GBC_CORE_ROOT_", ROOT_DIR)
             entry = string.gsub(entry, "_APP_ROOT_", path)
-            writefile(varEntryPath, entry)
+            _writefile(varEntryPath, entry)
             includes[#includes + 1] = string.format("        include %s;", varEntryPath)
         end
     end
     includes = "\n" .. table.concat(includes, "\n")
     contents = string.gsub(contents, "\n[ \t]*#[ \t]*_INCLUDE_APPS_ENTRY_", includes)
 
-    writefile(VAR_NGINX_CONF_PATH, contents)
+    _writefile(VAR_NGINX_CONF_PATH, contents)
 end
 
 function updateRedisConfig()
     local config = checkVarConfig()
 
-    local contents = readfile(REDIS_CONF_PATH)
+    local contents = _readfile(REDIS_CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
 
     local socket = getValue(config, "server.redis.socket")
@@ -189,59 +194,19 @@ function updateRedisConfig()
         contents = string.gsub(contents, "\n[# \t]*port[ \t]+[%d]+", "\nport 6379")
     end
 
-    writefile(VAR_REDIS_CONF_PATH, contents)
+    _writefile(VAR_REDIS_CONF_PATH, contents)
 end
 
-function getRedisArgs()
+function updateSupervisordConfig()
     local config = checkVarConfig()
-
-    local args = {}
-    local socket = getValue(config, "server.redis.socket")
-    if socket then
-        if string.sub(socket, 1, 5) == "unix:" then
-            socket = string.sub(socket, 6)
-        end
-        args[#args + 1] = string.format("-s %s", socket)
-    else
-        local host = getValue(config, "server.redis.host")
-        local port = getValue(config, "server.redis.port")
-
-        if host then
-            args[#args + 1] = string.format("-h %s", host)
-        end
-        if port then
-            args[#args + 1] = string.format("-p %s", tostring(port))
-        end
-    end
-
-    return table.concat(args, " ")
+    local contents = _readfile(SUPERVISORD_CONF_PATH)
+    contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
+    _writefile(VAR_SUPERVISORD_CONF_PATH, contents)
 end
-
-function getBeanstalkdArgs()
-    local config = checkVarConfig()
-
-    local args = {
-        string.format("-b %s", DB_DIR), -- binlog dest dir
-        "-f 100", -- fsync at most once every 100 milliseconds
-    }
-
-    local host = getValue(config, "server.beanstalkd.host")
-    local port = getValue(config, "server.beanstalkd.port")
-
-    if host then
-        args[#args + 1] = string.format("-l %s", host)
-    end
-    if port then
-        args[#args + 1] = string.format("-p %s", tostring(port))
-    end
-
-    return table.concat(args, " ")
-end
-
 
 --
 
-exists = function(path)
+_exists = function(path)
     local file = io.open(path, "r")
     if file then
         io.close(file)
@@ -250,7 +215,7 @@ exists = function(path)
     return false
 end
 
-readfile = function(path)
+_readfile = function(path)
     local file = io.open(path, "r")
     if file then
         local content = file:read("*a")
@@ -260,7 +225,7 @@ readfile = function(path)
     return nil
 end
 
-writefile = function(path, content, mode)
+_writefile = function(path, content, mode)
     mode = mode or "w+b"
     local file = io.open(path, mode)
     if file then
@@ -272,7 +237,7 @@ writefile = function(path, content, mode)
     end
 end
 
-split = function(input, delimiter)
+_split = function(input, delimiter)
     input = tostring(input)
     delimiter = tostring(delimiter)
     if (delimiter=='') then return false end
@@ -292,7 +257,7 @@ end
 
 ---- md5
 
-md5 = {
+_md5 = {
   _VERSION     = "md5.lua 1.0.2",
   _DESCRIPTION = "MD5 computation in Lua (5.1-3, LuaJIT)",
   _URL         = "https://github.com/kikito/md5.lua",
@@ -486,7 +451,7 @@ end
 
 ----------------------------------------------------------------
 
-function md5.sumhexa(s)
+function _md5.sumhexa(s)
   local msgLen = #s
   local padLen = 56 - msgLen % 64
 
@@ -511,19 +476,7 @@ function md5.sumhexa(s)
   return format("%08x%08x%08x%08x",swap(a),swap(b),swap(c),swap(d))
 end
 
-function md5.sum(s)
+function _md5.sum(s)
   return hex2binary(md5.sumhexa(s))
 end
 
-
-
-
-function startJobWorkers()
-    local config = checkVarConfig()
-    local appkeys = dofile(VAR_APP_KEYS_PATH)
-
-    for path, opts in pairs(appkeys) do
-        local appConfig = config.apps[opts.name]
-
-    end
-end

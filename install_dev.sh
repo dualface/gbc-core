@@ -18,6 +18,7 @@ if [ -d "$DEST_DIR" ]; then
     rm -f start_server
     rm -f stop_server
     rm -f check_server
+    rm -f restart_server
     rm -f bin/init.inc
     rm -f bin/init.lua
 fi
@@ -28,8 +29,11 @@ echo "sudo $CUR_DIR/install.sh --prefix=$DEST_DIR"
 echo ""
 sudo "$CUR_DIR/install.sh" --prefix="$DEST_DIR"
 
-cd "$DEST_DIR"
+if [ !-f "$DEST_DIR/start_server" ]; then
+    exit 1
+fi
 
+cd "$DEST_DIR"
 sudo chown -R $USER .
 
 rm -fr apps
@@ -53,7 +57,11 @@ ln -s "$CUR_DIR/shells/stop_server" stop_server
 rm check_server
 ln -s "$CUR_DIR/shells/check_server" check_server
 
+rm restart_server
+ln -s "$CUR_DIR/shells/restart_server" restart_server
+
 rm bin/init.inc
 rm bin/init.lua
 ln -s "$CUR_DIR/shells/init.inc" bin/init.inc
 ln -s "$CUR_DIR/shells/init.lua" bin/init.lua
+

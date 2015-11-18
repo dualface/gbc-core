@@ -14,245 +14,40 @@ function getVersion()
     $LUA_BIN -e "$CODE"
 }
 
-function updateConfig()
+function updateConfigs()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); updateConfig()"
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; dofile('$ROOT_DIR/bin/init.lua'); updateConfigs()"
 }
 
-function updateNginxConf()
+function startSupervisord()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); updateNginxConfig()"
-}
-
-function updateRedisConf()
-{
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); updateRedisConfig()"
-}
-
-function updateAllConfigs()
-{
-    updateConfig
-    updateNginxConf
-    updateRedisConf
-}
-
-function getRedisArgs()
-{
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); print(getRedisArgs())"
-}
-
-function getBeanstalkdArgs()
-{
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); print(getBeanstalkdArgs())"
-}
-
-# --
-
-function startNginx()
-{
-    pgrep -F $TMP_DIR/nginx.pid &> /dev/null
-    if [ $? -ne 0 ]; then
-        echo "[CMD] nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH"
-        $NGINX_DIR/sbin/nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH
-        if [ $? -ne 0 ]; then
-            exit $?
-        fi
-        echo "Start Nginx DONE"
-    else
-        echo "Nginx is already started"
-    fi
+    echo "[CMD] supervisord -c $VAR_SUPERVISORD_CONF_PATH"
+    echo ""
+    supervisord -c $VAR_SUPERVISORD_CONF_PATH
+    echo "Start supervisord DONE"
     echo ""
 }
 
-function stopNginx()
+function stopSupervisord()
 {
-    pgrep -F $TMP_DIR/nginx.pid &> /dev/null
-    if [ $? -eq 0 ]; then
-        echo "[CMD] nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH -s stop"
-        $NGINX_DIR/sbin/nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH -s stop
-        if [ $? -ne 0 ]; then
-            exit $?
-        fi
-        echo "Stop Nginx DONE"
-    else
-        echo "Nginx is not running"
-    fi
+    echo "[CMD] supervisorctl -c $VAR_SUPERVISORD_CONF_PATH shutdown"
+    echo ""
+    supervisorctl -c $VAR_SUPERVISORD_CONF_PATH shutdown
     echo ""
 }
 
-function reloadNginx()
+function restartSupervisord()
 {
-    pgrep -F $TMP_DIR/nginx.pid &> /dev/null
-    if [ $? -eq 0 ]; then
-        echo "[CMD] nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH -s reload"
-        $NGINX_DIR/sbin/nginx -p $ROOT_DIR -c $VAR_NGINX_CONF_PATH -s reload
-        if [ $? -ne 0 ]; then
-            exit $?
-        fi
-        echo "Reload Nginx DONE"
-    else
-        echo "Nginx is not running"
-    fi
+    echo "[CMD] supervisorctl -c $VAR_SUPERVISORD_CONF_PATH restart all"
+    echo ""
+    supervisorctl -c $VAR_SUPERVISORD_CONF_PATH restart all
+    echo "Restart supervisord DONE"
     echo ""
 }
-
-# --
-
-function startRedis()
-{
-    pgrep -F $TMP_DIR/redis.pid &> /dev/null
-    if [ $? -ne 0 ]; then
-        echo "[CMD] redis-server $VAR_REDIS_CONF_PATH"
-        $REDIS_DIR/bin/redis-server $VAR_REDIS_CONF_PATH
-        if [ $? -ne 0 ]; then
-            exit $?
-        fi
-        echo "Start Redis DONE"
-    else
-        echo "Redis is already started"
-    fi
-    echo ""
-}
-
-function stopRedis()
-{
-    pgrep -F $TMP_DIR/redis.pid &> /dev/null
-    if [ $? -eq 0 ]; then
-        REDIS_ARGS=$(getRedisArgs)
-        echo "[CMD] redis-cli $REDIS_ARGS SHUTDOWN SAVE"
-        $REDIS_DIR/bin/redis-cli $REDIS_ARGS SHUTDOWN SAVE
-        echo "Stop Redis DONE"
-    else
-        echo "Redis is not running"
-    fi
-    echo ""
-}
-
-# --
-
-function startBeanstalkd()
-{
-    pgrep -F $TMP_DIR/beanstalkd.pid &> /dev/null
-    if [ $? -ne 0 ]; then
-        BEANS_ARGS=$(getBeanstalkdArgs)
-        echo "[CMD] beanstalkd $BEANS_ARGS"
-        $ROOT_DIR/bin/beanstalkd/bin/beanstalkd $BEANS_ARGS > $VAR_BEANS_LOG_PATH &
-        if [ $? -ne 0 ]; then
-            exit $?
-        fi
-        echo $! > $TMP_DIR/beanstalkd.pid
-        echo "Start Beanstalkd DONE"
-    else
-        echo "Beanstalkd is already started"
-    fi
-    echo ""
-}
-
-function stopBeanstalkd()
-{
-    pgrep -F $TMP_DIR/beanstalkd.pid &> /dev/null
-    if [ $? -eq 0 ]; then
-        BEANS_PID=`cat $TMP_DIR/beanstalkd.pid`
-        rm -f $TMP_DIR/beanstalkd.pid
-        echo "[CMD] kill $BEANS_PID"
-        kill $BEANS_PID
-        echo "Stop Beanstalkd DONE"
-    else
-        echo "Beanstalkd is not running"
-    fi
-    echo ""
-}
-
-# --
-
-function startJobWorkers()
-{
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; loadfile('$ROOT_DIR/bin/init.lua')(); startJobWorkers()"
-    # ps -ef | grep -i "start_workers.*sh" | grep -v "grep" > /dev/null
-    # if [ $? -ne 0 ]; then
-    #     I=0
-    #     rm -f $ROOT_DIR/logs/jobworker.log
-    #     BEANS_NUM_OF_WORKERS=$(getBeanstalkdNumOfWorker)
-    #     while [ $I -lt $BEANS_NUM_OF_WORKERS ]; do
-    #         $ROOT_DIR/bin/instrument/start_workers.sh >> $ROOT_DIR/logs/jobworker.log &
-    #         I=$((I+1))
-    #     done
-    #     echo "Start Job Workers DONE"
-    # else
-    #     echo "Job Workers is already started"
-    # fi
-    echo ""
-}
-
-function stopJobWorkers()
-{
-    # echo "[CMD] killall start_workers.sh"
-    # if [ $OS_TYPE == "MACOS" ]; then
-    #     ps -ef | grep "start_workers" | awk '{print $2}' | xargs kill -9 > /dev/null 2> /dev/null
-    # else
-    #     killall start_workers.sh > /dev/null 2> /dev/null
-    # fi
-    # echo "[CMD] killall $CURRDIR/bin/openresty/luajit/bin/lua"
-    # killall -KILL $CURRDIR/bin/openresty/luajit/bin/lua > /dev/null 2> /dev/null
-    # echo "Stop Job Workers DONE"
-    echo ""
-}
-
-# --
-
-function startMonitor()
-{
-    if [ $OS_TYPE != "MACOS" ]; then
-        ps -ef | grep -i "monitor.*sh" | grep -v "grep" > /dev/null
-        if [ $? -ne 0 ]; then
-            $ROOT_DIR/bin/instrument/monitor.sh > $ROOT_DIR/logs/monitor.log &
-        fi
-    fi
-}
-
-function stopMonitor()
-{
-    if [ $OS_TYPE == "MACOS" ]; then
-        ps -ef | grep "monitor" | awk '{print $2}' | xargs kill -9 > /dev/null 2> /dev/null
-    else
-        killall monitor.sh > /dev/null 2> /dev/null
-    fi
-}
-
-# --
 
 function checkStatus()
 {
-    if [ -f "$VAR_NGINX_CONF_PATH" ]; then
-        grep "_DBG_DEBUG" $VAR_NGINX_CONF_PATH > /dev/null
-        if [ $? -ne 0 ]; then
-            DEBUG=0
-            echo -e "$VERSION in \033[32mRELEASE\033[0m mode"
-        else
-            DEBUG=1
-            echo -e "$VERSION in \033[31mDEBUG\033[0m mode"
-        fi
-        echo ""
-    fi
-
-    echo -e "\033[33m[Nginx] \033[0m"
-    ps -ef | grep -i "nginx" | grep -v "grep" --color=auto
-    echo ""
-
-    echo -e "\033[33m[Redis] \033[0m"
-    ps -ef | grep -i "redis" | grep -v "grep" --color=auto
-    echo ""
-
-    echo -e "\033[33m[Beanstalkd] \033[0m"
-    ps -ef | grep -i "beanstalkd" | grep -v "grep" --color=auto
-    echo ""
-
-    echo -e "\033[33m[Monitor] \033[0m"
-    ps -ef | grep -i "monitor\.sh" | grep -v "grep" --color=auto | grep -v "lua -e SERVER_CONFIG" --color=auto
-    echo ""
-
-    echo -e "\033[33m[Job Worker] \033[0m"
-    ps -ef | grep -i "start_workers\.sh" | grep -v "grep" --color=auto | grep -v "lua -e SERVER_CONFIG" --color=auto
+    supervisorctl -c $VAR_SUPERVISORD_CONF_PATH status
     echo ""
 }
 
@@ -266,22 +61,10 @@ fi
 cd $ROOT_DIR
 
 LUA_BIN=$ROOT_DIR/bin/openresty/luajit/bin/lua
-RESTY_BIN=$ROOT_DIR/bin/openresty/bin/resty
-NGINX_DIR=$ROOT_DIR/bin/openresty/nginx
-REDIS_DIR=$ROOT_DIR/bin/redis
-
 TMP_DIR=$ROOT_DIR/tmp
-
 CONF_DIR=$ROOT_DIR/conf
-
 CONF_PATH=$CONF_DIR/config.lua
-NGINX_CONF_PATH=$CONF_DIR/nginx.conf
-REDIS_CONF_PATH=$CONF_DIR/redis.conf
-
-VAR_CONF_PATH=$TMP_DIR/config.lua
-VAR_NGINX_CONF_PATH=$TMP_DIR/nginx.conf
-VAR_REDIS_CONF_PATH=$TMP_DIR/redis.conf
-VAR_BEANS_LOG_PATH=$TMP_DIR/beanstalkd.log
+VAR_SUPERVISORD_CONF_PATH=$TMP_DIR/supervisord.conf
 
 VERSION=$(getVersion)
 OS_TYPE=$(getOsType)
@@ -290,3 +73,4 @@ if [ $OS_TYPE == "MACOS" ]; then
 else
     SED_BIN='sed -i'
 fi
+

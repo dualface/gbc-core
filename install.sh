@@ -58,6 +58,7 @@ LUASOCKET_VER=3.0-rc1
 LUASEC_VER=0.5
 REDIS_VER=3.0.5
 BEANSTALKD_VER=1.10
+SUPERVISOR_VER=3.1.3
 # https://github.com/keplerproject/luafilesystem
 # LUAFILESYSTEM_VER=1.6.3
 # https://github.com/cloudwu/lua-bson
@@ -135,10 +136,10 @@ DEST_BIN_DIR=$DEST_DIR/bin
 OPENRESETY_CONFIGURE_ARGS=""
 
 if [ $OSTYPE == "UBUNTU" ] ; then
-    apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip
+    apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip supervisor
 elif [ $OSTYPE == "CENTOS" ]; then
     yum groupinstall -y "Development Tools"
-    yum install -y pcre-devel zlib-devel openssl-devel unzip
+    yum install -y pcre-devel zlib-devel openssl-devel unzip supervisor
 elif [ $OSTYPE == "MACOS" ]; then
     type "brew" > /dev/null 2> /dev/null
     if [ $? -ne 0 ]; then
@@ -207,7 +208,7 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
 
     # deploy tool script
     cd $CUR_DIR/shells/
-    cp -f start_server stop_server check_server $DEST_DIR
+    cp -f start_server stop_server check_server restart_server $DEST_DIR
     cp -f init.inc init.lua $DEST_BIN_DIR
     mkdir -p $DEST_DIR/apps/welcome/tools/actions
     mkdir -p $DEST_DIR/apps/welcome/workers/actions
@@ -320,6 +321,14 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
 
     cp -f ./protobuf.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
     cp -f ./protobuf.lua $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
+
+    if [ $OSTYPE == "MACOS" ]; then
+        # install supervisor
+        cd $BUILD_DIR
+        tar zxf supervisor-$SUPERVISOR_VER.tar.gz
+        cd supervisor-$SUPERVISOR_VER
+        python setup.py install
+    fi
 
     echo "Install Openresty and GameBox Cloud Core DONE"
 fi
