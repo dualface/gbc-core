@@ -29,7 +29,7 @@ echo "sudo $CUR_DIR/install.sh --prefix=$DEST_DIR"
 echo ""
 sudo "$CUR_DIR/install.sh" --prefix="$DEST_DIR"
 
-if [ !-f "$DEST_DIR/start_server" ]; then
+if [ ! -f "$DEST_DIR/start_server" ]; then
     exit 1
 fi
 

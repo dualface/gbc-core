@@ -65,6 +65,8 @@ SUPERVISOR_VER=3.1.3
 LUABSON_VER=20151114
 # https://github.com/cloudwu/pbc
 LUAPBC_VER=20150714
+# https://github.com/mah0x211/lua-process
+LUAPROCESS_VER=1.5.0
 
 if [ $OSTYPE == "MACOS" ]; then
     gcc -o $CUR_DIR/shells/getopt_long $CUR_DIR/shells/src/getopt_long.c
@@ -322,8 +324,29 @@ if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
     cp -f ./protobuf.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
     cp -f ./protobuf.lua $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
 
+    # install lua process
+    cd $BUILD_DIR
+    tar zxf lua-process-$LUAPROCESS_VER.tar.gz
+    cd lua-process-$LUAPROCESS_VER
+    cp Makefile Makefile_
+    echo "PACKAGE=process" > Makefile
+    echo "LIB_EXTENSION=so" >> Makefile
+    echo "SRCDIR=src" >> Makefile
+    echo "TMPLDIR=tmpl" >> Makefile
+    echo "VARDIR=var" >> Makefile
+    echo "CFLAGS=-Wall -fPIC -O2 -I_GBC_CORE_ROOT_/bin/openresty/luajit/include" >> Makefile
+    echo "LDFLAGS=--shared -Wall -fPIC -O2 -L_GBC_CORE_ROOT_/bin/openresty/luajit/lib" >> Makefile
+    echo "LIBS=-lluajit-5.1" >> Makefile
+    echo "" >> Makefile
+    cat Makefile_ >> Makefile
+    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" Makefile
+    make
+
+    cp -f ./process.so $DEST_BIN_DIR/openresty/lualib/.
+    cp -f ./process.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
+
+    # install supervisor
     if [ $OSTYPE == "MACOS" ]; then
-        # install supervisor
         cd $BUILD_DIR
         tar zxf supervisor-$SUPERVISOR_VER.tar.gz
         cd supervisor-$SUPERVISOR_VER
