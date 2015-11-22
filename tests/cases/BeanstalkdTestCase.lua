@@ -30,10 +30,10 @@ local Beanstalkd = cc.load("beanstalkd")
 
 local BeanstalkdTestCase = class("BeanstalkdTestCase", tests.TestCase)
 
-local _createBeanstalkd, _flush
+local _newbean, _flush
 
 local DEFAULT_TUBE = "default"
-local TEST_TUBE    = "test"
+local TEST_TUBE    = "_test_"
 local JOB_PRIORITY = 0
 local JOB_DELAY    = 1
 local JOB_TTR      = 2
@@ -41,7 +41,7 @@ local JOB_WORD     = "hello, number is " .. math.random(1, 100)
 
 
 function BeanstalkdTestCase:setup()
-    self._beanstalkd = _createBeanstalkd(self.connect.config.server.beanstalkd)
+    self._beanstalkd = _newbean(self.connect.config.server.beanstalkd)
     _flush(self._beanstalkd)
 end
 
@@ -141,8 +141,8 @@ function BeanstalkdTestCase:statsTest()
     check.equals(res["state"], "delayed")
 
     -- get tube info
-    local res = bean:statsTube(DEFAULT_TUBE)
-    check.equals(res["name"], DEFAULT_TUBE)
+    local res = bean:statsTube(TEST_TUBE)
+    check.equals(res["name"], TEST_TUBE)
     check.equals(res["current-jobs-delayed"], "1")
 
     -- get system info
@@ -153,16 +153,16 @@ function BeanstalkdTestCase:statsTest()
     -- list tubes
     local tubes = bean:listTubes()
     check.isTable(tubes)
-    check.contains(tubes, DEFAULT_TUBE)
+    check.contains(tubes, TEST_TUBE)
 
     -- list used tube
     local tube = bean:listTubeUsed()
-    check.equals(tube, DEFAULT_TUBE)
+    check.equals(tube, TEST_TUBE)
 
     -- list watched tubes
     local tubes = bean:listTubesWatched()
     check.isTable(tubes)
-    check.contains(tubes, DEFAULT_TUBE)
+    check.contains(tubes, TEST_TUBE)
 
     return true
 end
@@ -173,21 +173,25 @@ function BeanstalkdTestCase:tubeTest()
 
     -- use, watch, ignore
     check.equals({bean:use(TEST_TUBE)}, {TEST_TUBE})
+
     local count = bean:watch(TEST_TUBE)
     check.isInt(count)
     check.greaterThan(count, 0)
-    local count2 = bean:ignore(TEST_TUBE)
+
+    local count2 = bean:ignore(DEFAULT_TUBE)
     check.isInt(count2)
-    check.equals(count - 1, count2)
 
     return true
 end
 
 -- private
 
-_createBeanstalkd = function(config)
+_newbean = function(config)
     local beanstalkd = Beanstalkd:create()
     beanstalkd:connect(config.host, config.port)
+    beanstalkd:use(TEST_TUBE)
+    beanstalkd:watch(TEST_TUBE)
+    beanstalkd:ignore(DEFAULT_TUBE)
     return beanstalkd
 end
 

@@ -36,30 +36,37 @@ if #args < 2 then
     return help()
 end
 
-GBC_CORE_ROOT = args[1]
+ROOT_DIR = args[1]
 APP_ROOT_PATH = args[2]
 table.remove(args, 1)
 table.remove(args, 1)
 
 package.path = table.concat({
-    GBC_CORE_ROOT, '/src/?.lua;',
-    GBC_CORE_ROOT, '/src/lib/?.lua;',
+    ROOT_DIR, '/src/?.lua;',
+    ROOT_DIR, '/src/lib/?.lua;',
     package.path}, "")
 
-SERVER_CONFIG = dofile(GBC_CORE_ROOT .. "/tmp/config.lua")
-SERVER_APP_KEYS = dofile(GBC_CORE_ROOT .. "/tmp/app_keys.lua")
+SERVER_CONFIG = dofile(ROOT_DIR .. "/tmp/config.lua")
+SERVER_APP_KEYS = dofile(ROOT_DIR .. "/tmp/app_keys.lua")
 DEBUG = _DBG_DEBUG
 
 require("framework.init")
 
 local Factory = require("server.base.Factory")
 
-local function startWorker(appRootPath, args)
+local function startWorker(appRootPath, args, tag)
     local appConfigs = Factory.makeAppConfigs(SERVER_APP_KEYS, SERVER_CONFIG, package.path)
     local appConfig = appConfigs[appRootPath]
+    if type(appConfig) ~= "table" then
+        printf("[ERR] invalid app config for path: %s", appRootPath)
+        return 1
+    end
 
-    local cli = Factory.create(appConfig, "Worker", args)
-    return cli:run()
+    local worker = Factory.create(appConfig, "Worker", args, tag)
+    return worker:run()
 end
 
-startWorker(APP_ROOT_PATH, args)
+local process = require("process")
+local pid = tostring(process.getpid())
+
+return startWorker(APP_ROOT_PATH, args, pid)

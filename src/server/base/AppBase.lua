@@ -36,6 +36,15 @@ local table_concat = table.concat
 local table_remove = table.remove
 local type = type
 
+local sleep
+
+if ngx then
+    sleep = ngx.sleep
+else
+    local socket = require("socket")
+    sleep = socket.sleep
+end
+
 local Constants = import(".Constants")
 
 local AppBase = class("AppBase")
@@ -242,22 +251,32 @@ function AppBase:getRedis()
     return redis
 end
 
-function AppBase:getJobs()
+function AppBase:getJobs(opts)
+    opts = checktable(opts)
+    opts.try = checkint(opts.try)
+    if opts.try < 1 then opts.try = 1 end
     local jobs = self._jobs
     if not jobs then
         local Beanstalkd = cc.load("beanstalkd")
 
         local bean = Beanstalkd:create()
         local config = self.config.server.beanstalkd
-        local ok, err = bean:connect(config.host, config.port)
-        if not ok then
-            throw("AppBase:getJobs() - connect to beanstalkd, %s", err)
+        local try = opts.try
+        while true do
+            local ok, err = bean:connect(config.host, config.port)
+            if ok then break end
+            try = try - 1
+            if try == 0 then
+                throw("AppBase:getJobs() - connect to beanstalkd, %s", err)
+            else
+                sleep(1.0)
+            end
         end
 
         local tube = string_format(Constants.BEANSTALKD_JOB_TUBE_PATTERN, tostring(self.config.app.appIndex))
         bean:use(tube)
-        bean:ignore("default")
         bean:watch(tube)
+        bean:ignore("default")
 
         local Jobs = cc.load("jobs")
         jobs = Jobs:create(bean, self:getRedis())

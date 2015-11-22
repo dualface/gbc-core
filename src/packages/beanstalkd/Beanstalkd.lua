@@ -81,8 +81,13 @@ function Beanstalkd:ctor()
 end
 
 function Beanstalkd:connect(host, port)
-    self._socket = tcp()
-    return self._socket:connect(host or DEFAULT_HOST, port or DEFAULT_PORT)
+    local socket = tcp()
+    local ok, err = socket:connect(host or DEFAULT_HOST, port or DEFAULT_PORT)
+    if not ok then
+        return nil, err
+    end
+    self._socket = socket
+    return 1
 end
 
 function Beanstalkd:setTimeout(timeout)

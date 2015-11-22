@@ -37,9 +37,10 @@ local Constants = import(".Constants")
 
 local WorkerBase = class("WorkerBase", CLIBase)
 
-function WorkerBase:ctor(config)
+function WorkerBase:ctor(config, args, tag)
     WorkerBase.super.ctor(self, config)
     self._requestType = Constants.WORKER_REQUEST_TYPE
+    self._tag = tag or "worker"
 end
 
 function WorkerBase:run()
@@ -47,25 +48,36 @@ function WorkerBase:run()
 end
 
 function WorkerBase:runEventLoop()
-    local jobs = self:getJobs()
+    local jobs = self:getJobs({try = 3})
     local bean = jobs:getBeanstalkd()
     local beanerrs = bean.ERRORS
     local appname = self.config.app.appName
+    local tag = string_format("%s:%s", appname, self._tag)
+
+    printinfo("[%s] ready, waiting for job", tag)
 
     while true do
+        io_flush()
         local job, err = jobs:getready()
         if not job then
             if err == beanerrs.TIMED_OUT then
                 goto wait_next_job
             end
             if err == beanerrs.DEADLINE_SOON then
-                printinfo("[Worker] - deadline soon")
+                printinfo("[%s] deadline soon", tag)
                 goto wait_next_job
             end
-            printwarn("[Worker] - reserve job failed, %s", err)
+            printwarn("[%s] reserve job failed, %s", tag, err)
+            io_flush()
             break
         end
-        printinfo("get a job %s, action: %s", job.id, job.action)
+
+        if not job.id then
+            printinfo("[%s] get a invalid job", tag)
+            goto wait_next_job
+        else
+            printinfo("[%s] get a job %s, action: %s", tag, job.id, job.action)
+        end
 
         -- handle the job
         local actionName = job.action
@@ -74,16 +86,16 @@ function WorkerBase:runEventLoop()
             -- delete job
             local ok, err = jobs:delete(job.id)
             if not ok then
-                printwarn("[Worker] - delete job %s failed, %s", job.id, err)
+                printwarn("[%s] delete job %s failed, %s", tag, job.id, err)
             else
-                printinfo("[Worker] job %s done", job.id)
+                printinfo("[%s] job %s done", tag, job.id)
             end
         end
 
-        io_flush()
 ::wait_next_job::
     end
 
+    io_flush()
     return 0
 end
 

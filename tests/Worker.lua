@@ -25,11 +25,11 @@ THE SOFTWARE.
 local WorkerBase = require("server.base.WorkerBase")
 local Worker = class("HttpConnect", WorkerBase)
 
-function Worker:ctor(config)
+function Worker:ctor(config, ...)
     config.app.actionPackage = ""
     config.app.actionModuleSuffix = "Action"
     config.app.actionMethodSuffix = "Action"
-    Worker.super.ctor(self, config)
+    Worker.super.ctor(self, config, ...)
 end
 
 return Worker

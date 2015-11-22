@@ -65,4 +65,6 @@ function cc.disable_global()
     })
 end
 
-cc.disable_global()
+if not CC_ENABLE_GLOBALS then
+    cc.disable_global()
+end

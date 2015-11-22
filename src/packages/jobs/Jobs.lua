@@ -99,13 +99,14 @@ function Jobs:getready(timeout)
         return nil, err
     end
 
+    local id = jobraw.id
     local job = json_decode(jobraw.data)
-    if type(job) ~= "table" then
-        self:delete(jobraw.id)
-        return nil, string.format("invalid job %s", jobraw.id)
+    if type(job) ~= "table" or not job.action then
+        bean:delete(id)
+        return {id = nil}
     end
 
-    job.id = jobraw.id
+    job.id = id
     return job
 end
 
