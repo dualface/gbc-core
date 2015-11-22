@@ -19,8 +19,8 @@ if [ -d "$DEST_DIR" ]; then
     rm -f stop_server
     rm -f check_server
     rm -f restart_server
-    rm -f bin/init.inc
-    rm -f bin/init.lua
+    rm -f bin/shell_func.sh
+    rm -f bin/shell_func.lua
 fi
 
 echo "Maybe need enter your sudo password !"
@@ -60,8 +60,8 @@ ln -s "$CUR_DIR/shells/check_server" check_server
 rm restart_server
 ln -s "$CUR_DIR/shells/restart_server" restart_server
 
-rm bin/init.inc
-rm bin/init.lua
-ln -s "$CUR_DIR/shells/init.inc" bin/init.inc
-ln -s "$CUR_DIR/shells/init.lua" bin/init.lua
+rm bin/shell_func.sh
+rm bin/shell_func.lua
+ln -s "$CUR_DIR/shells/shell_func.sh" bin/shell_func.sh
+ln -s "$CUR_DIR/shells/shell_func.lua" bin/shell_func.lua
 

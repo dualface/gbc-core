@@ -22,13 +22,25 @@ THE SOFTWARE.
 
 ]]
 
-_GBC_CORE_VER = "0.8.0"
-_SERVER_ROOT_DIR = "_GBC_CORE_ROOT_"
+local globals = {
+    _GBC_CORE_VER = "0.8.0",
+    _SERVER_ROOT_DIR = "_GBC_CORE_ROOT_",
+    _DBG_ERROR = 0,
+    _DBG_WARN  = 1,
+    _DBG_INFO  = 2,
+    _DBG_DEBUG = 3,
+}
 
-_DBG_ERROR = 0
-_DBG_WARN  = 1
-_DBG_INFO  = 2
-_DBG_DEBUG = 3
+local _g
+if cc then
+    _g = cc.exports
+else
+    _g = _G
+end
+
+for k, v in pairs(globals) do
+    _g[k] = v
+end
 
 local config = {
     -- all apps
@@ -54,7 +66,7 @@ local config = {
         maxSubscribeRetryCount     = 10,
 
         jobMessageFormat           = "json",
-        numOfJobWorkers            = 4,
+        numOfJobWorkers            = 2,
     },
 
     -- server config

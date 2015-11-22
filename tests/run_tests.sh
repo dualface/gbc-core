@@ -2,12 +2,11 @@
 
 ROOT_DIR=$(cd "$(dirname $0)" && pwd)
 ROOT_DIR=$(dirname "$ROOT_DIR")
-source "$ROOT_DIR/bin/init.inc"
+source "$ROOT_DIR/bin/shell_func.sh"
 
 if [ $? -ne 0 ]; then echo "Terminating..." >&2; exit 1; fi
 
 DEBUG=1
-updateAllConfigs
 
 read -r -d '' CODE << EOT
 

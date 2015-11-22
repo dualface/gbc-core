@@ -10,13 +10,13 @@ function getOsType()
 
 function getVersion()
 {
-    CODE="_C=loadfile('$CONF_PATH')(); print('GameBox Cloud Core ' .. _GBC_CORE_VER)"
+    CODE="_C=dofile('$CONF_PATH'); print('GameBox Cloud Core ' .. _GBC_CORE_VER)"
     $LUA_BIN -e "$CODE"
 }
 
 function updateConfigs()
 {
-    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; dofile('$ROOT_DIR/bin/init.lua'); updateConfigs()"
+    $LUA_BIN -e "ROOT_DIR='$ROOT_DIR'; _DEBUG=$DEBUG; dofile('$ROOT_DIR/bin/shell_func.lua'); updateConfigs()"
 }
 
 function startSupervisord()

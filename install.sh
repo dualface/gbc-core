@@ -4,12 +4,7 @@ function showHelp()
 {
     echo "Usage: [sudo] ./install.sh [--prefix=absolute_path] [OPTIONS]"
     echo "Options:"
-    echo -e "\t -a | --all \t\t install nginx(openresty) and GameBox Cloud Core, redis and beanstalkd"
-    echo -e "\t -n | --nginx \t\t install nginx(openresty) and GameBox Cloud Core"
-    echo -e "\t -r | --redis \t\t install redis"
-    echo -e "\t -b | --beanstalkd \t install beanstalkd"
-    echo -e "\t -h | --help \t\t show this help"
-    echo "if the option is not specified, default option is \"--all(-a)\"."
+    echo -e "\t-h | --help\t\t show this help"
     echo "if the \"--prefix\" is not specified, default path is \"/opt/gbc-core\"."
 }
 
@@ -54,13 +49,14 @@ declare -i NGINX=0
 declare -i REDIS=0
 
 OPENRESTY_VER=1.9.3.1-luajit-2.1-beta1
-LUASOCKET_VER=3.0-rc1
-LUASEC_VER=0.5
 REDIS_VER=3.0.5
 BEANSTALKD_VER=1.10
 SUPERVISOR_VER=3.1.3
-# https://github.com/keplerproject/luafilesystem
-# LUAFILESYSTEM_VER=1.6.3
+
+# https://github.com/diegonehab/luasocket
+LUASOCKET_VER=3.0-rc1
+# https://github.com/brunoos/luasec
+LUASEC_VER=0.5
 # https://github.com/cloudwu/lua-bson
 LUABSON_VER=20151114
 # https://github.com/cloudwu/pbc
@@ -95,26 +91,6 @@ while true ; do
         --prefix)
             DEST_DIR=$2
             shift 2
-            ;;
-
-        -a|--all)
-            ALL=1
-            shift
-            ;;
-
-        -b|--beanstalkd)
-            BEANS=1
-            shift
-            ;;
-
-        -r|--redis)
-            REDIS=1
-            shift
-            ;;
-
-        -n|--nginx)
-            NGINX=1
-            shift
             ;;
 
         -h|--help)
@@ -184,208 +160,161 @@ mkdir -p $DEST_DIR/tmp
 mkdir -p $DEST_DIR/conf
 mkdir -p $DEST_DIR/db
 
-# install nginx and GameBox Cloud Core
-if [ $ALL -eq 1 ] || [ $NGINX -eq 1 ] ; then
-    cd $BUILD_DIR
-    tar zxf ngx_openresty-$OPENRESTY_VER.tar.gz
-    cd ngx_openresty-$OPENRESTY_VER
-    mkdir -p $DEST_BIN_DIR/openresty
+# ----
+# install openresty and lua extensions
+cd $BUILD_DIR
+tar zxf ngx_openresty-$OPENRESTY_VER.tar.gz
+cd ngx_openresty-$OPENRESTY_VER
+mkdir -p $DEST_BIN_DIR/openresty
 
-    # install openresty
-    ./configure $OPENRESETY_CONFIGURE_ARGS \
-        --prefix=$DEST_BIN_DIR/openresty \
-        --with-luajit \
-        --with-http_stub_status_module \
-        --with-cc-opt="-I/usr/local/include" \
-        --with-ld-opt="-L/usr/local/lib"
-    make
-    make install
+./configure $OPENRESETY_CONFIGURE_ARGS \
+    --prefix=$DEST_BIN_DIR/openresty \
+    --with-luajit \
+    --with-http_stub_status_module \
+    --with-cc-opt="-I/usr/local/include" \
+    --with-ld-opt="-L/usr/local/lib"
+make
+make install
+ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-beta1 $DEST_BIN_DIR/openresty/luajit/bin/lua
 
-    # install GameBox Cloud Core source and tools
-    ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-beta1 $DEST_BIN_DIR/openresty/luajit/bin/lua
-    cp -rf $CUR_DIR/src $DEST_DIR
-    cp -rf $CUR_DIR/apps $DEST_DIR
-    mkdir -p $DEST_BIN_DIR/instrument
-    cp -rf $CUR_DIR/instrument $DEST_BIN_DIR
+# install cjson
+cp -f $DEST_BIN_DIR/openresty/lualib/cjson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
 
-    # deploy tool script
-    cd $CUR_DIR/shells/
-    cp -f start_server stop_server check_server restart_server $DEST_DIR
-    cp -f init.inc init.lua $DEST_BIN_DIR
-    mkdir -p $DEST_DIR/apps/welcome/tools/actions
-    mkdir -p $DEST_DIR/apps/welcome/workers/actions
-    cp -f tools.sh $DEST_DIR/apps/welcome/.
-    # if it in Mac OS X, getopt_long should be deployed.
-    if [ $OSTYPE == "MACOS" ]; then
-        cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/bin
-        rm $CUR_DIR/shells/getopt_long
-    fi
+# install luasocket
+cd $BUILD_DIR
+tar zxf luasocket-$LUASOCKET_VER.tar.gz
+cd luasocket-$LUASOCKET_VER
+if [ $OSTYPE == "MACOS" ]; then
+    $SED_BIN "s#PLAT?= linux#PLAT?= macosx#g" makefile
+    $SED_BIN "s#PLAT?=linux#PLAT?=macosx#g" src/makefile
+    $SED_BIN "s#LUAPREFIX_macosx?=/opt/local#LUAPREFIX_macosx?=$DEST_BIN_DIR/openresty/luajit#g" src/makefile
+    $SED_BIN "s#LUAINC_macosx_base?=/opt/local/include#LUAINC_macosx_base?=$DEST_BIN_DIR/openresty/luajit/include#g" src/makefile
+    $SED_BIN "s#\$(LUAINC_macosx_base)/lua/\$(LUAV)#\$(LUAINC_macosx_base)/luajit-2.1#g" src/makefile
+else
+    $SED_BIN "s#LUAPREFIX_linux?=/usr/local#LUAPREFIX_linux?=$DEST_BIN_DIR/openresty/luajit#g" src/makefile
+    $SED_BIN "s#LUAINC_linux_base?=/usr/include#LUAINC_linux_base?=$DEST_BIN_DIR/openresty/luajit/include#g" src/makefile
+    $SED_BIN "s#\$(LUAINC_linux_base)/lua/\$(LUAV)#\$(LUAINC_linux_base)/luajit-2.1#g" src/makefile
+fi
+make clean && make && make install-unix
+cp -f src/serial.so src/unix.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/socket/.
 
-    # copy all configuration files
-    cp -f $CUR_DIR/conf/* $DEST_DIR/conf/
-
-    # modify apps entry config
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/welcome/app_entry.conf
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/admin/app_entry.conf
-
-    # modify tools path
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_DIR/apps/welcome/tools.sh
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/start_workers.sh
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/Monitor.lua
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" $DEST_BIN_DIR/instrument/monitor.sh
-    rm -f $DEST_DIR/apps/welcome/tools.sh--
-    rm -f $DEST_BIN_DIR/instrument/start_workers.sh--
-    rm -f $DEST_BIN_DIR/instrument/Monitor.lua--
-    rm -f $DEST_BIN_DIR/instrument/monitor.sh--
-
-    # install luasocket
-    cd $BUILD_DIR
-    tar zxf luasocket-$LUASOCKET_VER.tar.gz
-    cd luasocket-$LUASOCKET_VER
-    if [ $OSTYPE == "MACOS" ]; then
-        $SED_BIN "s#PLAT?= linux#PLAT?= macosx#g" makefile
-        $SED_BIN "s#PLAT?=linux#PLAT?=macosx#g" src/makefile
-        $SED_BIN "s#LUAPREFIX_macosx?=/opt/local#LUAPREFIX_macosx?=$DEST_BIN_DIR/openresty/luajit#g" src/makefile
-        $SED_BIN "s#LUAINC_macosx_base?=/opt/local/include#LUAINC_macosx_base?=$DEST_BIN_DIR/openresty/luajit/include#g" src/makefile
-        $SED_BIN "s#\$(LUAINC_macosx_base)/lua/\$(LUAV)#\$(LUAINC_macosx_base)/luajit-2.1#g" src/makefile
-    else
-        $SED_BIN "s#LUAPREFIX_linux?=/usr/local#LUAPREFIX_linux?=$DEST_BIN_DIR/openresty/luajit#g" src/makefile
-        $SED_BIN "s#LUAINC_linux_base?=/usr/include#LUAINC_linux_base?=$DEST_BIN_DIR/openresty/luajit/include#g" src/makefile
-        $SED_BIN "s#\$(LUAINC_linux_base)/lua/\$(LUAV)#\$(LUAINC_linux_base)/luajit-2.1#g" src/makefile
-    fi
-    make clean && make && make install-unix
-    cp -f src/serial.so src/unix.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/socket/.
-
-    # install luasec
-    cd $BUILD_DIR
-    tar zxf luasec-$LUASEC_VER.tar.gz
-    cd luasec-$LUASEC_VER
-    $SED_BIN "s#/usr/share/lua/5.1#$DEST_BIN_DIR/openresty/luajit/share/lua/5.1#g" ./Makefile
-    $SED_BIN "s#/usr/lib/lua/5.1#$DEST_BIN_DIR/openresty/luajit/lib/lua/5.1#g" ./Makefile
-    if [ $OSTYPE != "MACOS" ]; then
-        make clean && make linux && make install
-    fi
-
-    # install cjson
-    cp -f $DEST_BIN_DIR/openresty/lualib/cjson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
-
-    # install http client
-    cd $BUILD_DIR
-    tar zxf luahttpclient.tar.gz
-    cp -f httpclient.lua $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
-    cp -rf httpclient $DEST_BIN_DIR/openresty/luajit/share/lua/5.1/.
-
-    # install luabson
-    cd $BUILD_DIR
-    tar zxf luabson-$LUABSON_VER.tar.gz
-    cd lua-bson
-    if [ $OSTYPE == "MACOS" ]; then
-        $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" ./Makefile
-    else
-        $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib#g" ./Makefile
-    fi
-
-    make clean && make linux
-
-    cp -f ./bson.so $DEST_BIN_DIR/openresty/lualib/.
-    cp -f ./bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
-
-    # install luafilesystem
-    # cd $BUILD_DIR
-    # tar zxf luafilesystem-$LUAFILESYSTEM_VER.tar.gz
-    # cd luafilesystem-$LUAFILESYSTEM_VER
-    # $SED_BIN "s#PREFIX=/usr/local#PREFIX=$DEST_BIN_DIR/openresty/luajit#g" ./config
-    # $SED_BIN "s#/include#/include/luajit-2.1#g" ./config
-    # $SED_BIN "s#LIB_OPTION= -shared#\#LIB_OPTION= -shared#g" ./config
-    # $SED_BIN "s#\#LIB_OPTION= -bundle#LIB_OPTION= -bundle#g" ./config
-    # $SED_BIN "s#MACOSX_DEPLOYMENT_TARGET=\"10.3\"; export MACOSX_DEPLOYMENT_TARGET;##g" ./Makefile
-    # $SED_BIN "s#-o src/lfs.so#-o src/lfs.so -lluajit-5.1#g" ./Makefile
-    # make clean && make
-
-    # cp -f ./src/lfs.so $DEST_BIN_DIR/openresty/lualib/
-    # cp -f ./src/lfs.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/
-
-    #install lua pbc
-    cd $BUILD_DIR
-    tar zxf luapbc-$LUAPBC_VER.tar.gz
-    cd pbc
-    make clean && make lib
-    cd ./binding/lua
-    if [ $OSTYPE == "MACOS" ]; then
-        $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" ./Makefile
-    else
-        $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1#g" ./Makefile
-    fi
-    make clean && make
-
-    cp -f ./protobuf.so $DEST_BIN_DIR/openresty/lualib/.
-    cp -f ./protobuf.lua $DEST_BIN_DIR/openresty/lualib/.
-
-    cp -f ./protobuf.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
-    cp -f ./protobuf.lua $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
-
-    # install lua process
-    cd $BUILD_DIR
-    tar zxf lua-process-$LUAPROCESS_VER.tar.gz
-    cd lua-process-$LUAPROCESS_VER
-    cp Makefile Makefile_
-    echo "PACKAGE=process" > Makefile
-    echo "LIB_EXTENSION=so" >> Makefile
-    echo "SRCDIR=src" >> Makefile
-    echo "TMPLDIR=tmpl" >> Makefile
-    echo "VARDIR=var" >> Makefile
-    echo "CFLAGS=-Wall -fPIC -O2 -I_GBC_CORE_ROOT_/bin/openresty/luajit/include" >> Makefile
-    echo "LDFLAGS=--shared -Wall -fPIC -O2 -L_GBC_CORE_ROOT_/bin/openresty/luajit/lib" >> Makefile
-    echo "LIBS=-lluajit-5.1" >> Makefile
-    echo "" >> Makefile
-    cat Makefile_ >> Makefile
-    $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" Makefile
-    make
-
-    cp -f ./process.so $DEST_BIN_DIR/openresty/lualib/.
-    cp -f ./process.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
-
-    # install supervisor
-    if [ $OSTYPE == "MACOS" ]; then
-        cd $BUILD_DIR
-        tar zxf supervisor-$SUPERVISOR_VER.tar.gz
-        cd supervisor-$SUPERVISOR_VER
-        python setup.py install
-    fi
-
-    echo "Install Openresty and GameBox Cloud Core DONE"
+# install luasec
+cd $BUILD_DIR
+tar zxf luasec-$LUASEC_VER.tar.gz
+cd luasec-$LUASEC_VER
+$SED_BIN "s#/usr/share/lua/5.1#$DEST_BIN_DIR/openresty/luajit/share/lua/5.1#g" ./Makefile
+$SED_BIN "s#/usr/lib/lua/5.1#$DEST_BIN_DIR/openresty/luajit/lib/lua/5.1#g" ./Makefile
+if [ $OSTYPE != "MACOS" ]; then
+    make clean && make linux && make install
 fi
 
+# install luabson
+cd $BUILD_DIR
+tar zxf luabson-$LUABSON_VER.tar.gz
+cd lua-bson
+if [ $OSTYPE == "MACOS" ]; then
+    $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" ./Makefile
+else
+    $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib#g" ./Makefile
+fi
+
+make clean && make linux
+
+cp -f ./bson.so $DEST_BIN_DIR/openresty/lualib/.
+cp -f ./bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
+
+#install luapbc
+cd $BUILD_DIR
+tar zxf luapbc-$LUAPBC_VER.tar.gz
+cd pbc
+make clean && make lib
+cd ./binding/lua
+if [ $OSTYPE == "MACOS" ]; then
+    $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" ./Makefile
+else
+    $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1#g" ./Makefile
+fi
+make clean && make
+
+cp -f ./protobuf.so $DEST_BIN_DIR/openresty/lualib/.
+cp -f ./protobuf.lua $DEST_BIN_DIR/openresty/lualib/.
+
+cp -f ./protobuf.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
+cp -f ./protobuf.lua $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
+
+# install luaprocess
+cd $BUILD_DIR
+tar zxf lua-process-$LUAPROCESS_VER.tar.gz
+cd lua-process-$LUAPROCESS_VER
+cp Makefile Makefile_
+echo "PACKAGE=process" > Makefile
+echo "LIB_EXTENSION=so" >> Makefile
+echo "SRCDIR=src" >> Makefile
+echo "TMPLDIR=tmpl" >> Makefile
+echo "VARDIR=var" >> Makefile
+echo "CFLAGS=-Wall -fPIC -O2 -I_GBC_CORE_ROOT_/bin/openresty/luajit/include" >> Makefile
+echo "LDFLAGS=--shared -Wall -fPIC -O2 -L_GBC_CORE_ROOT_/bin/openresty/luajit/lib" >> Makefile
+echo "LIBS=-lluajit-5.1" >> Makefile
+echo "" >> Makefile
+cat Makefile_ >> Makefile
+$SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" Makefile
+make
+
+cp -f ./process.so $DEST_BIN_DIR/openresty/lualib/.
+cp -f ./process.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/.
+
+# ----
+# install supervisor
+if [ $OSTYPE == "MACOS" ]; then
+    cd $BUILD_DIR
+    tar zxf supervisor-$SUPERVISOR_VER.tar.gz
+    cd supervisor-$SUPERVISOR_VER
+    python setup.py install
+fi
+
+# ----
 #install redis
-if [ $ALL -eq 1 ] || [ $REDIS -eq 1 ] ; then
-    cd $BUILD_DIR
-    tar zxf redis-$REDIS_VER.tar.gz
-    cd redis-$REDIS_VER
-    mkdir -p $DEST_BIN_DIR/redis/bin
+cd $BUILD_DIR
+tar zxf redis-$REDIS_VER.tar.gz
+cd redis-$REDIS_VER
+mkdir -p $DEST_BIN_DIR/redis/bin
 
-    make
-    cp src/redis-server $DEST_BIN_DIR/redis/bin
-    cp src/redis-cli $DEST_BIN_DIR/redis/bin
-    cp src/redis-sentinel $DEST_BIN_DIR/redis/bin
-    cp src/redis-benchmark $DEST_BIN_DIR/redis/bin
-    cp src/redis-check-aof $DEST_BIN_DIR/redis/bin
-    cp src/redis-check-dump $DEST_BIN_DIR/redis/bin
+make
+cp src/redis-server $DEST_BIN_DIR/redis/bin
+cp src/redis-cli $DEST_BIN_DIR/redis/bin
+cp src/redis-sentinel $DEST_BIN_DIR/redis/bin
+cp src/redis-benchmark $DEST_BIN_DIR/redis/bin
+cp src/redis-check-aof $DEST_BIN_DIR/redis/bin
+cp src/redis-check-dump $DEST_BIN_DIR/redis/bin
 
-    echo "Install Redis DONE"
-fi
-
+# ----
 # install beanstalkd
-if [ $ALL -eq 1 ] || [ $BEANS -eq 1 ] ; then
-    cd $BUILD_DIR
-    tar zxf beanstalkd-$BEANSTALKD_VER.tar.gz
-    cd beanstalkd-$BEANSTALKD_VER
-    mkdir -p $DEST_BIN_DIR/beanstalkd/bin
+cd $BUILD_DIR
+tar zxf beanstalkd-$BEANSTALKD_VER.tar.gz
+cd beanstalkd-$BEANSTALKD_VER
+mkdir -p $DEST_BIN_DIR/beanstalkd/bin
 
-    make
-    cp beanstalkd $DEST_BIN_DIR/beanstalkd/bin
+make
+cp beanstalkd $DEST_BIN_DIR/beanstalkd/bin
 
-    echo "Install Beanstalkd DONE"
+# ----
+# install apps
+cp -rf $CUR_DIR/src $DEST_DIR
+cp -rf $CUR_DIR/apps $DEST_DIR
+cp -rf $CUR_DIR/tests $DEST_DIR
+
+cd $CUR_DIR/shells/
+cp -f start_server stop_server check_server restart_server $DEST_DIR
+cp -f shell_func.sh shell_func.lua $DEST_BIN_DIR
+
+# if it in Mac OS X, getopt_long should be deployed.
+if [ $OSTYPE == "MACOS" ]; then
+    cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/bin
+    rm $CUR_DIR/shells/getopt_long
 fi
+
+# copy all configuration files
+cp -f $CUR_DIR/conf/* $DEST_DIR/conf/
 
 # done
 

@@ -31,6 +31,7 @@ require("framework.functions")
 require("framework.server_functions")
 require("framework.package_support")
 json = require("framework.json")
+socket = {} -- avoid require("socket") warning
 
 cc.server = {
     PROVIDER = "GameBox Cloud Core",

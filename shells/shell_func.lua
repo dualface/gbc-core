@@ -27,6 +27,8 @@ if not ROOT_DIR then
     os.exit(1)
 end
 
+-- globals
+
 if not _DEBUG then _DEBUG = 1 end
 
 if tostring(_DEBUG) == "0" then
@@ -55,28 +57,45 @@ VAR_BEANS_LOG_PATH        = TMP_DIR .. "/beanstalkd.log"
 VAR_APP_KEYS_PATH         = TMP_DIR .. "/app_keys.lua"
 VAR_SUPERVISORD_CONF_PATH = TMP_DIR .. "/supervisord.conf"
 
+local _getValue, _checkVarConfig, _checkAppKeys
+local _updateCoreConfig, _updateNginxConfig
+local _updateRedisConfig, _updateSupervisordConfig
+
+function updateConfigs()
+    _updateCoreConfig()
+    _updateNginxConfig()
+    _updateRedisConfig()
+    _updateSupervisordConfig()
+end
+
+-- init
+
 package.path = table.concat({
     ROOT_DIR, '/src/?.lua;',
     ROOT_DIR, '/src/lib/?.lua;',
     package.path}, "")
 
-CC_ENABLE_GLOBALS = true
-
 require("framework.init")
+
+-- private
 
 local Factory = require("server.base.Factory")
 local luamd5 = cc.load("luamd5")
 
--- globals
-
-function updateConfigs()
-    updateCoreConfig()
-    updateNginxConfig()
-    updateRedisConfig()
-    updateSupervisordConfig()
+_getValue = function(t, key, def)
+    local keys = string.split(key, ".")
+    for _, key in ipairs(keys) do
+        if t[key] then
+            t = t[key]
+        else
+            if type(def) ~= "nil" then return def end
+            return nil
+        end
+    end
+    return t
 end
 
-function checkVarConfig()
+_checkVarConfig = function()
     if not io.exists(VAR_CONF_PATH) then
         print(string.format("[ERR] Not found file: %s", VAR_CONF_PATH))
         os.exit(1)
@@ -91,7 +110,7 @@ function checkVarConfig()
     return config
 end
 
-function checkAppKeys()
+_checkAppKeys = function()
     if not io.exists(VAR_APP_KEYS_PATH) then
         print(string.format("[ERR] Not found file: %s", VAR_APP_KEYS_PATH))
         os.exit(1)
@@ -106,27 +125,14 @@ function checkAppKeys()
     return appkeys
 end
 
-function getValue(t, key, def)
-    local keys = string.split(key, ".")
-    for _, key in ipairs(keys) do
-        if t[key] then
-            t = t[key]
-        else
-            if type(def) ~= "nil" then return def end
-            return nil
-        end
-    end
-    return t
-end
-
-function updateCoreConfig()
+_updateCoreConfig = function()
     local contents = io.readfile(CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
     io.writefile(VAR_CONF_PATH, contents)
 
     -- update all apps key and index
-    local config = checkVarConfig()
-    local apps = getValue(config, "apps")
+    local config = _checkVarConfig()
+    local apps = _getValue(config, "apps")
 
     local names = {}
     for name, _ in pairs(apps) do
@@ -145,13 +151,13 @@ function updateCoreConfig()
     io.writefile(VAR_APP_KEYS_PATH, table.concat(contents, "\n"))
 end
 
-function updateNginxConfig()
-    local config = checkVarConfig()
+_updateNginxConfig = function()
+    local config = _checkVarConfig()
 
     local contents = io.readfile(NGINX_CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
-    contents = string.gsub(contents, "listen[ \t]+[0-9]+", string.format("listen %d", getValue(config, "server.nginx.port", 8088)))
-    contents = string.gsub(contents, "worker_processes[ \t]+[0-9]+", string.format("worker_processes %d", getValue(config, "server.nginx.numOfWorkers", 4)))
+    contents = string.gsub(contents, "listen[ \t]+[0-9]+", string.format("listen %d", _getValue(config, "server.nginx.port", 8088)))
+    contents = string.gsub(contents, "worker_processes[ \t]+[0-9]+", string.format("worker_processes %d", _getValue(config, "server.nginx.numOfWorkers", 4)))
 
     if DEBUG then
         contents = string.gsub(contents, "DEBUG = [%a_]+", "DEBUG = _DBG_DEBUG")
@@ -164,7 +170,7 @@ function updateNginxConfig()
     end
 
     -- copy app_entry.conf to tmp/
-    local apps = getValue(config, "apps")
+    local apps = _getValue(config, "apps")
     local includes = {}
     for name, path in pairs(apps) do
         local entryPath = string.format("%s/app_entry.conf", path)
@@ -183,13 +189,13 @@ function updateNginxConfig()
     io.writefile(VAR_NGINX_CONF_PATH, contents)
 end
 
-function updateRedisConfig()
-    local config = checkVarConfig()
+_updateRedisConfig = function()
+    local config = _checkVarConfig()
 
     local contents = io.readfile(REDIS_CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
 
-    local socket = getValue(config, "server.redis.socket")
+    local socket = _getValue(config, "server.redis.socket")
     if socket then
         if string.sub(socket, 1, 5) == "unix:" then
             socket = string.sub(socket, 6)
@@ -199,14 +205,14 @@ function updateRedisConfig()
         contents = string.gsub(contents, "[# \t]*unixsocket[ \t]+", "# unixsocket")
     end
 
-    local host = getValue(config, "server.redis.host")
+    local host = _getValue(config, "server.redis.host")
     if host then
-        contents = string.gsub(contents, "[# \t]*bind[ \t]+[%d\\.]+", string.format("bind %s", host))
+        contents = string.gsub(contents, "[# \t]*bind[ \t]+[%d\\.]+", "bind 127.0.0.1")
     else
         contents = string.gsub(contents, "[# \t]*bind[ \t]+[%d\\.]+", "# bind 127.0.0.1")
     end
 
-    local port = getValue(config, "server.redis.port")
+    local port = _getValue(config, "server.redis.port")
     if port then
         contents = string.gsub(contents, "\n[# \t]*port[ \t]+[%d]+", string.format("\nport %s", tostring(port)))
     else
@@ -215,7 +221,6 @@ function updateRedisConfig()
 
     io.writefile(VAR_REDIS_CONF_PATH, contents)
 end
-
 
 local _SUPERVISOR_WORKER_PROG_TMPL = [[
 [program:worker-_APP_NAME_]
@@ -227,16 +232,18 @@ stdout_logfile=_GBC_CORE_ROOT_/logs/worker-_APP_NAME_.log
 
 ]]
 
-function updateSupervisordConfig()
-    local config = checkVarConfig()
-    local appkeys = checkAppKeys()
+_updateSupervisordConfig = function()
+    local config = _checkVarConfig()
+    local appkeys = _checkAppKeys()
     local appConfigs = Factory.makeAppConfigs(appkeys, config, package.path)
+    local beanport = _getValue(config, "server.beanstalkd.port")
 
     local contents = io.readfile(SUPERVISORD_CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
+    contents = string.gsub(contents, "_BEANSTALKD_PORT_", beanport)
 
     local workers = {}
-    local apps = getValue(config, "apps")
+    local apps = _getValue(config, "apps")
     for name, path in pairs(apps) do
         local prog = string.gsub(_SUPERVISOR_WORKER_PROG_TMPL, "_GBC_CORE_ROOT_", ROOT_DIR)
         prog = string.gsub(prog, "_APP_ROOT_PATH_", path)
