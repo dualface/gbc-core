@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 local tests = cc.load("tests")
 local check = tests.Check
-local helper = import(".helper")
+local helper = import("..helper")
 
 local Redis = cc.load("redis")
 

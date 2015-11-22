@@ -1,5 +1,5 @@
 
-local Redis = cc.load("Redis")
+local Redis = cc.load("redis")
 local Beanstalkd = cc.load("beanstalkd")
 
 local _M = {}
@@ -32,4 +32,3 @@ _M.sleep = function(n)
 end
 
 return _M
-

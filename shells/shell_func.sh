@@ -40,7 +40,13 @@ function restartSupervisord()
 {
     echo "[CMD] supervisorctl -c $VAR_SUPERVISORD_CONF_PATH restart all"
     echo ""
-    supervisorctl -c $VAR_SUPERVISORD_CONF_PATH restart all
+    supervisorctl -c $VAR_SUPERVISORD_CONF_PATH shutdown
+    echo ""
+    DELAY=3
+    echo "waiting for $DELAY seconds ..."
+    sleep $DELAY
+    supervisord -c $VAR_SUPERVISORD_CONF_PATH
+    echo ""
     echo "Restart supervisord DONE"
     echo ""
 }

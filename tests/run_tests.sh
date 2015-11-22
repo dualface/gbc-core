@@ -19,7 +19,7 @@ DEBUG = _DBG_WARN
 TESTS_APP_ROOT = "$ROOT_DIR/tests"
 
 require("framework.init")
-local Tests = dofile("$ROOT_DIR/tests/run_tests_inc.lua")
+local Tests = dofile("$ROOT_DIR/tests/run_tests_func.lua")
 local tests = Tests:create()
 tests:run("$*")
 

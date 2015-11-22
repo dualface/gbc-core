@@ -23,9 +23,10 @@ THE SOFTWARE.
 ]]
 
 local assert = assert
-local type = type
 local ipairs = ipairs
 local string_format = string.format
+local string_lower = string.lower
+local type = type
 
 cc.loaded_packages = {}
 local loaded_packages = cc.loaded_packages
@@ -41,6 +42,11 @@ function cc.load(...)
     local packages = {}
     for _, name in ipairs(names) do
         assert(type(name) == "string", string_format("cc.load() - invalid package name \"%s\"", tostring(name)))
+        local _name = name
+        name = string_lower(name)
+        if _name ~= name then
+            print(string_format("cc.load() should use all lowercase package names, actual is %s", _name))
+        end
         if not loaded_packages[name] then
             local packageName = string_format("packages.%s.init", name)
             local cls = require(packageName)
