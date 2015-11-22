@@ -6,25 +6,27 @@
 
 ~~~lua
 -- 军营模块
-local BarrackAction = class("BarrackAction", cc.server.ActionBase)
+
+local ActionBase = require("server.base.ActionBase")
+
+local BarrackAction = class("BarrackAction", ActionBase)
 
 -- 出兵的接口
 function BarrackAction:sentAction(arg)
     -- 这些数据将包含在任务中，并在任务时间到达时传递给指定的接口
     local data = {
-        troops = "knight",
+        troops   = "knight",
         quantity = 30,
-        level = 2,
+        level    = 2,
     }
-
-    -- 任务传递给 battle.arrival
-    local action = "jobs/battle.arrival"
-    -- 任务延迟 10 秒执行
-    local delay = 10
 
     -- 取得 jobs 接口，并添加任务
     local jobs = self.connect:getJobs:)
-    jobs:add(action, data, delay)
+    jobs:add({
+        action = 'jobs/battle.arrival', -- 任务传递给 battle.arrival
+        data   = data, -- 要传递给任务接口的数据
+        delay  = 10, -- 任务延迟 10 秒执行
+    })
 end
 ~~~
 
@@ -33,14 +35,18 @@ end
 系统会在指定时间到达后，调用任务指定的 `jobs/battle.arrival` 接口。
 
 ~~~lua
-local BattleAction = class("BattleAction", cc.server.ActionBase)
+
+local ActionBase = require("server.base.ActionBase")
+
+local BattleAction = class("BattleAction", ActionBase)
 
 function BattleAction:arrivalAction(job)
     -- 整个任务会作为参数传入接口
-    
+
     print(job.delay) -- 任务设定的等待时间
+    print(job.pri)   -- 任务设定的优先级
     print(job.ttr)   -- 任务的执行时间限制
-    
+
     -- barrack.sent 中提供的数据，会作为 job.data 参数
     local troops   = job.data.troops
     local quantity = job.data.quantity
@@ -90,12 +96,12 @@ app
 
 说明：
 
--   `Jobs:add(action, data, delay, priority, ttr)`
+-   `Jobs:add(args)`: `arg` 是一个 table，包含下列字段:
     -   `action`: 任务到期时调用哪一个接口
     -   `data`: 要传递给任务接口的数据，必须是 `table`
     -   `delay`: 任务的等待时间
-    -   `priority`: 任务的优先级，数字越小优先级越高，默认为 2048，表示普通优先级。低于 1024 的优先级表示紧急任务。同等延迟时间的任务，优先级高的会先执行。
-    -   `ttr`: 任务接口可以用多少时间来处理任务。默认为 10 秒。如果在制定时间内任务没有处理完成，该任务会重新回到队列中。因此对于可能耗时较长的任务，应该指定较大的 `ttr` 值。
+    -   `priority`: （可选）任务的优先级，数字越小优先级越高，默认为 2048，表示普通优先级。低于 1024 的优先级表示紧急任务。同等延迟时间的任务，优先级高的会先执行。
+    -   `ttr`: （可选）任务接口可以用多少时间来处理任务。默认为 10 秒。如果在制定时间内任务没有处理完成，该任务会重新回到队列中。因此对于可能耗时较长的任务，应该指定较大的 `ttr` 值。
 
 `add()` 如果成功，将返回一个整数，作为 `job id`。后续可以用 `job id` 移除任务或暂停任务。
 
@@ -114,10 +120,10 @@ end
 
 说明：
 
--   `Jobs:at(action, data, time, priority, ttr)`
+-   `Jobs:at(arg)`: `arg` 是一个 `table`，与 `add()` 接口相比仅仅是 `delay` 字段改为 `time` 字段：
     -   `time`: 自 1970 年以来的秒数，指定任务执行的时间。
     -   其他参数和返回值同 `Jobs:add()` 接口。
-    
+
 由于存在时区问题，因此可以用以下代码获得指定时间的秒数（UTC）：
 
 ~~~lua
@@ -127,41 +133,25 @@ local time = os.gettime({2015, 12, 24, 22, 30})
 PS: `os.gettime()` 函数是 GBC 提供的自定义函数，并非标准库函数。
 
 
-### `Jobs:remove()` - 删除任务
+### `Jobs:delete()` - 删除任务
 
 说明：
 
--   `Jobs:remove(jobid)`
+-   `Jobs:delete(jobid)`
     -   `jobid`: 要删除任务的 `job id`，由 `Jobs:add()` 和 `Jobs:at()` 接口返回。
 
-`remove()` 如果成功，返回 `true`，否则返回 `nil` 和错误信息。
+`delete()` 如果成功，返回 `true`，否则返回 `nil` 和错误信息。
 
 
-### `Jobs:pause()` - 暂停一个任务
-
-说明：
-
--   `Jobs:pause(jobid)`
-
-在暂停期间，任务的倒计时仍然会继续。因此在调用 `resume()` 接口恢复任务后，任务仍然会按照最初的时间执行。
-
-
-### `Jobs:resume()` - 恢复一个暂停的任务
+### `Jobs:get()` - 查询一个任务
 
 说明：
 
--   `Jobs:resume(jobid)`
-
-
-### `Jobs:query()` - 查询一个任务
-
-说明：
-
--   `Jobs:query(jobid)`
+-   `Jobs:get(jobid)`
     -   `jobid`: 如果指定的任务还未删除，则返回包含所有任务信息的 `table`：
 
 ~~~lua
-local job = jobs:query(jobid)
+local job = jobs:get(jobid)
 -- job.id
 -- job.action
 -- job.delay
@@ -173,4 +163,12 @@ local job = jobs:query(jobid)
 如果指定的任务不存在，则返回 `nil` 和错误信息。
 
 
+### `Jobs:getready()` - 查询一个到达指定时间的任务，如果没有任务则一直等待直到超时
 
+说明：
+
+-   `Jobs:getready()`
+
+`getready()` 如果成功，返回一个 `table`，结果同 `get()`。如果失败，则返回 `nil` 和错误信息。
+
+\-EOF\-

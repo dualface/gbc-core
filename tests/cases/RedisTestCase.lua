@@ -24,6 +24,8 @@ THE SOFTWARE.
 
 local tests = cc.load("tests")
 local check = tests.Check
+local helper = import(".helper")
+
 local Redis = cc.load("redis")
 
 local RedisTestCase = class("RedisTestCase", tests.TestCase)
@@ -37,10 +39,10 @@ for _, key in ipairs(keys) do
 end
 ]]
 
-local _createRedis, _doCommands
+local _newredis, _runcmds
 
 function RedisTestCase:setup()
-    self._redis = _createRedis(self.connect.config.server.redis)
+    self._redis = _newredis(self.connect.config.server.redis)
 end
 
 function RedisTestCase:teardown()
@@ -132,18 +134,18 @@ function RedisTestCase:pipelineTest()
 
     -- test commit pipeline
     redis:initPipeline()
-    _doCommands(redis, commands)
+    _runcmds(redis, commands)
     local vals = redis:commitPipeline()
     check.isTable(vals)
     _checkResult(vals)
 
     -- test cancel pipeline
     redis:initPipeline()
-    _doCommands(redis, commands)
+    _runcmds(redis, commands)
     redis:cancelPipeline() -- cleanup pipeline
 
     redis:initPipeline() -- start again
-    _doCommands(redis, commands)
+    _runcmds(redis, commands)
     local vals = redis:commitPipeline()
     check.isTable(vals)
     _checkResult(vals)
@@ -166,7 +168,7 @@ function RedisTestCase:pubsubTest()
     })
 
     -- use an other instance publish message to channels
-    local redis2 = _createRedis(self.connect.config.server.redis)
+    local redis2 = _newredis(self.connect.config.server.redis)
     redis2:publish(channel1, "hello")
 
     check.equals(redis:readReply(), {
@@ -195,21 +197,15 @@ end
 
 -- private methods
 
-_createRedis = function(config)
-    local redis = Redis:create()
-    local ok, err
-    if config.socket then
-        ok, err = redis:connect(config.socket)
-    else
-        ok, err = redis:connect(config.host, config.port)
-    end
+_newredis = function(config)
+    local redis, err = helper.newredis(config)
     check.isNil(err, err)
     redis:select(RedisTestCase.TEST_DB_INDEX)
     redis:eval(RedisTestCase.CLEANUP_CODE, 0)
     return redis
 end
 
-_doCommands = function(redis, commands)
+_runcmds = function(redis, commands)
     local res = {}
     for i, args in ipairs(commands) do
         res[i] = redis:doCommand(unpack(args))

@@ -22,34 +22,44 @@ THE SOFTWARE.
 
 ]]
 
-local string_sub = string.sub
+local args = {...}
 
-local TestCase = class("TestCase")
+local help = function()
+    print [[
 
-TestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
+$ lua WorkerInit <GBC_CORE_ROOT> <APP_ROOT_PATH> [args...]
 
-function TestCase:ctor(connect)
-    self.connect = connect
-
-    local mt = getmetatable(self)
-    for name, method in pairs(mt.__index) do
-        if type(method) == "function" and string_sub(name, -4) == "Test" then
-            self[name] = function(...)
-                self:setup()
-                local res = {method(self, ...)}
-                self:teardown()
-                return unpack(res)
-            end
-        end
-    end
-
-    math.newrandomseed()
+]]
 end
 
-function TestCase:setup()
+if #args < 2 then
+    return help()
 end
 
-function TestCase:teardown()
+GBC_CORE_ROOT = args[1]
+APP_ROOT_PATH = args[2]
+table.remove(args, 1)
+table.remove(args, 1)
+
+package.path = table.concat({
+    GBC_CORE_ROOT, '/src/?.lua;',
+    GBC_CORE_ROOT, '/src/lib/?.lua;',
+    package.path}, "")
+
+SERVER_CONFIG = dofile(GBC_CORE_ROOT .. "/tmp/config.lua")
+SERVER_APP_KEYS = dofile(GBC_CORE_ROOT .. "/tmp/app_keys.lua")
+DEBUG = _DBG_DEBUG
+
+require("framework.init")
+
+local Factory = require("server.base.Factory")
+
+local function startWorker(appRootPath, args)
+    local appConfigs = Factory.makeAppConfigs(SERVER_APP_KEYS, SERVER_CONFIG, package.path)
+    local appConfig = appConfigs[appRootPath]
+
+    local cli = Factory.create(appConfig, "Worker", args)
+    return cli:run()
 end
 
-return TestCase
+startWorker(APP_ROOT_PATH, args)

@@ -24,13 +24,13 @@ THE SOFTWARE.
 
 local tests = cc.load("tests")
 local check = tests.Check
+local helper = import(".helper")
+
 local Beanstalkd = cc.load("beanstalkd")
 
 local BeanstalkdTestCase = class("BeanstalkdTestCase", tests.TestCase)
 
-BeanstalkdTestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
-
-local _createBeanstalkd, _flush, _sleep
+local _createBeanstalkd, _flush
 
 local DEFAULT_TUBE = "default"
 local TEST_TUBE    = "test"
@@ -60,7 +60,7 @@ function BeanstalkdTestCase:basicsTest()
     check.equals(job, {id = id, data = JOB_WORD})
 
     -- sleep, reserve again with deadline_soon
-    _sleep(JOB_TTR - 1)
+    helper.sleep(JOB_TTR - 1)
 
     check.equals({bean:reserve(0)}, {nil, errors.DEADLINE_SOON})
     check.equals({bean:touch(job.id)}, {true})
@@ -120,7 +120,7 @@ function BeanstalkdTestCase:changestateTest()
     -- kick it
     check.equals({bean:kick(100)}, {1})
     -- wait it ready
-    _sleep(JOB_DELAY)
+    helper.sleep(JOB_DELAY)
     local job = bean:peek("ready")
     check.equals(job, expected)
 
@@ -199,10 +199,6 @@ _flush = function(bean)
         if not data then break end
         bean:delete(data.id)
     end
-end
-
-_sleep = function(n)
-    os.execute("sleep " .. tonumber(n))
 end
 
 return BeanstalkdTestCase

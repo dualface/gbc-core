@@ -22,34 +22,7 @@ THE SOFTWARE.
 
 ]]
 
-local string_sub = string.sub
+local _P = import(".Jobs")
 
-local TestCase = class("TestCase")
+return _P
 
-TestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
-
-function TestCase:ctor(connect)
-    self.connect = connect
-
-    local mt = getmetatable(self)
-    for name, method in pairs(mt.__index) do
-        if type(method) == "function" and string_sub(name, -4) == "Test" then
-            self[name] = function(...)
-                self:setup()
-                local res = {method(self, ...)}
-                self:teardown()
-                return unpack(res)
-            end
-        end
-    end
-
-    math.newrandomseed()
-end
-
-function TestCase:setup()
-end
-
-function TestCase:teardown()
-end
-
-return TestCase

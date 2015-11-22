@@ -22,17 +22,19 @@ THE SOFTWARE.
 
 ]]
 
+local json_encode = json.encode
 local pcall = pcall
-local type = type
-local string_lower = string.lower
-local string_ucfirst = string.ucfirst
-local string_gsub = string.gsub
-local string_format = string.format
+local string_byte = string.byte
 local string_find = string.find
+local string_format = string.format
+local string_gsub = string.gsub
+local string_lower = string.lower
 local string_sub = string.sub
+local string_trim = string.trim
+local string_ucfirst = string.ucfirst
 local table_concat = table.concat
 local table_remove = table.remove
-local json_encode = json.encode
+local type = type
 
 local Constants = import(".Constants")
 
@@ -49,7 +51,6 @@ function AppBase:ctor(config)
     self._requestType = "unknown"
     self._actionModules = {}
     self._requestParameters = nil
-    self._services = {}
 
     -- autoloads
     for packageName, packageConfig in pairs(self.config.app.autoloads) do
@@ -65,15 +66,15 @@ end
 
 function AppBase:runAction(actionName, data)
     -- parse actionName
-    local actionModuleName, actionMethodName = self:normalizeActionName(actionName)
-    actionMethodName = actionMethodName .. self.config.app.actionMethodSuffix
+    local moduleName, methodName, folder = self:normalizeActionName(actionName)
+    methodName = methodName .. self.config.app.actionMethodSuffix
 
     local action -- instance
     -- check registered action module before load module
-    local actionModule = self._actionModules[actionModuleName]
+    local actionModule = self._actionModules[folder .. moduleName]
     local actionModulePath
     if not actionModule then
-        actionModulePath = self:getActionModulePath(actionModuleName)
+        actionModulePath = self:getActionModulePath(moduleName, folder)
         if DEBUG >= _DBG_INFO then
             package.loaded[actionModulePath] = false
         end
@@ -88,20 +89,20 @@ function AppBase:runAction(actionName, data)
 
     local t = type(actionModule)
     if t ~= "table" and t ~= "userdata" then
-        throw("failed to load action module \"%s\"", actionModulePath or actionModuleName)
+        throw("failed to load action module \"%s\"", actionModulePath or moduleName)
     end
 
     local acceptedRequestType = actionModule.ACCEPTED_REQUEST_TYPE or self.config.app.defaultAcceptedRequestType
     local currentRequestType = self:getRequestType()
     if not self:checkActionTypes(currentRequestType, acceptedRequestType) then
-        throw("can't access this action via \"%s\"", currentRequestType)
+        throw("can't access this action via request type \"%s\"", currentRequestType)
     end
 
     action = actionModule:create(self)
 
-    local method = action[actionMethodName]
+    local method = action[methodName]
     if type(method) ~= "function" then
-        throw("invalid action method \"%s:%s()\"", actionModuleName, actionMethodName)
+        throw("invalid action method \"%s:%s()\"", moduleName, methodName)
     end
 
     if not data then
@@ -127,8 +128,13 @@ function AppBase:checkActionTypes(currentRequestType, acceptedRequestType)
     return false
 end
 
-function AppBase:getActionModulePath(actionModuleName)
-    return string_format("%s.%s%s", self.config.app.actionPackage, actionModuleName, self.config.app.actionModuleSuffix)
+function AppBase:getActionModulePath(moduleName, folder)
+    moduleName = moduleName .. self.config.app.actionModuleSuffix
+    if folder ~= "" then
+        return string_format("%s.%s", string.gsub(folder, "/", "."), moduleName)
+    else
+        return string_format("%s.%s", self.config.app.actionPackage, moduleName)
+    end
 end
 
 function AppBase:registerActionModule(actionModuleName, actionModule)
@@ -140,16 +146,35 @@ function AppBase:registerActionModule(actionModuleName, actionModule)
     end
 
     local action = actionModuleName .. ".index"
-    local actionModuleName, _ = self:normalizeActionName(actionName)
-    self._actionModules[actionModuleName] = actionModule
+    local actionModuleName, _, folder = self:normalizeActionName(actionName)
+    self._actionModules[folder .. actionModuleName] = actionModule
 end
 
 function AppBase:normalizeActionName(actionName)
     if not actionName or actionName == "" then
         actionName = "index.index"
     end
+
+    local folder = ""
+    if string_byte(actionName) == 47 --[[ / ]] then
+        local pos = 1
+        local offset = 2
+        while true do
+            pos = string_find(actionName, "/", offset)
+            if not pos then
+                pos = offset - 1
+                break
+            else
+                offset = offset + 1
+            end
+        end
+
+        folder = string_trim(string_sub(actionName, 1, pos), "/")
+        actionName = string_sub(actionName, pos + 1)
+    end
+
     actionName = string_lower(actionName)
-    actionName = string_gsub(actionName, "[^%a.]", "")
+    actionName = string_gsub(actionName, "[^%a./]", "")
     actionName = string_gsub(actionName, "^[.]+", "")
     actionName = string_gsub(actionName, "[.]+$", "")
 
@@ -165,7 +190,7 @@ function AppBase:normalizeActionName(actionName)
     c = c - 1
     -- mdoule = "demo.Hello"
     parts[c] = string_ucfirst(parts[c])
-    return table_concat(parts, "."), method
+    return table_concat(parts, "."), method, folder
 end
 
 function AppBase:closeConnect(connectId)
@@ -194,37 +219,51 @@ function AppBase:sendMessageToChannel(channelName, message)
     redis:command("PUBLISH", channelName, tostring(message))
 end
 
-function AppBase:getService(name, ...)
-    local service = self._services[name]
-    if not service then
-        local serviceClass = cc.load(name).service
-        service = serviceClass:create(...)
-        self._services[name] = service
-    end
-    return service
-end
-
 function AppBase:getRedis()
     local redis = self._redis
     if not redis then
-        redis = self:getService("redis", self.config.server.redis)
-        redis:connect()
-        redis:command("SELECT", self.config.app.appIndex)
+        local config = self.config.server.redis
+        local Redis = cc.load("redis")
+        redis = Redis:create()
+
+        local ok, err
+        if config.socket then
+            ok, err = redis:connect(config.socket)
+        else
+            ok, err = redis:connect(config.host, config.port)
+        end
+        if not ok then
+            throw("AppBase:getRedis() - %s", err)
+        end
+
+        redis:select(self.config.app.appIndex)
         self._redis = redis
     end
     return redis
 end
 
 function AppBase:getJobs()
-    if not self._beans then
-        self._beans = self:getService("beanstalkd", self.config.server.beanstalkd)
-        self._beans:connect()
+    local jobs = self._jobs
+    if not jobs then
+        local Beanstalkd = cc.load("beanstalkd")
+
+        local bean = Beanstalkd:create()
+        local config = self.config.server.beanstalkd
+        local ok, err = bean:connect(config.host, config.port)
+        if not ok then
+            throw("AppBase:getJobs() - connect to beanstalkd, %s", err)
+        end
+
+        local tube = string_format(Constants.BEANSTALKD_JOB_TUBE_PATTERN, tostring(self.config.app.appIndex))
+        bean:use(tube)
+        bean:ignore("default")
+        bean:watch(tube)
+
+        local Jobs = cc.load("jobs")
+        jobs = Jobs:create(bean, self:getRedis())
+        self._jobs = jobs
     end
-    if not self._jobs then
-        self._jobs = self:getService("job", self._beans)
-        self._jobs:useChannel(string_format("job-%d", self.config.app.appIndex))
-    end
-    return self._jobs
+    return jobs
 end
 
 return AppBase

@@ -32,7 +32,10 @@ require("framework.server_functions")
 require("framework.package_support")
 json = require("framework.json")
 
-cc.server = {VERSION = "GameBox Cloud Core 0.7.0"}
+cc.server = {
+    PROVIDER = "GameBox Cloud Core",
+    VERSION = "0.8.0",
+}
 
 -- register the build-in packages
 cc.register("event", require("framework.packages.event.init"))
@@ -50,19 +53,13 @@ setmetatable(cc.exports, {
     end
 })
 
-local string_split = string.split
-local table_concat = table.concat
-
 -- disable create unexpected global variable
 function cc.disable_global()
     setmetatable(__g, {
         __newindex = function(_, name, value)
             local msg = string.format("USE \"cc.exports.%s = <value>\" INSTEAD OF SET GLOBAL VARIABLE", name)
-            local lines = string_split(debug.traceback(msg, 4), "\n")
-            local c = #lines
-            if c > 4 then c = 4 end
-            print(table_concat(lines, "\n", 1, c))
-            print("")
+            print(debug.traceback(msg, 2))
+            if not ngx then print("") end
             rawset(__g, name, value)
         end
     })

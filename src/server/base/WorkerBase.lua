@@ -22,22 +22,15 @@ THE SOFTWARE.
 
 ]]
 
-local assert = assert
-local type = type
-local string_lower = string.lower
-local string_format = string.format
+local io_flush = io.flush
 local json_decode = json.decode
 local json_encode = json.encode
-local tostring = tostring
 local os_date = os.date
 local os_time = os.time
-local io_flush = io.flush
-
-local _JOB_HASH = "_JOB_HASH"
-
-local RedisService = cc.load("redis").service
-local BeansService = cc.load("beanstalkd").service
-local JobService = cc.load("job").service
+local string_format = string.format
+local string_lower = string.lower
+local tostring = tostring
+local type = type
 
 local CLIBase = import(".CLIBase")
 local Constants = import(".Constants")
@@ -46,100 +39,52 @@ local WorkerBase = class("WorkerBase", CLIBase)
 
 function WorkerBase:ctor(config)
     WorkerBase.super.ctor(self, config)
-
     self._requestType = Constants.WORKER_REQUEST_TYPE
-    self._jobTube = config.server.beanstalkd.jobTube
-    self._jobService = JobService:create(self:_getRedis(), self:_getBeans(), config)
 end
 
 function WorkerBase:run()
-    local ok, err = xpcall(function()
-        self:runEventLoop()
-    end, function(err)
-        err = tostring(err)
-        printerror(err)
-    end)
+    return self:runEventLoop()
 end
 
 function WorkerBase:runEventLoop()
-    local beans = self:_getBeans()
-    local redis = self:_getRedis()
-    local jobService = self._jobService
-
-    beans:command("watch", self._jobTube)
+    local jobs = self:getJobs()
+    local bean = jobs:getBeanstalkd()
+    local beanerrs = bean.ERRORS
+    local appname = self.config.app.appName
 
     while true do
-        local job, err = beans:command("reserve")
+        local job, err = jobs:getready()
         if not job then
-            printwarn("reserve beanstalkd job failed: %s", err)
-            if err == "NOT_CONNECTED" then
-                throw("beanstalkd NOT_CONNECTED")
+            if err == beanerrs.TIMED_OUT then
+                goto wait_next_job
             end
-            goto reserve_next_job
+            if err == beanerrs.DEADLINE_SOON then
+                printinfo("[Worker] - deadline soon")
+                goto wait_next_job
+            end
+            printwarn("[Worker] - reserve job failed, %s", err)
+            break
         end
+        printinfo("get a job %s, action: %s", job.id, job.action)
 
-        local data, err = json_decode(job.data)
-        if not data then
-            printwarn("job bid: %s,  contents: \"%s\" is invalid: %s", job.id, job.data, err)
-            beans:command("delete", job.id)
-            goto reserve_next_job
+        -- handle the job
+        local actionName = job.action
+        local res = self:runAction(actionName, job)
+        if res ~= false then
+            -- delete job
+            local ok, err = jobs:delete(job.id)
+            if not ok then
+                printwarn("[Worker] - delete job %s failed, %s", job.id, err)
+            else
+                printinfo("[Worker] job %s done", job.id)
+            end
         end
-
-        printinfo("get a job, jobId: %s, contents: %s", tostring(data.id), job.data)
-
-        -- remove redis data, which is related to this job
-        jobService:remove(data.id)
-
-        -- handle this job
-        local jobAction = data.action
-        res = self:runAction(jobAction, data.arg)
-        if self.config.app.jobMessageFormat == "json" then
-            res = json_encode(res)
-        end
-
-        printinfo("finish job, jobId: %s, joined_time: %s, reserved_time:%s, result: %s", tostring(data.id), os_date("%Y-%m-%d %H:%M:%S", data.joined_time), os_date("%Y-%m-%d %H:%M:%S"), res)
 
         io_flush()
-::reserve_next_job::
+::wait_next_job::
     end
 
-    printinfo("DONE")
-end
-
-function WorkerBase:getActionModulePath(actionModuleName)
-    return string_format("%s.%s%s", "workers.actions", actionModuleName, self.config.app.actionModuleSuffix)
-end
-
-function WorkerBase:_getBeans()
-    if not self._beans then
-        self._beans = self:_newBeans()
-    end
-    return self._beans
-end
-
-function WorkerBase:_newBeans()
-    local beans = BeansService:create(self.config.server.beanstalkd)
-    local ok, err = beans:connect()
-    if err then
-        throw("connect internal beanstalkd failed, %s", err)
-    end
-    return beans
-end
-
-function WorkerBase:_getRedis()
-    if not self._redis then
-        self._redis = self:_newRedis()
-    end
-    return self._redis
-end
-
-function WorkerBase:_newRedis()
-    local redis = RedisService:create(self.config.server.redis)
-    local ok, err = redis:connect()
-    if err then
-        throw("connect internal redis failed, %s", err)
-    end
-    return redis
+    return 0
 end
 
 return WorkerBase

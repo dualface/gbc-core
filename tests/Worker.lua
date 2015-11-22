@@ -22,34 +22,14 @@ THE SOFTWARE.
 
 ]]
 
-local string_sub = string.sub
+local WorkerBase = require("server.base.WorkerBase")
+local Worker = class("HttpConnect", WorkerBase)
 
-local TestCase = class("TestCase")
-
-TestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
-
-function TestCase:ctor(connect)
-    self.connect = connect
-
-    local mt = getmetatable(self)
-    for name, method in pairs(mt.__index) do
-        if type(method) == "function" and string_sub(name, -4) == "Test" then
-            self[name] = function(...)
-                self:setup()
-                local res = {method(self, ...)}
-                self:teardown()
-                return unpack(res)
-            end
-        end
-    end
-
-    math.newrandomseed()
+function Worker:ctor(config)
+    config.app.actionPackage = ""
+    config.app.actionModuleSuffix = "Action"
+    config.app.actionMethodSuffix = "Action"
+    Worker.super.ctor(self, config)
 end
 
-function TestCase:setup()
-end
-
-function TestCase:teardown()
-end
-
-return TestCase
+return Worker

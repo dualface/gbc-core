@@ -27,6 +27,13 @@ local HttpConnect = class("HttpConnect", HttpConnectBase)
 
 local STRIP_LUA_PATH_PATTERN = "[./%a]+.lua:%d+: "
 
+function HttpConnect:ctor(config)
+    config.app.actionPackage = "cases"
+    config.app.actionModuleSuffix = "TestCase"
+    config.app.actionMethodSuffix = "Test"
+    HttpConnect.super.ctor(self, config)
+end
+
 function HttpConnect:_formatError(actionName, err)
     return string.gsub(err, STRIP_LUA_PATH_PATTERN, "")
 end

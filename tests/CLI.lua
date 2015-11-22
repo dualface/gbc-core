@@ -22,34 +22,14 @@ THE SOFTWARE.
 
 ]]
 
-local string_sub = string.sub
+local CLIBase = require("server.base.CLIBase")
+local CLI = class("HttpConnect", CLIBase)
 
-local TestCase = class("TestCase")
-
-TestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
-
-function TestCase:ctor(connect)
-    self.connect = connect
-
-    local mt = getmetatable(self)
-    for name, method in pairs(mt.__index) do
-        if type(method) == "function" and string_sub(name, -4) == "Test" then
-            self[name] = function(...)
-                self:setup()
-                local res = {method(self, ...)}
-                self:teardown()
-                return unpack(res)
-            end
-        end
-    end
-
-    math.newrandomseed()
+function CLI:ctor(config)
+    config.app.actionPackage = "cases"
+    config.app.actionModuleSuffix = "TestCase"
+    config.app.actionMethodSuffix = "Test"
+    CLI.super.ctor(self, config)
 end
 
-function TestCase:setup()
-end
-
-function TestCase:teardown()
-end
-
-return TestCase
+return CLI
