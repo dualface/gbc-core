@@ -25,7 +25,7 @@ THE SOFTWARE.
 local pcall = pcall
 local tostring = tostring
 local tonumber = tonumber
-local json_decode = json.decode
+local json_decode = cc.json.decode
 local string_format = string.format
 local string_find = string.find
 local string_sub = string.sub
@@ -69,7 +69,7 @@ local httpClient = require("httpclient").new()
 
 local socket = require("socket")
 
-local Monitor = class("Monitor")
+local Monitor = cc.class("Monitor")
 
 function Monitor:ctor(config)
     self._config = config
@@ -239,11 +239,11 @@ function Monitor:_getPerfomance()
         end
     end
 
-    if DEBUG >= 1 then
+    if cc.DEBUG >= cc.DEBUG_WARN then
         for k, v in pairs(self._procData) do
-            printinfo("%s pid %s: cpu %s, mem %s", k, v.pid, v.cpu, v.mem)
+           cc.printinfo("%s pid %s: cpu %s, mem %s", k, v.pid, v.cpu, v.mem)
             if tonumber(v.cpu) > 100 then
-                printwarn("cpu usage %s of %s is large than 100", v.cpu, k)
+               cc.printwarn("cpu usage %s of %s is large than 100", v.cpu, k)
             end
         end
     end
@@ -324,7 +324,7 @@ function Monitor:_getConnNums(procName)
         if res.body then
             return string_match(res.body, "connections: (%d+)")
         else
-            printwarn("access nginx_status failed, err: %s", res.err)
+           cc.printwarn("access nginx_status failed, err: %s", res.err)
             return -1
         end
     end
@@ -353,7 +353,7 @@ function Monitor:_recoverJobs()
 
     local res, err = redis:command("HGETALL", _JOB_HASH)
     if not res then
-        printwarn("recover jobs from db faild: %s", err)
+       cc.printwarn("recover jobs from db faild: %s", err)
         return
     end
 
@@ -371,17 +371,17 @@ function Monitor:_recoverJobs()
                 local id
                 id, err = jobService:add(job.action, job.arg, job.delay, job.priority, job.ttr)
                 if id then
-                    printinfo("recover job success, old job id: %s, new job id: %s", k, tostring(id))
+                   cc.printinfo("recover job success, old job id: %s, new job id: %s", k, tostring(id))
                 end
             end
 
             if err then
-                printwarn("recover job failed: %s. job id: %s, contents: %s", err, k, v)
+               cc.printwarn("recover job failed: %s. job id: %s, contents: %s", err, k, v)
             end
         end
     end
 
-    printinfo("recover jobs finished.")
+   cc.printinfo("recover jobs finished.")
 end
 
 function Monitor:_getBeans()
@@ -395,7 +395,7 @@ function Monitor:_newBeans()
     local beans = BeansService:create(self._config.beanstalkd)
     local ok, err = beans:connect()
     if err then
-        throw("connect internal beanstalkd failed, %s", err)
+        cc.throw("connect internal beanstalkd failed, %s", err)
     end
     return beans
 end
@@ -411,7 +411,7 @@ function Monitor:_newRedis()
     local redis = RedisService:create(self._config.redis)
     local ok, err = redis:connect()
     if err then
-        throw("connect internal redis failed, %s", err)
+        cc.throw("connect internal redis failed, %s", err)
     end
     return redis
 end

@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 local tostring = tostring
 
-local ConnectIdService = class("ConnectIdService")
+local ConnectIdService = cc.class("ConnectIdService")
 
 ConnectIdService.CONNECTS_ID_DICT_KEY  = "_CONNECTS_ID_DICT" -- id => tag
 ConnectIdService.CONNECTS_TAG_DICT_KEY = "_CONNECTS_TAG_DICT" -- tag => id
@@ -35,14 +35,14 @@ end
 
 function ConnectIdService:getIdByTag(tag)
     if not tag then
-        throw("get connect id by invalid tag \"%s\"", tostring(tag))
+        cc.throw("get connect id by invalid tag \"%s\"", tostring(tag))
     end
     return self._redis:command("HGET", ConnectIdService.CONNECTS_TAG_DICT_KEY, tostring(tag))
 end
 
 function ConnectIdService:getTagById(connectId)
     if not connectId then
-        throw("get connect tag by invalid id \"%s\"", tostring(connectId))
+        cc.throw("get connect tag by invalid id \"%s\"", tostring(connectId))
     end
     return self._redis:command("HGET", ConnectIdService.CONNECTS_ID_DICT_KEY, tostring(connectId))
 end
@@ -54,7 +54,7 @@ end
 function ConnectIdService:setTag(connectId, tag)
     connectId = tostring(connectId)
     if not tag then
-        throw("set connect \"%s\" tag with invalid tag", connectId)
+        cc.throw("set connect \"%s\" tag with invalid tag", connectId)
     end
     local pipe = self._redis:newPipeline()
     pipe:command("HMSET", ConnectIdService.CONNECTS_ID_DICT_KEY, connectId, tag)

@@ -57,7 +57,6 @@ if [ -d "$DEST_DIR" ]; then
     rm -f apps
     rm -f conf
     rm -f src
-    rm -f tests
     rm -f start_server
     rm -f stop_server
     rm -f check_server
@@ -90,9 +89,6 @@ ln -s "$CUR_DIR/conf" conf
 rm -fr src
 ln -s "$CUR_DIR/src" src
 
-rm -fr tests
-ln -s "$CUR_DIR/tests" tests
-
 rm start_server
 ln -s "$CUR_DIR/shells/start_server" start_server
 
@@ -107,5 +103,7 @@ ln -s "$CUR_DIR/shells/restart_server" restart_server
 
 rm bin/shell_func.sh
 rm bin/shell_func.lua
+rm bin/start_worker.lua
 ln -s "$CUR_DIR/shells/shell_func.sh" bin/shell_func.sh
 ln -s "$CUR_DIR/shells/shell_func.lua" bin/shell_func.lua
+ln -s "$CUR_DIR/shells/start_worker.lua" bin/start_worker.lua

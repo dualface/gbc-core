@@ -22,50 +22,99 @@ THE SOFTWARE.
 
 ]]
 
-if type(DEBUG) ~= "number" then DEBUG = 0 end
+local debug_getlocal = debug.getlocal
+local string_byte    = string.byte
+local string_find    = string.find
+local string_format  = string.format
+local string_lower   = string.lower
+local string_sub     = string.sub
+local table_concat   = table.concat
 
--- load framework
 cc = cc or {}
 
-require("framework.functions")
-require("framework.server_functions")
-require("framework.package_support")
-json = require("framework.json")
 socket = {} -- avoid require("socket") warning
-
-cc.server = {
-    PROVIDER = "GameBox Cloud Core",
-    VERSION = "0.8.0",
-}
-
--- register the build-in packages
-cc.register("event", require("framework.packages.event.init"))
-
 -- export global variable
-local __g = _G
+local _g = _G
 cc.exports = {}
 setmetatable(cc.exports, {
     __newindex = function(_, name, value)
-        rawset(__g, name, value)
+        rawset(_g, name, value)
     end,
 
     __index = function(_, name)
-        return rawget(__g, name)
+        return rawget(_g, name)
     end
 })
 
 -- disable create unexpected global variable
-function cc.disable_global()
-    setmetatable(__g, {
-        __newindex = function(_, name, value)
-            local msg = string.format("USE \"cc.exports.%s = <value>\" INSTEAD OF SET GLOBAL VARIABLE", name)
-            print(debug.traceback(msg, 2))
-            if not ngx then print("") end
-            rawset(__g, name, value)
-        end
-    })
+setmetatable(_g, {
+    __newindex = function(_, name, value)
+        local msg = string_format("USE \"cc.exports.%s = <value>\" INSTEAD OF SET GLOBAL VARIABLE", name)
+        print(debug.traceback(msg, 2))
+        if not ngx then print("") end
+    end
+})
+
+--
+
+cc.DEBUG_ERROR   = 0
+cc.DEBUG_WARN    = 1
+cc.DEBUG_INFO    = 2
+cc.DEBUG_VERBOSE = 3
+cc.DEBUG         = cc.DEBUG_DEBUG
+
+cc.GBC_VERSION = "0.8.0"
+
+-- loader
+local _loaded = {}
+function cc.load(name)
+    name = string_lower(name)
+    if not _loaded[name] then
+        local modulename = string_format("packages.%s.%s", name, name)
+        _loaded[name] = require(modulename)
+    end
+    return _loaded[name]
 end
 
-if not CC_ENABLE_GLOBALS then
-    cc.disable_global()
+function cc.import(name, current)
+    if string_byte(name) ~= 46 --[[ "." ]] then
+        return require(name)
+    end
+
+    if not current then
+        local _, v = debug_getlocal(3, 1)
+        current = v
+    end
+
+    local parts = {}
+    local offset = 1
+    while true do
+        local pos = string_find(current, ".", offset, true)
+        if pos then
+            parts[#parts + 1] = string_sub(current, offset, pos - 1)
+            offset = pos + 1
+        else
+            parts[#parts + 1] = string_sub(current, offset)
+            break
+        end
+    end
+
+    offset = 1
+    while string_byte(name, offset) == 46 do
+        table.remove(parts)
+        offset = offset + 1
+    end
+
+    parts[#parts + 1] = string_sub(name, offset)
+    return require(table_concat(parts, "."))
 end
+
+-- load basics modules
+require("framework.class")
+require("framework.table")
+require("framework.string")
+require("framework.debug")
+require("framework.math")
+require("framework.ctype")
+require("framework.os")
+require("framework.io")

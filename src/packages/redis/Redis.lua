@@ -22,17 +22,17 @@ THE SOFTWARE.
 
 ]]
 
-local tcp, unix_socket
-local _USE_COSOCKET = false
-local _TIME_MULTIPLY = 1
+local _tcp, _null, _unix_socket, _TIME_MULTIPLY
 if ngx and ngx.socket then
-    _USE_COSOCKET = true
-    tcp = ngx.socket.tcp
+    _tcp = ngx.socket.tcp
+    _null = ngx.null
     _TIME_MULTIPLY = 1000
 else
     local socket = require("socket")
-    tcp = socket.tcp
-    unix_socket = require("socket.unix")
+    _tcp = socket.tcp
+    _null = function() return nil end
+    _unix_socket = require("socket.unix")
+    _TIME_MULTIPLY = 1
 end
 
 local _COMMANDS = {
@@ -116,46 +116,42 @@ local _UNSUB_COMMANDS = {
     "unsubscribe", "punsubscribe",
 }
 
-local null = null or function() return "null" end
-local pairs = pairs
-local string_byte = string.byte
+local pairs         = pairs
+local string_byte   = string.byte
 local string_format = string.format
-local string_lower = string.lower
-local string_sub = string.sub
-local string_upper = string.upper
-local table_concat = table.concat
-local table_new = table.new
-local tonumber = tonumber
-local tostring = tostring
-local type = type
+local string_lower  = string.lower
+local string_sub    = string.sub
+local string_upper  = string.upper
+local table_concat  = table.concat
+local table_new     = table.new
+local tonumber      = tonumber
+local tostring      = tostring
+local type          = type
 
-local RedisService = class("RedisService")
+local RedisService = cc.class("RedisService")
 
 RedisService.VERSION = "0.5"
-RedisService.null = null
+RedisService.null    = _null
 
 local DEFAULT_HOST = "localhost"
 local DEFAULT_PORT = 6379
 
 local _genreq, _readreply, _checksub
 
-function RedisService:ctor()
-end
-
 function RedisService:connect(host, port)
     local socket_file, socket, ok, err
     host = host or DEFAULT_HOST
     if string_sub(host, 1, 5) == "unix:" then
         socket_file = host
-        if unix_socket then
+        if _unix_socket then
             socket_file = string_sub(host, 6)
-            socket = unix_socket()
+            socket = _unix_socket()
         else
-            socket = tcp()
+            socket = _tcp()
         end
         ok, err = socket:connect(socket_file)
     else
-        socket = tcp()
+        socket = _tcp()
         ok, err = socket:connect(host, port or DEFAULT_PORT)
     end
 
@@ -172,7 +168,7 @@ function RedisService:setTimeout(timeout)
     if not socket then
         return nil, "not initialized"
     end
-    return socket:settimeout(timeout * TIME_MULTIPLY)
+    return socket:settimeout(timeout * _TIME_MULTIPLY)
 end
 
 function RedisService:setKeepAlive(...)
@@ -357,7 +353,7 @@ _readreply = function(self, socket)
         -- print("bulk reply")
         local size = tonumber(string_sub(line, 2))
         if size < 0 then
-            return null
+            return _null
         end
 
         local data, err = socket:receive(size)
@@ -383,7 +379,7 @@ _readreply = function(self, socket)
         -- print("multi-bulk reply: ", n)
         local n = tonumber(string_sub(line, 2))
         if n < 0 then
-            return null
+            return _null
         end
 
         local vals = table_new(n, 0)

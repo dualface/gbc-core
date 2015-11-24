@@ -22,10 +22,9 @@ THE SOFTWARE.
 
 ]]
 
-local json_encode = json.encode
-local json_decode = json.decode
+local json = cc.load("json")
 
-local Jobs = class("Jobs")
+local Jobs = cc.class("Jobs")
 
 Jobs.DEFAULT_DELAY    = 1
 Jobs.DEFAULT_TTR      = 10
@@ -44,33 +43,34 @@ function Jobs:getBeanstalkd()
     return self._bean
 end
 
-function Jobs:add(arg)
-    local action = arg.action
-    local data = arg.data
-    local delay = arg.delay or Jobs.DEFAULT_DELAY
-    local pri = arg.priority or Jobs.DEFAULT_PRIORITY
-    local ttr = arg.ttr or Jobs.DEFAULT_TTR
+function Jobs:add(job)
+    local action = job.action
+    local data   = job.data
+    local delay  = job.delay or Jobs.DEFAULT_DELAY
+    local pri    = job.priority or Jobs.DEFAULT_PRIORITY
+    local ttr    = job.ttr or Jobs.DEFAULT_TTR
 
     local job = {
         action = action,
-        data = data,
-        delay = delay,
-        pri = pri,
-        ttr = ttr,
+        data   = data,
+        delay  = delay,
+        pri    = pri,
+        ttr    = ttr,
     }
-    return self._bean:put(json_encode(job), pri, delay, ttr)
+
+    return self._bean:put(json.encode(job), pri, delay, ttr)
 end
 
-function Jobs:at(arg)
+function Jobs:at(job)
     local now = os.time()
-    local at = arg.time
+    local at = job.time
     if type(at) ~= "number" then
         at = now
     end
     local delay = at - now
-    arg.delay = delay
-    arg.time = nil
-    return self:add(arg)
+    job.delay = delay
+    job.time = nil
+    return self:add(job)
 end
 
 function Jobs:get(id)
@@ -81,7 +81,7 @@ function Jobs:get(id)
         return nil, err
     end
 
-    local job = json_decode(jobraw.data)
+    local job = json.decode(jobraw.data)
     if type(job) ~= "table" then
         self:delete(jobraw.id)
         return nil, string.format("invalid job %s", jobraw.id)
@@ -100,7 +100,7 @@ function Jobs:getready(timeout)
     end
 
     local id = jobraw.id
-    local job = json_decode(jobraw.data)
+    local job = json.decode(jobraw.data)
     if type(job) ~= "table" or not job.action then
         bean:delete(id)
         return {id = nil}

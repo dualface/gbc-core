@@ -29,7 +29,7 @@ local strFormat = string.format
 
 local mysql = require "3rd.luasql.mysql"
 
-local MysqlLuaAdapter = class("MysqlLuaAdapter")
+local MysqlLuaAdapter = cc.class("MysqlLuaAdapter")
 
 function MysqlLuaAdapter:ctor(config)
     self.db_   = nil
@@ -37,7 +37,7 @@ function MysqlLuaAdapter:ctor(config)
 
     local env, err = mysql.mysql()
     if err then
-        printwarn("MysqlLuaAdapter:ctor() - failed to instantiate mysql: %s", err)
+       cc.printwarn("MysqlLuaAdapter:ctor() - failed to instantiate mysql: %s", err)
         return db, err
     end
 
@@ -61,14 +61,14 @@ function MysqlLuaAdapter:query(queryStr)
 
     local cur, err = self.db_:execute(queryStr)
     if err then
-        printwarn("MysqlLuaAdapter:query() - failed to query mysql: %s", err)
+       cc.printwarn("MysqlLuaAdapter:query() - failed to query mysql: %s", err)
         return cur, err
     end
 
     if type(cur) == "userdata" then
         local row, err = cur:fetch ({}, "a")
         if err then
-            printwarn("MysqlLuaAdapter:query() - failed to query mysql: %s", err)
+           cc.printwarn("MysqlLuaAdapter:query() - failed to query mysql: %s", err)
             return row, err
         end
 

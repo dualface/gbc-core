@@ -22,14 +22,14 @@ THE SOFTWARE.
 
 ]]
 
-local tcp
-local TIME_MULTIPLY = 1
+local _tcp, _TIME_MULTIPLY
 if ngx and ngx.socket then
-    tcp = ngx.socket.tcp
-    TIME_MULTIPLY = 1000
+    _tcp = ngx.socket.tcp
+    _TIME_MULTIPLY = 1000
 else
     local socket = require("socket")
-    tcp = socket.tcp
+    _tcp = socket.tcp
+    _TIME_MULTIPLY = 1
 end
 
 local string_byte   = string.byte
@@ -43,7 +43,7 @@ local table_new     = table.new
 local table_remove  = table.remove
 local type          = type
 
-local Beanstalkd = class("Beanstalkd")
+local Beanstalkd = cc.class("Beanstalkd")
 
 Beanstalkd.VERSION = "0.5"
 Beanstalkd.ERRORS = {
@@ -62,10 +62,10 @@ Beanstalkd.ERRORS = {
 
 setmetatable(Beanstalkd.ERRORS, {
     __newindex = function()
-        throw("Beanstalkd.ERRORS is readonly table")
+        cc.throw("Beanstalkd.ERRORS is readonly table")
     end,
     __index = function(t, key)
-        throw("Beanstalkd.ERRORS not found key: %s", key)
+        cc.throw("Beanstalkd.ERRORS not found key: %s", key)
     end
 })
 
@@ -81,7 +81,7 @@ function Beanstalkd:ctor()
 end
 
 function Beanstalkd:connect(host, port)
-    local socket = tcp()
+    local socket = _tcp()
     local ok, err = socket:connect(host or DEFAULT_HOST, port or DEFAULT_PORT)
     if not ok then
         return nil, err
@@ -95,7 +95,7 @@ function Beanstalkd:setTimeout(timeout)
     if not socket then
         return nil, "not initialized"
     end
-    return socket:settimeout(timeout * TIME_MULTIPLY)
+    return socket:settimeout(timeout * _TIME_MULTIPLY)
 end
 
 function Beanstalkd:setKeepAlive(...)

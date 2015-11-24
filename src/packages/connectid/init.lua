@@ -24,6 +24,6 @@ THE SOFTWARE.
 
 local _P = {}
 
-_P.service = import(".ConnectIdService")
+_P.service = cc.import(".ConnectIdService")
 
 return _P

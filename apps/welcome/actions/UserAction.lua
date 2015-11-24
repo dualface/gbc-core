@@ -1,5 +1,5 @@
 
-local UserAction = class("UserAction")
+local UserAction = cc.class("UserAction")
 
 local OnlineService = cc.load("online").service
 
@@ -15,12 +15,12 @@ end
 function UserAction:loginAction(arg)
     local username = arg.username
     if not username then
-        throw("not set argument: \"username\"")
+        cc.throw("not set argument: \"username\"")
     end
 
     -- check username is exists
     if self.online:isExists(username) then
-        throw("username \"%s\" is exists", username)
+        cc.throw("username \"%s\" is exists", username)
     end
 
     -- start session
@@ -44,12 +44,12 @@ end
 function UserAction:logoutAction(arg)
     local sid = arg.sid
     if not sid then
-        throw("not set argument: \"sid\"")
+        cc.throw("not set argument: \"sid\"")
     end
 
     local session = self.connect:openSession(sid)
     if not session then
-        throw("session is expired, or invalid session id")
+        cc.throw("session is expired, or invalid session id")
     end
 
     -- close websocket connect
@@ -62,12 +62,12 @@ end
 function UserAction:countAction(arg)
     local sid = arg.sid
     if not sid then
-        throw("not set argument: \"sid\"")
+        cc.throw("not set argument: \"sid\"")
     end
 
     local session = self.connect:openSession(sid)
     if not session then
-        throw("session is expired, or invalid session id")
+        cc.throw("session is expired, or invalid session id")
     end
 
     -- update count value

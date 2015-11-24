@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 local string_sub = string.sub
 
-local TestCase = class("TestCase")
+local TestCase = cc.class("TestCase")
 
 TestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
 

@@ -28,18 +28,18 @@ local ngx = ngx
 local string_format = string.format
 local table_concat = table.concat
 
-local MysqlService = class("MysqlService")
+local MysqlService = cc.class("MysqlService")
 
 local MysqlAdapter
 if ngx then
-    MysqlAdapter = import(".adapter.MysqlRestyAdapter")
+    MysqlAdapter = cc.import(".adapter.MysqlRestyAdapter")
 else
-    MysqlAdapter = import(".adapter.MysqlLuaAdapter")
+    MysqlAdapter = cc.import(".adapter.MysqlLuaAdapter")
 end
 
 function MysqlService:ctor(config)
     if not config or type(config) ~= "table" then
-        throw("invalid mysql config")
+        cc.throw("invalid mysql config")
     end
 
     self._config = config

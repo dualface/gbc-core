@@ -1,5 +1,5 @@
 
-local ChatAction = class("ChatAction")
+local ChatAction = cc.class("ChatAction")
 
 ChatAction.ACCEPTED_REQUEST_TYPE = "websocket"
 
@@ -11,17 +11,17 @@ end
 function ChatAction:sendmessageAction(arg)
     local tag = arg.tag
     if not tag then
-        throw("not set argument: \"tag\"")
+        cc.throw("not set argument: \"tag\"")
     end
     -- get connect id by tag
     local connectId = self.connects:getIdByTag(tag)
     if not connectId then
-        throw("not found connect id by tag \"%s\"", tag)
+        cc.throw("not found connect id by tag \"%s\"", tag)
     end
 
     local message = arg.message
     if not message then
-        throw("not set argument: \"message\"")
+        cc.throw("not set argument: \"message\"")
     end
 
     local session = self.connect:getSession()

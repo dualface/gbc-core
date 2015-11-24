@@ -1,10 +1,9 @@
 
 local ngx_null = ngx.null
 local table_map = table.map
-local json_encode = json.encode
-local json_decode = json.decode
+local json = cc.load("json")
 
-local OnlineService = class("OnlineService")
+local OnlineService = cc.class("OnlineService")
 
 OnlineService.USER_ADD_EVENT = "USER_ADD_EVENT"
 OnlineService.USER_REMOVE_EVENT = "USER_REMOVE_EVENT"
@@ -33,7 +32,7 @@ function OnlineService:setEventsEnabled(enabled)
     self.eventsEnabled = enabled
     if enabled then
         self.connect:subscribeChannel(_ONLINE_CHANNEL, function(message)
-            local message = json_decode(message)
+            local message = json.decode(message)
             if message.name == _ADD_MESSAGE then
                 self:dispatchEvent({name = OnlineService.USER_ADD_EVENT, username = message.username})
             elseif message.name == _REMOVE_MESSAGE then
@@ -52,7 +51,7 @@ end
 function OnlineService:get(username)
     local res = self.redis:command("GET", _key(username))
     if not res then return {} end
-    return json_decode(res)
+    return json.decode(res)
 end
 
 function OnlineService:getAll()
@@ -66,7 +65,7 @@ function OnlineService:getAll()
     local res = {}
     for i, username in ipairs(usernames) do
         if all[i] ~= ngx_null then
-            local userdata = json_decode(all[i])
+            local userdata = json.decode(all[i])
             res[#res + 1] = {username = username, tag = userdata.tag}
         end
     end
@@ -79,9 +78,9 @@ end
 
 function OnlineService:add(username, data)
     local pipe = self.redis:newPipeline()
-    pipe:command("SET", _key(username), json_encode(data))
+    pipe:command("SET", _key(username), json.encode(data))
     pipe:command("SADD", _ONLINE_SET, username)
-    pipe:command("PUBLISH", _ONLINE_CHANNEL, json_encode({name = _ADD_MESSAGE, username = username}))
+    pipe:command("PUBLISH", _ONLINE_CHANNEL, json.encode({name = _ADD_MESSAGE, username = username}))
     pipe:commit()
 end
 
@@ -89,7 +88,7 @@ function OnlineService:remove(username)
     local pipe = self.redis:newPipeline()
     pipe:command("DEL", _key(username))
     pipe:command("SREM", _ONLINE_SET, username)
-    pipe:command("PUBLISH", _ONLINE_CHANNEL, json_encode({name = _REMOVE_MESSAGE, username = username}))
+    pipe:command("PUBLISH", _ONLINE_CHANNEL, json.encode({name = _REMOVE_MESSAGE, username = username}))
     pipe:commit()
 end
 

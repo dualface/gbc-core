@@ -54,7 +54,7 @@ while true ; do
     esac
 done
 
-echo -e "\033[33mStart $VERSION \033[0m"
+echo -e "\033[33mStart GameBox Cloud Core $VERSION\033[0m"
 echo ""
 
 updateConfigs

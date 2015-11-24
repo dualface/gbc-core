@@ -1,12 +1,12 @@
 
-local WebSocketConnectBase = require("server.base.WebSocketConnectBase")
-local WebSocketConnect = class("WebSocketConnect", WebSocketConnectBase)
-
 local ConnectIdService = cc.load("connectid").service
 local OnlineService = cc.load("online").service
 
+local WebSocketConnectBase = cc.import(".WebSocketConnectBase")
+local WebSocketConnect = cc.class("WebSocketConnect", WebSocketConnectBase)
+
 function WebSocketConnect:ctor(config)
-    printinfo("new WebSocketConnect instance")
+   cc.printinfo("new WebSocketConnect instance")
     WebSocketConnect.super.ctor(self, config)
 end
 

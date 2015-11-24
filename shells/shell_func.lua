@@ -29,14 +29,6 @@ end
 
 -- globals
 
-if not _DEBUG then _DEBUG = 1 end
-
-if tostring(_DEBUG) == "0" then
-    DEBUG = false
-else
-    DEBUG = true
-end
-
 LUA_BIN                   = ROOT_DIR .. "/bin/openresty/luajit/bin/lua"
 NGINX_DIR                 = ROOT_DIR .. "/bin/openresty/nginx"
 REDIS_DIR                 = ROOT_DIR .. "/bin/redis"
@@ -70,17 +62,20 @@ end
 
 -- init
 
-package.path = table.concat({
-    ROOT_DIR, '/src/?.lua;',
-    ROOT_DIR, '/src/lib/?.lua;',
-    package.path}, "")
+package.path = ROOT_DIR .. '/src/?.lua;' .. package.path;
 
 require("framework.init")
 
+if tostring(DEBUG) ~= "0" then
+    cc.DEBUG = cc.DEBUG_VERBOSE
+else
+    cc.DEBUG = cc.DEBUG_WARN
+end
+
 -- private
 
-local Factory = require("server.base.Factory")
 local luamd5 = cc.load("luamd5")
+local Factory = cc.load("gbc").Factory
 
 _getValue = function(t, key, def)
     local keys = string.split(key, ".")
@@ -159,12 +154,12 @@ _updateNginxConfig = function()
     contents = string.gsub(contents, "listen[ \t]+[0-9]+", string.format("listen %d", _getValue(config, "server.nginx.port", 8088)))
     contents = string.gsub(contents, "worker_processes[ \t]+[0-9]+", string.format("worker_processes %d", _getValue(config, "server.nginx.numOfWorkers", 4)))
 
-    if DEBUG then
-        contents = string.gsub(contents, "DEBUG = [%a_]+", "DEBUG = _DBG_DEBUG")
+    if cc.DEBUG then
+        contents = string.gsub(contents, "cc.DEBUG = [%a_.]+", "cc.DEBUG = cc.DEBUG_VERBOSE")
         contents = string.gsub(contents, "error_log logs/error.log[ \t%a]*;", "error_log logs/error.log debug;")
         contents = string.gsub(contents, "lua_code_cache[ \t]+%a+;", "lua_code_cache off;")
     else
-        contents = string.gsub(contents, "DEBUG = [%a_]+", "DEBUG = _DBG_ERROR")
+        contents = string.gsub(contents, "cc.DEBUG = [%a_.]+", "cc.DEBUG = cc.DEBUG_ERROR")
         contents = string.gsub(contents, "error_log logs/error.log[ \t%a]*;", "error_log logs/error.log;")
         contents = string.gsub(contents, "lua_code_cache[ \t]+%a+;", "lua_code_cache on;")
     end
@@ -173,7 +168,7 @@ _updateNginxConfig = function()
     local apps = _getValue(config, "apps")
     local includes = {}
     for name, path in pairs(apps) do
-        local entryPath = string.format("%s/app_entry.conf", path)
+        local entryPath = string.format("%s/conf/app_entry.conf", path)
         local varEntryPath = string.format("%s/app_%s_entry.conf", TMP_DIR, name)
         if io.exists(entryPath) then
             local entry = io.readfile(entryPath)
@@ -224,7 +219,7 @@ end
 
 local _SUPERVISOR_WORKER_PROG_TMPL = [[
 [program:worker-_APP_NAME_]
-command=_GBC_CORE_ROOT_/bin/openresty/luajit/bin/lua _GBC_CORE_ROOT_/src/WorkerInit.lua _GBC_CORE_ROOT_ _APP_ROOT_PATH_
+command=_GBC_CORE_ROOT_/bin/openresty/luajit/bin/lua _GBC_CORE_ROOT_/bin/start_worker.lua _GBC_CORE_ROOT_ _APP_ROOT_PATH_
 process_name=%%(process_num)02d
 numprocs=_NUM_PROCESS_
 redirect_stderr=true

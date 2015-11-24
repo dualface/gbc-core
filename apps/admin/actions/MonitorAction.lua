@@ -39,7 +39,7 @@ local _MONITOR_MEM_INFO_KEY = "_MONITOR_MEM_INFO"
 local _MONITOR_CPU_INFO_KEY = "_MONITOR_CPU_INFO"
 local _MONITOR_DISK_INFO_KEY = "_MONITOR_DISK_INFO"
 
-local MonitorAction = class("MonitorAction")
+local MonitorAction = cc.class("MonitorAction")
 
 function MonitorAction:ctor(connect)
     self.connect = connect
@@ -123,7 +123,7 @@ function MonitorAction:_convertToSec(timeSpan)
 
     local time = string_match(string_lower(timeSpan), "^(%d+[s|h|m])")
     if time == nil then
-        throw("time format error.")
+        cc.throw("time format error.")
     end
     local unit = string_sub(time, -1)
     local number = tonumber(string_sub(time, 1, -2))

@@ -24,6 +24,6 @@ THE SOFTWARE.
 
 local _P = {}
 
-_P.service = import(".MysqlService")
+_P.service = cc.import(".MysqlService")
 
 return _P

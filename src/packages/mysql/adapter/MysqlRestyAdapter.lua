@@ -29,21 +29,21 @@ local ngx_quote_sql_str = ngx.quote_sql_str
 
 local mysql = require("resty.mysql")
 
-local MysqlRestyAdapter = class("MysqlRestyAdapter")
+local MysqlRestyAdapter = cc.class("MysqlRestyAdapter")
 
 function MysqlRestyAdapter:ctor(config)
     self._config = config
 
     local db, err = mysql:new()
     if err then
-        throw("failed to instantiation mysql: %s", err)
+        cc.throw("failed to instantiation mysql: %s", err)
     end
 
     self._db = db
     self._db:set_timeout(config.timeout)
     local ok, err, errno, sqlstate = db:connect(config)
     if err then
-        throw("mysql connect error [%s] %s, %s", tostring(errno), err, sqlstate)
+        cc.throw("mysql connect error [%s] %s, %s", tostring(errno), err, sqlstate)
     end
     self._db:query("SET NAMES 'utf8'")
 end
@@ -65,7 +65,7 @@ end
 function MysqlRestyAdapter:query(queryStr)
     local res, err, errno, sqlstate = self._db:query(queryStr)
     if err then
-        throw("mysql query error: [%s] %s, %s", tostring(errno), err, sqlstate)
+        cc.throw("mysql query error: [%s] %s, %s", tostring(errno), err, sqlstate)
     end
     return res
 end

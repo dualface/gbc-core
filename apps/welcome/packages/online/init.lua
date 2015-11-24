@@ -1,6 +1,6 @@
 
 local _P = {}
 
-_P.service = import(".OnlineService")
+_P.service = cc.import(".OnlineService")
 
 return _P
