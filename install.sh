@@ -283,7 +283,7 @@ cp -rf $CUR_DIR/src $DEST_DIR
 cp -rf $CUR_DIR/apps $DEST_DIR
 
 cd $CUR_DIR/shells/
-cp -f start_server stop_server check_server restart_server $DEST_DIR
+cp -f start_server stop_server check_server $DEST_DIR
 cp -f shell_func.sh shell_func.lua start_worker.lua $DEST_BIN_DIR
 
 # if it in Mac OS X, getopt_long should be deployed.

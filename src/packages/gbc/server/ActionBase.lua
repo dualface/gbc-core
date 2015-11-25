@@ -26,6 +26,10 @@ local ActionBase = cc.class("ActionBase")
 
 function ActionBase:ctor(connect)
     self.connect = connect
+    self:oninit()
+end
+
+function ActionBase:oninit()
 end
 
 return ActionBase

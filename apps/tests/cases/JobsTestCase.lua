@@ -23,7 +23,7 @@ THE SOFTWARE.
 ]]
 
 local helper = cc.import(".helper")
-local tests = cc.load("tests")
+local tests = cc.import("#tests")
 local check = tests.Check
 
 local JobsTestCase = cc.class("JobsTestCase", tests.TestCase)

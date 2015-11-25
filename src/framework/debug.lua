@@ -24,8 +24,11 @@ THE SOFTWARE.
 
 local ngx = ngx
 local ngx_log = nil
-if ngx then ngx_log = ngx.log end
+if ngx then
+    ngx_log = ngx.log
+end
 
+local cc              = cc
 local debug_traceback = debug.traceback
 local error           = error
 local print           = print

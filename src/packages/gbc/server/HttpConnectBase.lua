@@ -34,7 +34,7 @@ local table_merge = table.merge
 local string_gsub = string.gsub
 local string_ltrim = string.ltrim
 
-local json = cc.load("json")
+local json = cc.import("#json")
 local Constants = cc.import(".Constants")
 
 local ConnectBase = cc.import(".ConnectBase")

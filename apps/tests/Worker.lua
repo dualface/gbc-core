@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 ]]
 
-local WorkerBase = cc.load("gbc").server.WorkerBase
+local WorkerBase = cc.import("#gbc").server.WorkerBase
 local Worker = cc.class("Worker", WorkerBase)
 
 function Worker:ctor(config, ...)

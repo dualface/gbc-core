@@ -33,8 +33,8 @@ package.path = ROOT_DIR .. "/src/?.lua;" .. ROOT_DIR .. "/apps/tests/?.lua;" .. 
 require("framework.init")
 cc.DEBUG = cc.DEBUG_VERBOSE
 
-local json = cc.load("json")
-local Factory = cc.load("gbc").Factory
+local json = cc.import("#json")
+local Factory = cc.import("#gbc").Factory
 
 -- declare Tests class
 
@@ -47,7 +47,7 @@ local _testsrv, _testcli
 local _help
 
 function Tests:ctor(appConfig, appRootPath)
-    self._url = string_format("http://localhost:%s/tests/?action=%%s", tostring(appConfig.server.nginx.port))
+    self._url = string_format("http://localhost:%s/testcases/?action=%%s", tostring(appConfig.server.nginx.port))
     self._config = appConfig
     self._root = appRootPath
 end

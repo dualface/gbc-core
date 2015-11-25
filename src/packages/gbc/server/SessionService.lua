@@ -28,7 +28,7 @@ local clone = clone
 local tostring = tostring
 local type = type
 
-local json = cc.load("json")
+local json = cc.import("#json")
 local SessionService = cc.class("SessionService")
 
 local _DEFAULT_EXPIRED = 60 * 5 -- 5m

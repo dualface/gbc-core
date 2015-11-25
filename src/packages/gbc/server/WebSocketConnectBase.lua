@@ -35,7 +35,7 @@ local table_concat = table.concat
 local string_format = string.format
 local string_sub = string.sub
 
-local json = cc.load("json")
+local json = cc.import("#json")
 local Constants = cc.import(".Constants")
 
 local ConnectBase = cc.import(".ConnectBase")
@@ -228,7 +228,7 @@ function WebSocketConnectBase:subscribeChannel(channelName, callback)
         sub.running = true
 
         -- pubsub thread need separated redis connect
-        local redis = cc.load("redis").service:create(self.config.server.redis)
+        local redis = cc.import("#redis").service:create(self.config.server.redis)
         redis:connect()
         redis:command("SELECT", self.config.app.appIndex)
 

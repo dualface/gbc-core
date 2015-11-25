@@ -65,20 +65,22 @@ cc.DEBUG         = cc.DEBUG_DEBUG
 
 cc.GBC_VERSION = "0.8.0"
 
--- loader
 local _loaded = {}
-function cc.load(name)
-    name = string_lower(name)
-    if not _loaded[name] then
-        local modulename = string_format("packages.%s.%s", name, name)
-        _loaded[name] = require(modulename)
-    end
-    return _loaded[name]
-end
-
+-- loader
 function cc.import(name, current)
-    if string_byte(name) ~= 46 --[[ "." ]] then
-        return require(name)
+    local _name = name
+    local first = string_byte(name)
+    if first ~= 46 and _loaded[name] then
+        return _loaded[name]
+    end
+
+    if first == 35 --[[ "#" ]] then
+        name = string_sub(name, 2)
+        name = string_format("packages.%s.%s", name, name)
+    end
+    if first ~= 46 --[[ "." ]] then
+        _loaded[_name] = require(name)
+        return _loaded[_name]
     end
 
     if not current then
@@ -106,7 +108,9 @@ function cc.import(name, current)
     end
 
     parts[#parts + 1] = string_sub(name, offset)
-    return require(table_concat(parts, "."))
+    name = table_concat(parts, ".")
+    _loaded[_name] = require(name)
+    return _loaded[_name]
 end
 
 -- load basics modules

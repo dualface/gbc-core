@@ -23,9 +23,9 @@ THE SOFTWARE.
 ]]
 
 local helper = cc.import(".helper")
-local tests = cc.load("tests")
+local tests = cc.import("#tests")
 local check = tests.Check
-local Beanstalkd = cc.load("beanstalkd")
+local Beanstalkd = cc.import("#beanstalkd")
 
 local BeanstalkdTestCase = cc.class("BeanstalkdTestCase", tests.TestCase)
 

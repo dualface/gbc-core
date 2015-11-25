@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 ]]
 
-local json = cc.load("json")
+local json = cc.import("#json")
 
 local Jobs = cc.class("Jobs")
 

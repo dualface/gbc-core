@@ -1,6 +1,6 @@
 
-local ConnectIdService = cc.load("connectid").service
-local OnlineService = cc.load("online").service
+local ConnectIdService = cc.import("#connectid").service
+local OnlineService = cc.import("#online").service
 
 local WebSocketConnectBase = cc.import(".WebSocketConnectBase")
 local WebSocketConnect = cc.class("WebSocketConnect", WebSocketConnectBase)

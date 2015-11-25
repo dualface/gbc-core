@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 ]]
 
-local CLIBase = cc.load("gbc").server.CLIBase
+local CLIBase = cc.import("#gbc").server.CLIBase
 local CLI = cc.class("CLI", CLIBase)
 
 function CLI:ctor(config)

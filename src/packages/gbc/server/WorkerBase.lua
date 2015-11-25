@@ -30,7 +30,7 @@ local string_lower = string.lower
 local tostring = tostring
 local type = type
 
-local json = cc.load("json")
+local json = cc.import("#json")
 local Constants = cc.import(".Constants")
 
 local CLIBase = cc.import(".CLIBase")

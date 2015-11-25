@@ -46,7 +46,6 @@ VAR_APP_KEYS_PATH         = TMP_DIR .. "/app_keys.lua"
 VAR_NGINX_CONF_PATH       = TMP_DIR .. "/nginx.conf"
 VAR_REDIS_CONF_PATH       = TMP_DIR .. "/redis.conf"
 VAR_BEANS_LOG_PATH        = TMP_DIR .. "/beanstalkd.log"
-VAR_APP_KEYS_PATH         = TMP_DIR .. "/app_keys.lua"
 VAR_SUPERVISORD_CONF_PATH = TMP_DIR .. "/supervisord.conf"
 
 local _getValue, _checkVarConfig, _checkAppKeys
@@ -62,20 +61,22 @@ end
 
 -- init
 
-package.path = ROOT_DIR .. '/src/?.lua;' .. package.path;
+package.path = ROOT_DIR .. '/src/?.lua;' .. package.path
 
 require("framework.init")
 
 if tostring(DEBUG) ~= "0" then
     cc.DEBUG = cc.DEBUG_VERBOSE
+    DEBUG = true
 else
     cc.DEBUG = cc.DEBUG_WARN
+    DEBUG = false
 end
 
 -- private
 
-local luamd5 = cc.load("luamd5")
-local Factory = cc.load("gbc").Factory
+local luamd5 = cc.import("#luamd5")
+local Factory = cc.import("#gbc").Factory
 
 _getValue = function(t, key, def)
     local keys = string.split(key, ".")
@@ -154,13 +155,13 @@ _updateNginxConfig = function()
     contents = string.gsub(contents, "listen[ \t]+[0-9]+", string.format("listen %d", _getValue(config, "server.nginx.port", 8088)))
     contents = string.gsub(contents, "worker_processes[ \t]+[0-9]+", string.format("worker_processes %d", _getValue(config, "server.nginx.numOfWorkers", 4)))
 
-    if cc.DEBUG then
-        contents = string.gsub(contents, "cc.DEBUG = [%a_.]+", "cc.DEBUG = cc.DEBUG_VERBOSE")
-        contents = string.gsub(contents, "error_log logs/error.log[ \t%a]*;", "error_log logs/error.log debug;")
+    if DEBUG then
+        contents = string.gsub(contents, "cc.DEBUG = [%a_%.]+", "cc.DEBUG = cc.DEBUG_VERBOSE")
+        contents = string.gsub(contents, "error_log (.+%-error%.log)[ \t%a]*;", "error_log %1 debug;")
         contents = string.gsub(contents, "lua_code_cache[ \t]+%a+;", "lua_code_cache off;")
     else
-        contents = string.gsub(contents, "cc.DEBUG = [%a_.]+", "cc.DEBUG = cc.DEBUG_ERROR")
-        contents = string.gsub(contents, "error_log logs/error.log[ \t%a]*;", "error_log logs/error.log;")
+        contents = string.gsub(contents, "cc.DEBUG = [%a_%.]+", "cc.DEBUG = cc.DEBUG_ERROR")
+        contents = string.gsub(contents, "error_log (.+%-error%.log)[ \t%a]*;", "error_log %1;")
         contents = string.gsub(contents, "lua_code_cache[ \t]+%a+;", "lua_code_cache on;")
     end
 

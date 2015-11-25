@@ -1,7 +1,7 @@
 
 local ngx_null = ngx.null
 local table_map = table.map
-local json = cc.load("json")
+local json = cc.import("#json")
 
 local OnlineService = cc.class("OnlineService")
 

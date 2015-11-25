@@ -1,5 +1,5 @@
 
-local ActionBase = cc.load("gbc").server.ActionBase
+local ActionBase = cc.import("#gbc").server.ActionBase
 
 local JobsAction = cc.class("JobsAction", ActionBase)
 

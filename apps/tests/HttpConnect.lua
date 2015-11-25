@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 ]]
 
-local HttpConnectBase = cc.load("gbc").server.HttpConnectBase
+local HttpConnectBase = cc.import("#gbc").server.HttpConnectBase
 local HttpConnect = cc.class("HttpConnect", HttpConnectBase)
 
 local STRIP_LUA_PATH_PATTERN = "[./%a]+.lua:%d+: "

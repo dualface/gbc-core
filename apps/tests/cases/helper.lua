@@ -1,6 +1,6 @@
 
-local Redis = cc.load("redis")
-local Beanstalkd = cc.load("beanstalkd")
+local Redis = cc.import("#redis")
+local Beanstalkd = cc.import("#beanstalkd")
 
 local _M = {}
 

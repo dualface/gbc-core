@@ -6,3 +6,17 @@ pre {
     white-space: -o-pre-wrap;    /* Opera 7 */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
+
+article {
+    margin-top: 3em;
+    font-size: 110%;
+    line-height: 150%
+}
+
+article li {
+    margin-bottom: 1em;
+}
+
+article blockquote {
+    font-size: 85%;
+}

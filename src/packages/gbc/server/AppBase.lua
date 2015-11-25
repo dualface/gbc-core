@@ -44,7 +44,7 @@ else
     sleep = socket.sleep
 end
 
-local json = cc.load("json")
+local json = cc.import("#json")
 local Constants = cc.import(".Constants")
 
 local AppBase = cc.class("AppBase")
@@ -63,7 +63,7 @@ function AppBase:ctor(config)
 
     -- autoloads
     for packageName, packageConfig in pairs(self.config.app.autoloads) do
-        local packageClass = cc.load(packageName)
+        local packageClass = cc.import("#" .. packageName)
         local package = packageClass.new(packageConfig, self)
         self[packageName .. "_"] = package
     end
@@ -191,7 +191,7 @@ function AppBase:normalizeActionName(actionName)
     local parts = string.split(actionName, ".")
     local c = #parts
     if c == 1 then
-        return string_ucfirst(parts[1]), "index"
+        return string_ucfirst(parts[1]), "index", folder
     end
     -- method = "say"
     local method = parts[c]
@@ -232,7 +232,7 @@ function AppBase:getRedis()
     local redis = self._redis
     if not redis then
         local config = self.config.server.redis
-        local Redis = cc.load("redis")
+        local Redis = cc.import("#redis")
         redis = Redis:create()
 
         local ok, err
@@ -257,7 +257,7 @@ function AppBase:getJobs(opts)
     if opts.try < 1 then opts.try = 1 end
     local jobs = self._jobs
     if not jobs then
-        local Beanstalkd = cc.load("beanstalkd")
+        local Beanstalkd = cc.import("#beanstalkd")
 
         local bean = Beanstalkd:create()
         local config = self.config.server.beanstalkd
@@ -278,7 +278,7 @@ function AppBase:getJobs(opts)
         bean:watch(tube)
         bean:ignore("default")
 
-        local Jobs = cc.load("jobs")
+        local Jobs = cc.import("#jobs")
         jobs = Jobs:create(bean, self:getRedis())
         self._jobs = jobs
     end
