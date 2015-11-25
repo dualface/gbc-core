@@ -44,7 +44,7 @@ BUILD_DIR=/tmp/install-gbc-core
 DEST_DIR=/opt/gbc-core
 
 # dists
-OPENRESTY_VER=1.9.3.1-luajit-2.1-beta1
+OPENRESTY_VER=1.9.3.2
 REDIS_VER=3.0.5
 BEANSTALKD_VER=1.10
 SUPERVISOR_VER=3.1.3
