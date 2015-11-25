@@ -60,6 +60,7 @@ if [ -d "$DEST_DIR" ]; then
     rm -f start_server
     rm -f stop_server
     rm -f check_server
+    rm -f bin/start_worker.lua
     rm -f bin/shell_func.sh
     rm -f bin/shell_func.lua
 fi

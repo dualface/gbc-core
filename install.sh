@@ -111,10 +111,9 @@ elif [ $OSTYPE == "MACOS" ]; then
         echo -e "\033[33mruby -e \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\" \033[0m"
         exit 0
     else
-        sudo -u $SUDO_USER brew install pcre
+        sudo -u $SUDO_USER brew install pcre openssl
+        sudo -u $SUDO_USER brew link openssl --force
     fi
-
-    OPENRESETY_CONFIGURE_ARGS="--without-http_ssl_module --without-http_encrypted_session_module"
 
     type "gcc" > /dev/null 2> /dev/null
     if [ $? -ne 0 ]; then
@@ -152,6 +151,13 @@ cd $BUILD_DIR
 tar zxf ngx_openresty-$OPENRESTY_VER.tar.gz
 cd ngx_openresty-$OPENRESTY_VER
 mkdir -p $DEST_BIN_DIR/openresty
+
+echo ./configure $OPENRESETY_CONFIGURE_ARGS \
+    --prefix=$DEST_BIN_DIR/openresty \
+    --with-luajit \
+    --with-http_stub_status_module \
+    --with-cc-opt="-I/usr/local/include" \
+    --with-ld-opt="-L/usr/local/lib"
 
 ./configure $OPENRESETY_CONFIGURE_ARGS \
     --prefix=$DEST_BIN_DIR/openresty \
