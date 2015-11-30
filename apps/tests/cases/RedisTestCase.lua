@@ -22,10 +22,10 @@ THE SOFTWARE.
 
 ]]
 
+local Redis = cc.import("#redis")
 local helper = cc.import(".helper")
 local tests = cc.import("#tests")
 local check = tests.Check
-local Redis = cc.import("#redis")
 
 local RedisTestCase = cc.class("RedisTestCase", tests.TestCase)
 
@@ -156,6 +156,8 @@ function RedisTestCase:pubsubTest()
 
     local channel1 = "MSG_CHANNEL_1"
     local channel2 = "MSG_CHANNEL_2"
+    local channel3 = "MSG_CHANNEL_3"
+    local channel4 = "MSG_CHANNEL_4"
 
     -- use current instance to subscribe to channels
     check.equals(redis:subscribe(channel1, channel2), {
@@ -173,22 +175,94 @@ function RedisTestCase:pubsubTest()
         "message", channel1, "hello"
     })
 
-    redis2:publish(channel2, "world")
+    redis:subscribe(channel3, channel4)
+    check.equals(redis:readReply(), {
+        "subscribe", channel4, 4
+    })
 
+    redis2:publish(channel2, "world")
     check.equals(redis:readReply(), {
         "message", channel2, "world"
     })
+
+    for i = 1, 10 do
+        redis2:publish(channel2, "world_" .. i)
+    end
+
+    for i = 1, 10 do
+        check.equals(redis:readReply(), {
+            "message", channel2, "world_" .. i
+        })
+    end
 
     redis2:close()
 
     -- unsubscribe from channels
     check.equals(redis:unsubscribe(channel1), {
-        "unsubscribe", channel1, 1
+        "unsubscribe", channel1, 3
     })
     check.equals(redis:unsubscribe(channel2), {
-        "unsubscribe", channel2, 0
+        "unsubscribe", channel2, 2
+    })
+    check.equals(redis:unsubscribe(channel3), {
+        "unsubscribe", channel3, 1
+    })
+    check.equals(redis:unsubscribe(channel4), {
+        "unsubscribe", channel4, 0
     })
     check.equals(redis:echo("hello"), "hello")
+
+    return true
+end
+
+function RedisTestCase:loopTest()
+    local redis = self._redis
+
+    local channel1 = "MSG_CHANNEL_1"
+    local channel2 = "MSG_CHANNEL_2"
+    local channel3 = "MSG_CHANNEL_3"
+    local channel4 = "MSG_CHANNEL_4"
+
+    -- Loop will use an other redis instance
+    local msgs = {}
+    local loop, err = redis:makeSubscribeLoop()
+    if not loop then
+        check.equals(self.connect:getRequestType(), "cli")
+        return true
+    end
+
+    loop:start({
+        onmessage = function(channel, msg)
+            msgs[#msgs + 1] = {channel, msg}
+        end,
+        onerror = function(err)
+            cc.printf("err: %s", err)
+        end,
+    })
+    loop:subscribe(channel1, channel2)
+
+    -- publish message to channels
+    redis:publish(channel1, "hello1")
+    redis:publish(channel2, "hello2")
+
+    loop:unsubscribe(channel2)
+    redis:publish(channel2, "hello2")
+
+    loop:psubscribe("MSG_CHANNEL_*")
+    redis:publish(channel2, "hello2")
+    redis:publish(channel3, "hello3")
+    redis:publish(channel4, "hello4")
+
+    loop:stop()
+
+    check.equals(msgs, {
+        {channel1, "hello1"},
+        {channel2, "hello2"},
+        --
+        {channel2, "hello2"},
+        {channel3, "hello3"},
+        {channel4, "hello4"},
+    })
 
     return true
 end

@@ -72,7 +72,8 @@ function Tests:run(args)
 
         local ok, testCaseClass = pcall(require, "cases." .. casename)
         if not ok then
-            cc.printf("ERR: not found test '%s'", casename)
+            -- testCaseClass is error message
+            cc.printf("ERR: not found test '%s'\n\n%s", casename, testCaseClass)
             break
         end
         local actionPackageName = string_lower(string_sub(casename, 1, -9))

@@ -128,17 +128,26 @@ local tonumber      = tonumber
 local tostring      = tostring
 local type          = type
 
-local RedisService = cc.class("RedisService")
+local Loop
+if ngx then
+    Loop = cc.import(".NginxLuaLoop")
+end
 
-RedisService.VERSION = "0.5"
-RedisService.null    = _null
+local Redis = cc.class("Redis")
+
+Redis.VERSION = "0.6"
+Redis.null    = _null
 
 local DEFAULT_HOST = "localhost"
 local DEFAULT_PORT = 6379
 
 local _genreq, _readreply, _checksub
 
-function RedisService:connect(host, port)
+function Redis:ctor()
+    self._config = {}
+end
+
+function Redis:connect(host, port)
     local socket_file, socket, ok, err
     host = host or DEFAULT_HOST
     if string_sub(host, 1, 5) == "unix:" then
@@ -159,11 +168,12 @@ function RedisService:connect(host, port)
         return nil, err
     end
 
+    self._config = {host = host, port = port}
     self._socket = socket
     return 1
 end
 
-function RedisService:setTimeout(timeout)
+function Redis:setTimeout(timeout)
     local socket = self._socket
     if not socket then
         return nil, "not initialized"
@@ -171,7 +181,7 @@ function RedisService:setTimeout(timeout)
     return socket:settimeout(timeout * _TIME_MULTIPLY)
 end
 
-function RedisService:setKeepAlive(...)
+function Redis:setKeepAlive(...)
     local socket = self._socket
     if not socket then
         return nil, "not initialized"
@@ -185,7 +195,7 @@ function RedisService:setKeepAlive(...)
     end
 end
 
-function RedisService:getReusedTimes()
+function Redis:getReusedTimes()
     local socket = self._socket
     if not socket then
         return nil, "not initialized"
@@ -197,7 +207,7 @@ function RedisService:getReusedTimes()
     end
 end
 
-function RedisService:close()
+function Redis:close()
     local socket = self._socket
     if not socket then
         return nil, "not initialized"
@@ -206,7 +216,7 @@ function RedisService:close()
     return socket:close()
 end
 
-function RedisService:doCommand(...)
+function Redis:doCommand(...)
     local args = {...}
     local cmd = args[1] or "<unknown command>"
     local socket = self._socket
@@ -234,15 +244,15 @@ function RedisService:doCommand(...)
     return res
 end
 
-function RedisService:initPipeline(numberOfCommands)
+function Redis:initPipeline(numberOfCommands)
     self._reqs = table_new(numberOfCommands or 4, 0)
 end
 
-function RedisService:cancelPipeline()
+function Redis:cancelPipeline()
     self._reqs = nil
 end
 
-function RedisService:commitPipeline()
+function Redis:commitPipeline()
     local socket = self._socket
     if not socket then
         return nil, "not initialized"
@@ -282,7 +292,7 @@ function RedisService:commitPipeline()
     return vals
 end
 
-function RedisService:readReply()
+function Redis:readReply()
     local res, err = _readreply(self, self._socket)
     if not res then
         return nil, err
@@ -292,7 +302,20 @@ function RedisService:readReply()
     return res
 end
 
-function RedisService:hashToArray(hash)
+function Redis:makeSubscribeLoop()
+    if not Loop then
+        return nil, "not support subscribe loop in current platform"
+    end
+
+    local subredis = Redis:create()
+    local ok, err = subredis:connect(self._config.host, self._config.port)
+    if not ok then
+        return nil, err
+    end
+    return Loop:create(self, subredis)
+end
+
+function Redis:hashToArray(hash)
     local arr = {}
     local i = 0
     for k, v in pairs(hash) do
@@ -303,7 +326,7 @@ function RedisService:hashToArray(hash)
     return arr
 end
 
-function RedisService:arrayToHash(arr)
+function Redis:arrayToHash(arr)
     local c = #arr
     local hash = table_new(0, c / 2)
     for i = 1, c, 2 do
@@ -424,24 +447,24 @@ end
 -- add commands
 
 for _, cmd in ipairs(_COMMANDS) do
-    RedisService[cmd] = function(self, ...)
+    Redis[cmd] = function(self, ...)
         return self:doCommand(cmd, ...)
     end
 end
 
 for _, cmd in ipairs(_SUB_COMMANDS) do
-    RedisService[cmd] = function(self, ...)
+    Redis[cmd] = function(self, ...)
         self._subscribed = true
         return self:doCommand(cmd, ...)
     end
 end
 
 for _, cmd in ipairs(_UNSUB_COMMANDS) do
-    RedisService[cmd] = function(self, ...)
+    Redis[cmd] = function(self, ...)
         local res = self:doCommand(cmd, ...)
         _checksub(self, res)
         return res
     end
 end
 
-return RedisService
+return Redis
