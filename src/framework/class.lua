@@ -51,14 +51,7 @@ _setmetatableindex = function(target, index)
             _setmetatableindex(target, index)
          end
     else
-        local mt = getmetatable(target) or {}
-        local __index = rawget(mt, "__index")
-        if not __index then
-            mt.__index = index
-            setmetatable(target, mt)
-        elseif __index ~= index then
-            _setmetatableindex(mt, index)
-        end
+        setmetatable(target, {__index = index})
     end
 end
 
@@ -92,7 +85,6 @@ _iskindofinternal = function(mt, classname)
 
     local cname = rawget(index, "__cname")
     if cname == classname then return true end
-    if not cname then return false end
 
     return _iskindofinternal(getmetatable(index), classname)
 end
@@ -101,25 +93,29 @@ end
 
 function cc.class(classname, super)
     -- create class
-    local cls = {
-        __cname = classname,
-        create = function(_cls, ...)
-            local create = _cls.__create
-            local instance
-            if create then
-                instance = create(...)
-            else
-                instance = {}
-            end
-            _setmetatableindex(instance, _cls)
-            instance.class = _cls
-            instance:ctor(...)
-            return instance
-        end,
-        iskindof = function(_cls, target)
-            return _iskindof(target, _cls.__cname)
+    local cls = {__cname = classname}
+
+    cls.new = function(...)
+        local create = cls.__create
+        local instance
+        if create then
+            instance = create(...)
+        else
+            instance = {}
         end
-    }
+        _setmetatableindex(instance, cls)
+        instance.class = cls
+        instance:ctor(...)
+        return instance
+    end
+
+    cls.create = function(_cls, ...)
+        return cls.new(...)
+    end
+
+    cls.iskindof = function(target)
+        return _iskindof(target, cls.__cname)
+    end
 
     -- set super class
     local superType = type(super)
@@ -148,4 +144,28 @@ function cc.class(classname, super)
     end
 
     return cls
+end
+
+function cc.bind(target, extend)
+    local id = tostring(extend)
+    extend = extend()
+    extend.__id = id
+    setmetatable(extend, getmetatable(target))
+    setmetatable(target, {__index = extend})
+    return target
+end
+
+function cc.unbind(target, extend)
+    local id = tostring(extend)
+    local mt = getmetatable(target)
+    while mt do
+        local index = rawget(mt, "__index")
+        if not index then break end
+        if index.__id == id then
+            setmetatable(target, getmetatable(index))
+            break
+        end
+        mt = getmetatable(mt)
+    end
+    return target
 end
