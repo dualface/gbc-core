@@ -37,7 +37,7 @@ local function addEventListener(self, event, listener, tag)
     tag = tag or ""
     tag = tostring(tag)
 
-    event = string_lower(event)
+    event = string_lower(tostring(event))
     if not listeners[event] then
         listeners[event] = {}
     end
@@ -60,7 +60,7 @@ local function dispatchEvent(self, event)
     event.name = string_lower(tostring(event.name))
 
     if DEBUG then
-        cc.printinfo("[Event:%s] dispatch event '%s'", tostring(self), event)
+        cc.printinfo("[Event:%s] dispatch event '%s'", tostring(self), event.name)
     end
 
     local listeners = self._listeners
@@ -76,7 +76,7 @@ local function dispatchEvent(self, event)
 
     for id, pair in pairs(listeners[event.name]) do
         if DEBUG then
-            cc.printinfo("[Event:%s] dispatch event '%s' to listener %s", tostring(self), event, id)
+            cc.printinfo("[Event:%s] dispatch event '%s' to listener %s", tostring(self), event.name, id)
         end
 
         event.tag = pair[2]
