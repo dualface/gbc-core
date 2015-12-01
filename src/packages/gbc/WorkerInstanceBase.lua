@@ -22,36 +22,36 @@ THE SOFTWARE.
 
 ]]
 
-local io_flush = io.flush
-local os_date = os.date
-local os_time = os.time
+local io_flush      = io.flush
+local os_date       = os.date
+local os_time       = os.time
 local string_format = string.format
-local string_lower = string.lower
-local tostring = tostring
-local type = type
+local string_lower  = string.lower
+local tostring      = tostring
+local type          = type
 
-local json = cc.import("#json")
+local json      = cc.import("#json")
 local Constants = cc.import(".Constants")
 
-local CLIBase = cc.import(".CLIBase")
-local WorkerBase = cc.class("WorkerBase", CLIBase)
+local CommandLineInstanceBase = cc.import(".CommandLineInstanceBase")
+local WorkerInstanceBase = cc.class("WorkerInstanceBase", CommandLineInstanceBase)
 
-function WorkerBase:ctor(config, args, tag)
-    WorkerBase.super.ctor(self, config)
+function WorkerInstanceBase:ctor(config, args, tag)
+    WorkerInstanceBase.super.ctor(self, config)
     self._requestType = Constants.WORKER_REQUEST_TYPE
     self._tag = tag or "worker"
 end
 
-function WorkerBase:run()
+function WorkerInstanceBase:run()
     return self:runEventLoop()
 end
 
-function WorkerBase:runEventLoop()
-    local jobs = self:getJobs({try = 3})
-    local bean = jobs:getBeanstalkd()
+function WorkerInstanceBase:runEventLoop()
+    local jobs     = self:getJobs({try = 3})
+    local bean     = jobs:getBeanstalkd()
     local beanerrs = bean.ERRORS
-    local appname = self.config.app.appName
-    local tag = string_format("%s:%s", appname, self._tag)
+    local appname  = self.config.app.appName
+    local tag      = string_format("%s:%s", appname, self._tag)
 
    cc.printinfo("[%s] ready, waiting for job", tag)
 
@@ -98,4 +98,4 @@ function WorkerBase:runEventLoop()
     return 0
 end
 
-return WorkerBase
+return WorkerInstanceBase

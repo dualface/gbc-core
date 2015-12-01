@@ -22,27 +22,14 @@ THE SOFTWARE.
 
 ]]
 
-local string_format = string.format
+local ActionBase = cc.class("ActionBase")
 
-local Constants = cc.import(".Constants")
-
-local AppBase = cc.import(".AppBase")
-local CLIBase = cc.class("CLIBase", AppBase)
-
-function CLIBase:ctor(config, arg)
-    CLIBase.super.ctor(self, config)
-    self._requestType = Constants.CLI_REQUEST_TYPE
-    self._requestParameters = cc.checktable(arg)
+function ActionBase:ctor(instance)
+    self.instance = instance
+    self:init()
 end
 
-function CLIBase:run()
-    local actionName = self._requestParameters.action or ""
-    local result = self:runAction(actionName, self._requestParameters)
-    if type(result) ~= "table" then
-        print(result)
-    else
-        cc.dump(result)
-    end
+function ActionBase:init()
 end
 
-return CLIBase
+return ActionBase

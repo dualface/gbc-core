@@ -27,70 +27,75 @@ local rawequal = rawequal
 local string_format = string.format
 local _empty
 local _equals
-local _contains, _containsInTable
-local _dump_result
-local _dump_result_arr
-local _format_msg
+local _contains, _containsintable
+local _dumpresult
+local _dumpresultarr
+local _formatmsg
 
 local _M = {}
 
 -- nil, "", {} is empty
 function _M.empty(v, msg)
     if _empty(v) then return end
-    cc.throw(string_format("expected is empty, actual is '%s'", tostring(v)) .. _format_msg(msg))
+    cc.throw("expected is empty, actual is '%s'%s", tostring(v), _formatmsg(msg))
 end
 
 function _M.notEmpty(v, msg)
     if not _empty(v) then return end
-    cc.throw(string_format("expected is not empty, actual is '%s'", tostring(v)) .. _format_msg(msg))
+    cc.throw("expected is not empty, actual is '%s'%s", tostring(v), _formatmsg(msg))
 end
 
 function _M.isTrue(v, msg)
     if v == true then return end
-    cc.throw(string_format("expected is true, actual is '%s'", tostring(v)) .. _format_msg(msg))
+    cc.throw("expected is true, actual is '%s'%s", tostring(v), _formatmsg(msg))
 end
 
 function _M.isFalse(v, msg)
     if v == false then return end
-    cc.throw(string_format("expected is false, actual is '%s'", tostring(v)) .. _format_msg(msg))
+    cc.throw("expected is false, actual is '%s'%s", tostring(v), _formatmsg(msg))
 end
 
 function _M.isNil(v, msg)
     if type(v) == "nil" then return end
-    cc.throw(string_format("expected is nil, actual is '%s'", type(v)) .. _format_msg(msg))
+    cc.throw("expected is nil, actual is '%s'%s", type(v), _formatmsg(msg))
+end
+
+function _M.isFunction(v, msg)
+    if type(v) == "function" then return end
+    cc.throw("expected is function, actual is '%s'%s", type(v), _formatmsg(msg))
 end
 
 function _M.isTable(v, msg)
     if type(v) == "table" then return end
-    cc.throw(string_format("expected is table, actual is '%s'", type(v)) .. _format_msg(msg))
+    cc.throw("expected is table, actual is '%s'%s", type(v), _formatmsg(msg))
 end
 
 function _M.isInt(v, msg)
     if type(v) == "number" and math.floor(v) == v then return end
-    cc.throw(string_format("expected is integer, actual is '%s'", tostring(v)) .. _format_msg(msg))
+    cc.throw("expected is integer, actual is '%s'%s", tostring(v), _formatmsg(msg))
 end
 
 function _M.isPosInt(v, msg)
     if type(v) == "number" and math.floor(v) == v and v >= 0 then return end
-    cc.throw(string_format("expected is positive integer, actual is '%s'", tostring(v)) .. _format_msg(msg))
+    cc.throw("expected is positive integer, actual is '%s'%s", tostring(v), _formatmsg(msg))
 end
 
 function _M.isString(v, msg)
     if type(v) == "string" then return end
-    cc.throw(string_format("expected is string, actual is '%s'", tostring(v)) .. _format_msg(msg))
+    cc.throw("expected is string, actual is '%s'%s", tostring(v), _formatmsg(msg))
 end
 
 function _M.greaterThan(actual, expected, msg)
     if type(actual) == "number" and type(expected) == "number" and actual > expected then return end
-    cc.throw(string_format("expected is '%s' > '%s'", tostring(actual), tostring(expected)) .. _format_msg(msg))
+    cc.throw("expected is '%s' > '%s'%s", tostring(actual), tostring(expected), _formatmsg(msg))
 end
 
 function _M.equals(actual, expected, msg)
     if _equals(actual, expected) then return end
     local msgs = {
-        "should be equals" .. _format_msg(msg),
-        _dump_result(actual, "actual"),
-        _dump_result(expected, "expected"),
+        "should be equals" .. _formatmsg(msg),
+        _dumpresult(actual, "actual"),
+        _dumpresult(expected, "expected"),
     }
     cc.throw(table.concat(msgs, "\n"))
 end
@@ -98,9 +103,9 @@ end
 function _M.notEquals(actual, expected, msg)
     if not _equals(actual, expected) then return end
     local msgs = {
-        "should be not equals" .. _format_msg(msg),
-        _dump_result(actual, "actual"),
-        _dump_result(expected, "expected"),
+        "should be not equals" .. _formatmsg(msg),
+        _dumpresult(actual, "actual"),
+        _dumpresult(expected, "expected"),
     }
     cc.throw(table.concat(msgs, "\n"))
 end
@@ -108,9 +113,9 @@ end
 function _M.contains(actual, expected, msg)
     if _contains(actual, expected) then return end
     local msgs = {
-        string_format("expected contains '%s'", tostring(expected)) .. _format_msg(msg),
-        _dump_result(actual, "actual"),
-        _dump_result(expected, "expected"),
+        string_format("expected contains '%s'%s", tostring(expected), _formatmsg(msg)),
+        _dumpresult(actual, "actual"),
+        _dumpresult(expected, "expected"),
     }
     cc.throw(table.concat(msgs, "\n"))
 end
@@ -118,9 +123,9 @@ end
 function _M.notContains(actual, expected, msg)
     if not _contains(actual, expected) then return end
     local msgs = {
-        string_format("expected not contains '%s'", tostring(needle)) .. _format_msg(msg),
-        _dump_result(actual, "actual"),
-        _dump_result(expected, "expected"),
+        string_format("expected not contains '%s'%s", tostring(needle), _formatmsg(msg)),
+        _dumpresult(actual, "actual"),
+        _dumpresult(expected, "expected"),
     }
     cc.throw(table.concat(msgs, "\n"))
 end
@@ -175,23 +180,23 @@ end
 
 _contains = function(actual, expected)
     if type(actual) == "table" then
-        return _containsInTable(actual, expected)
+        return _containsintable(actual, expected)
     end
     return string.find(tostring(actual), tostring(expected), 1, true)
 end
 
-_containsInTable = function(arr, needle)
+_containsintable = function(arr, needle)
     for _, v in pairs(arr) do
         if needle == v then return true end
     end
     return false
 end
 
-_dump_result = function(value, label)
-    return table.concat(_dump_result_arr(value, label), "\n")
+_dumpresult = function(value, label)
+    return table.concat(_dumpresultarr(value, label), "\n")
 end
 
-_dump_result_arr = function(value, label)
+_dumpresultarr = function(value, label)
     local result = {}
     local first = true
     cc.dump(value, label, 99, function(s)
@@ -204,7 +209,7 @@ _dump_result_arr = function(value, label)
     return result
 end
 
-_format_msg = function(msg)
+_formatmsg = function(msg)
     if msg then
         return ", " .. tostring(msg)
     else

@@ -23,7 +23,7 @@ THE SOFTWARE.
 ]]
 
 local cc           = cc
-local string_lower = string.lower
+local string_upper = string.upper
 local tostring     = tostring
 
 local function addEventListener(self, event, listener, tag)
@@ -37,7 +37,7 @@ local function addEventListener(self, event, listener, tag)
     tag = tag or ""
     tag = tostring(tag)
 
-    event = string_lower(tostring(event))
+    event = string_upper(tostring(event))
     if not listeners[event] then
         listeners[event] = {}
     end
@@ -57,7 +57,7 @@ local function dispatchEvent(self, event)
     if type(event) ~= "table" then
         event = {name = event}
     end
-    event.name = string_lower(tostring(event.name))
+    event.name = string_upper(tostring(event.name))
 
     if DEBUG then
         cc.printinfo("[Event:%s] dispatch event '%s'", tostring(self), event.name)
@@ -137,7 +137,7 @@ end
 
 local function removeEventListenersByEvent(self, event)
     if self._listeners then
-        self._listeners[string_lower(event)] = nil
+        self._listeners[string_upper(event)] = nil
         if cc.DEBUG > cc.DEBUG_WARN then
             cc.printinfo("[Event:%s] remove event '%s' all listeners", tostring(self), event)
         end

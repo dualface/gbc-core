@@ -22,26 +22,39 @@ THE SOFTWARE.
 
 ]]
 
-local _CURRENT_MODULE=...
+local _CUR = ...
+
+local string_find   = string.find
+local string_format = string.format
+local string_sub    = string.sub
 
 local Factory = cc.class("Factory")
 
-function Factory.create(config, classNamePrefix, ...)
+function Factory.create(config, classname, ...)
     if config.app.packagePath then
         package.path = config.app.packagePath
     end
 
-    local tagretClass
-    local ok, _tagretClass = pcall(require, classNamePrefix)
-    if ok then
-        tagretClass = _tagretClass
+    local ok, cls = pcall(require, classname)
+    if not ok then
+        local err = cls
+        local pos = string_find(err, "not found:", 1, true)
+        if not pos then
+            cc.throw(err)
+        end
+
+        if not string_find(err, string_format("module '%s' not found:", classname), 1, true) then
+            cc.throw(err)
+        end
+
+        cls = nil
     end
 
-    if not tagretClass then
-        tagretClass = cc.import(".server." .. classNamePrefix .. "Base", _CURRENT_MODULE)
+    if not cls then
+        cls = cc.import("." .. classname .. "Base", _CUR)
     end
 
-    return tagretClass:create(config, ...)
+    return cls.new(config, ...)
 end
 
 function Factory.makeAppConfigs(appKeys, serverConfig, defaultPackagePath)

@@ -33,68 +33,71 @@ local table_remove       = table.remove
 local tostring           = tostring
 local unpack             = unpack
 
-local NginxLuaLoop = cc.class("NginxLuaLoop")
+local NginxRedisLoop = cc.class("NginxRedisLoop")
 
-local _FORWARD_CHANNEL = "_GBC_LOOP_FORWARD_CHANNEL"
-local _COMMANDS = {
-    "subscribe", "unsubscribe",
-    "psubscribe", "punsubscribe",
-}
-local _CMD_PATTERN = "%s %s"
+local _CMD_CHANNEL = "_GBC_LOOP_CMD_CHANNEL"
 
 local _loop, _cleanup, _onmessage, _onerror
 
-function NginxLuaLoop:ctor(redis, subredis)
+function NginxRedisLoop:ctor(redis, subredis, id)
     self._redis = redis
     self._subredis = subredis
     self._subredis:setTimeout(3) -- check client connect abort quickly
-    self._id = string_sub(tostring(self), 8)
+    id = id or ""
+    self._id = id .. "_" .. string_sub(tostring(self), 10)
 end
 
-function NginxLuaLoop:start(callbacks)
+function NginxRedisLoop:start(onmessage, cmdchannel)
     if not self._subredis then
         return nil, "not initialized"
     end
-    local onmessage = callbacks.onmessage or _onmessage
-    local onerror = callbacks.onerror or _onerror
+    local onmessage = onmessage or _onmessage
+    local onerror = _onerror
+    cmdchannel = cmdchannel or _CMD_CHANNEL
+    self._cmdchannel = cmdchannel
     self._thread = ngx_thread_spawn(_loop, self, onmessage, onerror)
-    self._redis:publish(_FORWARD_CHANNEL, self._id, "PING") -- make loop run
+    self._redis:publish(cmdchannel, self._id, "PING") -- make loop run
     return 1
 end
 
-function NginxLuaLoop:stop()
-    self._redis:publish(_FORWARD_CHANNEL, "QUIT " .. self._id)
+function NginxRedisLoop:stop()
+    self._redis:publish(self._cmdchannel, "QUIT " .. self._id)
     _cleanup(self)
 end
 
 -- add methods
 
+local _COMMANDS = {
+    "subscribe", "unsubscribe",
+    "psubscribe", "punsubscribe",
+}
+
 for _, cmd in ipairs(_COMMANDS) do
-    NginxLuaLoop[cmd] = function(self, ...)
+    NginxRedisLoop[cmd] = function(self, ...)
         local args = {cmd, self._id}
         for _, arg in ipairs({...}) do
             args[#args + 1] = tostring(arg)
         end
-        return self._redis:publish(_FORWARD_CHANNEL, table_concat(args, " "))
+        return self._redis:publish(self._cmdchannel, table_concat(args, " "))
     end
 end
 
 -- private
 
 _loop = function(self, onmessage, onerror)
-    local subredis = self._subredis
-    local id = self._id
-    subredis:subscribe(_FORWARD_CHANNEL)
+    local cmdchannel = self._cmdchannel
+    local subredis   = self._subredis
+    local id         = self._id
+    subredis:subscribe(cmdchannel)
 
     while true do
         local res, err = subredis:readReply()
         if not res then
             if err == "timeout" then
-                cc.printinfo("timeout")
                 goto wait_next_msg
             end
 
-            onerror(err)
+            onerror(err, id)
             break
         end
 
@@ -102,16 +105,16 @@ _loop = function(self, onmessage, onerror)
         local channel = res[2]
         local msg     = res[3]
 
-        if channel ~= _FORWARD_CHANNEL then
+        if channel ~= cmdchannel then
             if msgtype == "message" then
-                onmessage(channel, msg)
+                onmessage(channel, msg, nil, id)
             elseif msgtype == "pmessage" then
                 local pchannel = channel
                 channel = msg
                 msg = res[4]
-                onmessage(channel, msg, pchannel)
+                onmessage(channel, msg, pchannel, id)
             else
-                cc.printinfo("[RedisSub] [%s] %s", id, table_concat(res, " "))
+                cc.printinfo("[RedisSub:%s] %s", id, table_concat(res, " "))
             end
             goto wait_next_msg
         end
@@ -123,7 +126,7 @@ _loop = function(self, onmessage, onerror)
             goto wait_next_msg
         end
 
-        cc.printinfo("[RedisSub] [%s] FORWARD: %s", id, msg)
+        cc.printinfo("[RedisSub:%s] FORWARD: %s", id, msg)
 
         if cmd == "QUIT" then
             break -- stop loop
@@ -136,12 +139,14 @@ _loop = function(self, onmessage, onerror)
         table_remove(parts, 2) -- remove id
         local ok, err = subredis:doCommand(unpack(parts))
         if not ok then
-            cc.printwarn("[RedisSub] redis failed, %s", err)
+            cc.printwarn("[RedisSub:%s] redis failed, %s", id, err)
         end
 
 ::wait_next_msg::
 
     end
+
+    cc.printinfo("[RedisSub:%s] QUIT", id)
 
     subredis:unsubscribe()
     subredis:setKeepAlive()
@@ -156,16 +161,16 @@ _cleanup = function(self)
     self._id = nil
 end
 
-_onmessage = function(channel, msg, pchannel)
+_onmessage = function(channel, msg, pchannel, id)
     if pchannel then
-        cc.printinfo("[RedisSub] [%s] [%s] %s", pchannel, channel, msg)
+        cc.printinfo("[RedisSub:%s] <%s> <%s> %s", id, pchannel, channel, msg)
     else
-        cc.printinfo("[RedisSub] [%s] %s", channel, msg)
+        cc.printinfo("[RedisSub:%s] <%s> %s", id, channel, msg)
     end
 end
 
-_onerror = function(err)
-    cc.printwarn("[RedisSub] onerror: %s", err)
+_onerror = function(err, id)
+    cc.printwarn("[RedisSub:%s] onerror: %s", id, err)
 end
 
-return NginxLuaLoop
+return NginxRedisLoop

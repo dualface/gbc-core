@@ -22,28 +22,26 @@ THE SOFTWARE.
 
 ]]
 
-local _CURRENT_MODULE = ...
+local _CUR = ...
 
-local _M = {}
+local _M = {
+    Constants               = cc.import(".Constants", _CUR),
+    Factory                 = cc.import(".Factory", _CUR),
 
-_M.Factory         = cc.import(".Factory", _CURRENT_MODULE)
-_M.NginxBootstrap  = cc.import(".NginxBootstrap", _CURRENT_MODULE)
-_M.WorkerBootstrap = cc.import(".WorkerBootstrap", _CURRENT_MODULE)
-_M.CLIBootstrap    = cc.import(".CLIBootstrap", _CURRENT_MODULE)
+    ActionBase              = cc.import(".ActionBase", _CUR),
+    InstanceBase            = cc.import(".InstanceBase", _CUR),
 
-_M.server = {
-    Constants            = cc.import(".server.Constants", _CURRENT_MODULE),
-    ActionBase           = cc.import(".server.ActionBase", _CURRENT_MODULE),
-    AppBase              = cc.import(".server.AppBase", _CURRENT_MODULE),
-    CLIBase              = cc.import(".server.CLIBase", _CURRENT_MODULE),
-    WorkerBase           = cc.import(".server.WorkerBase", _CURRENT_MODULE),
+    CommandLineInstanceBase = cc.import(".CommandLineInstanceBase", _CUR),
+    CommandLineBootstrap    = cc.import(".CommandLineBootstrap", _CUR),
+
+    WorkerInstanceBase      = cc.import(".WorkerInstanceBase", _CUR),
+    WorkerBootstrap         = cc.import(".WorkerBootstrap", _CUR),
 }
 
 if ngx then
-    _M.server.ConnectBase          = cc.import(".server.ConnectBase", _CURRENT_MODULE)
-    _M.server.HttpConnectBase      = cc.import(".server.HttpConnectBase", _CURRENT_MODULE)
-    _M.server.SessionService       = cc.import(".server.SessionService", _CURRENT_MODULE)
-    _M.server.WebSocketConnectBase = cc.import(".server.WebSocketConnectBase", _CURRENT_MODULE)
+    _M.HttpInstanceBase      = cc.import(".HttpInstanceBase", _CUR)
+    _M.WebSocketInstanceBase = cc.import(".WebSocketInstanceBase", _CUR)
+    _M.NginxBootstrap        = cc.import(".NginxBootstrap", _CUR)
 end
 
 return _M

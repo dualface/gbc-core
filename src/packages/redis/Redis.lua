@@ -130,7 +130,7 @@ local type          = type
 
 local Loop
 if ngx then
-    Loop = cc.import(".NginxLuaLoop")
+    Loop = cc.import(".NginxRedisLoop")
 end
 
 local Redis = cc.class("Redis")
@@ -302,17 +302,17 @@ function Redis:readReply()
     return res
 end
 
-function Redis:makeSubscribeLoop()
+function Redis:makeSubscribeLoop(id)
     if not Loop then
         return nil, "not support subscribe loop in current platform"
     end
 
-    local subredis = Redis:create()
+    local subredis = Redis.new()
     local ok, err = subredis:connect(self._config.host, self._config.port)
     if not ok then
         return nil, err
     end
-    return Loop:create(self, subredis)
+    return Loop.new(self, subredis, id)
 end
 
 function Redis:hashToArray(hash)

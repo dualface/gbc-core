@@ -22,18 +22,27 @@ THE SOFTWARE.
 
 ]]
 
-local Factory = cc.import(".Factory")
+local string_format = string.format
 
-local CLIBootstrap = cc.class("CLIBootstrap")
+local Constants = cc.import(".Constants")
 
-function CLIBootstrap:ctor(appKeys, globalConfig)
-    self._configs = Factory.makeAppConfigs(appKeys, globalConfig, package.path)
+local InstanceBase = cc.import(".InstanceBase")
+local CommandLineInstanceBase = cc.class("CommandLineInstanceBase", InstanceBase)
+
+function CommandLineInstanceBase:ctor(config, arg)
+    CommandLineInstanceBase.super.ctor(self, config)
+    self._requestType = Constants.CLI_REQUEST_TYPE
+    self._requestParameters = cc.checktable(arg)
 end
 
-function CLIBootstrap:runapp(appRootPath)
-    local appConfig = self._configs[appRootPath]
-    local cli = Factory.create(appConfig, "CLI")
-    cli:run()
+function CommandLineInstanceBase:run()
+    local actionName = self._requestParameters.action or ""
+    local result = self:runAction(actionName, self._requestParameters)
+    if type(result) ~= "table" then
+        print(result)
+    else
+        cc.dump(result)
+    end
 end
 
-return CLIBootstrap
+return CommandLineInstanceBase

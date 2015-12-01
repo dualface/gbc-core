@@ -44,7 +44,6 @@ local config = {
         websocketMessageFormat     = "json",
         websocketsTimeout          = 60 * 1000, -- 60s
         websocketsMaxPayloadLen    = 16 * 1024, -- 16KB
-        maxSubscribeRetryCount     = 10,
 
         jobMessageFormat           = "json",
         numOfJobWorkers            = 2,

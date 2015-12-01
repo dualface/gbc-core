@@ -22,14 +22,18 @@ THE SOFTWARE.
 
 ]]
 
-local ActionBase = cc.class("ActionBase")
+local Factory = cc.import(".Factory")
 
-function ActionBase:ctor(connect)
-    self.connect = connect
-    self:oninit()
+local CommandLineBootstrap = cc.class("CommandLineBootstrap")
+
+function CommandLineBootstrap:ctor(appKeys, globalConfig)
+    self._configs = Factory.makeAppConfigs(appKeys, globalConfig, package.path)
 end
 
-function ActionBase:oninit()
+function CommandLineBootstrap:runapp(appRootPath)
+    local appConfig = self._configs[appRootPath]
+    local cli = Factory.create(appConfig, "CommandLineInstance")
+    cli:run()
 end
 
-return ActionBase
+return CommandLineBootstrap

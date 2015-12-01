@@ -46,7 +46,7 @@ local type          = type
 local Beanstalkd = cc.class("Beanstalkd")
 
 Beanstalkd.VERSION = "0.5"
-Beanstalkd.ERRORS = {
+Beanstalkd.ERRORS = table.readonly({
     OUT_OF_MEMORY   = "OUT_OF_MEMORY",
     INTERNAL_ERROR  = "INTERNAL_ERROR",
     BAD_FORMAT      = "BAD_FORMAT",
@@ -58,15 +58,6 @@ Beanstalkd.ERRORS = {
     NOT_FOUND       = "NOT_FOUND",
     BURIED          = "BURIED",
     INVALID_YML     = "INVALID_YML",
-}
-
-setmetatable(Beanstalkd.ERRORS, {
-    __newindex = function()
-        cc.throw("Beanstalkd.ERRORS is readonly table")
-    end,
-    __index = function(t, key)
-        cc.throw("Beanstalkd.ERRORS not found key: %s", key)
-    end
 })
 
 local ERRORS = Beanstalkd.ERRORS
@@ -76,9 +67,6 @@ local DEFAULT_PORT = 11300
 
 local _req, _reqstate, _reqvalue, _reqyml
 local _readreply, _getvalue, _getjob, _getyml
-
-function Beanstalkd:ctor()
-end
 
 function Beanstalkd:connect(host, port)
     local socket = _tcp()

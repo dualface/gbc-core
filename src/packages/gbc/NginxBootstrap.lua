@@ -32,15 +32,15 @@ end
 
 function NginxBootstrap:runapp(appRootPath)
     local headers = ngx.req.get_headers()
-    local val = headers.upgrade
-    if type(val) == "table" then
-        val = val[1]
+    local upgrade = headers.upgrade
+    if type(upgrade) == "table" then
+        upgrade = upgrade[1]
     end
 
-    local classNamePrefix = "HttpConnect"
+    local classNamePrefix = "HttpInstance"
     local appConfig = self._configs[appRootPath]
-    if val and string.lower(val) == "websocket" then
-        classNamePrefix = "WebSocketConnect"
+    if upgrade and string.lower(upgrade) == "websocket" then
+        classNamePrefix = "WebSocketInstance"
         if not appConfig.app.websocketEnabled then
             ngx.exit(ngx.HTTP_FORBIDDEN)
         end

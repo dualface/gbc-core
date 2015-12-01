@@ -22,33 +22,34 @@ THE SOFTWARE.
 
 ]]
 
-local ngx = ngx
-local ngx_say = ngx.say
-local req_get_headers = ngx.req.get_headers
+local ngx               = ngx
+local ngx_say           = ngx.say
 local req_get_body_data = ngx.req.get_body_data
-local req_get_method = ngx.req.get_method
-local req_get_uri_args = ngx.req.get_uri_args
-local req_read_body = ngx.req.read_body
+local req_get_headers   = ngx.req.get_headers
+local req_get_method    = ngx.req.get_method
 local req_get_post_args = ngx.req.get_post_args
-local table_merge = table.merge
-local string_gsub = string.gsub
-local string_ltrim = string.ltrim
+local req_get_uri_args  = ngx.req.get_uri_args
+local req_read_body     = ngx.req.read_body
+local string_format     = string.format
+local string_gsub       = string.gsub
+local string_ltrim      = string.ltrim
+local table_merge       = table.merge
 
-local json = cc.import("#json")
+local json      = cc.import("#json")
 local Constants = cc.import(".Constants")
 
-local ConnectBase = cc.import(".ConnectBase")
-local HttpConnectBase = cc.class("HttpConnectBase", ConnectBase)
+local InstanceBase = cc.import(".InstanceBase")
+local HttpInstanceBase = cc.class("HttpInstanceBase", InstanceBase)
 
-function HttpConnectBase:ctor(config)
-    HttpConnectBase.super.ctor(self, config)
+function HttpInstanceBase:ctor(config)
+    HttpInstanceBase.super.ctor(self, config)
 
     if config.app.httpMessageFormat then
         self.config.app.messageFormat = config.app.httpMessageFormat
     end
 
-    self._requestType = Constants.HTTP_REQUEST_TYPE
-    self._requestMethod = req_get_method()
+    self._requestType       = Constants.HTTP_REQUEST_TYPE
+    self._requestMethod     = req_get_method()
     self._requestParameters = req_get_uri_args()
 
     if self._requestMethod == "POST" then
@@ -75,9 +76,9 @@ function HttpConnectBase:ctor(config)
             to the same size value in client_max_body_size.
             ]]
             if body then
-                local data, err = cc.json.decode(body)
+                local data, err = json.decode(body)
                 if err then
-                   cc.printwarn("HttpConnectBase:ctor() - invalid JSON content, %s", err)
+                   cc.printwarn("HttpInstanceBase:ctor() - invalid JSON content, %s", err)
                 else
                     table_merge(self._requestParameters, data)
                 end
@@ -88,7 +89,7 @@ function HttpConnectBase:ctor(config)
     end
 end
 
-function HttpConnectBase:run()
+function HttpInstanceBase:run()
     local result, err = self:runEventLoop()
     result, err = self:_genOutput(result, err)
     if err then
@@ -103,7 +104,7 @@ function HttpConnectBase:run()
 end
 
 -- actually it is not a loop, since it is based on HTTP.
-function HttpConnectBase:runEventLoop()
+function HttpInstanceBase:runEventLoop()
     local actionName = self._requestParameters.action or ""
     actionName = tostring(actionName)
     if cc.DEBUG > cc.DEBUG_WARN then
@@ -116,9 +117,9 @@ function HttpConnectBase:runEventLoop()
     end, function(_err)
         err = _err
         if cc.DEBUG > cc.DEBUG_WARN then
-           cc.printwarn("HTTP action: %s, %s", actionName, err .. debug.traceback("", 4))
+            err = debug.traceback(err, 4)
+            cc.printwarn(err)
         end
-        -- error message need return to client
     end)
     if err then
         return nil, self:_formatError(actionName, err)
@@ -126,11 +127,11 @@ function HttpConnectBase:runEventLoop()
     return result
 end
 
-function HttpConnectBase:_formatError(actionName, err)
-    return string.format("run action \"%s\" error, %s", actionName, err)
+function HttpInstanceBase:_formatError(actionName, err)
+    return string_format("run action \"%s\" error, %s", actionName, err)
 end
 
-function HttpConnectBase:_genOutput(result, err)
+function HttpInstanceBase:_genOutput(result, err)
     local rtype = type(result)
     if self.config.app.messageFormat == Constants.MESSAGE_FORMAT_JSON then
         if err then
@@ -152,4 +153,4 @@ function HttpConnectBase:_genOutput(result, err)
     end
 end
 
-return HttpConnectBase
+return HttpInstanceBase

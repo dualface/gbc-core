@@ -24,13 +24,13 @@ THE SOFTWARE.
 
 local string_sub = string.sub
 
-local TestCase = cc.class("TestCase")
+local gbc = cc.import("#gbc")
+
+local TestCase = cc.class("TestCase", gbc.ActionBase)
 
 TestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
 
-function TestCase:ctor(connect)
-    self.connect = connect
-
+function TestCase:init()
     local mt = getmetatable(self)
     for name, method in pairs(mt.__index) do
         if type(method) == "function" and string_sub(name, -4) == "Test" then
