@@ -39,7 +39,12 @@ local table_concat    = table.concat
 local tostring        = tostring
 
 function cc.throw(fmt, ...)
-    local msg = string_format(fmt, ...)
+    local msg
+    if #{...} == 0 then
+        msg = fmt
+    else
+        msg = string_format(fmt, ...)
+    end
     if cc.DEBUG > cc.DEBUG_WARN then
         error(msg, 2)
     else

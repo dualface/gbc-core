@@ -169,3 +169,9 @@ function cc.unbind(target, extend)
     end
     return target
 end
+
+function cc.handler(target, method)
+    return function(...)
+        return method(target, ...)
+    end
+end

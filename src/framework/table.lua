@@ -104,3 +104,16 @@ function table.length(t)
     end
     return count
 end
+
+function table.readonly(t, name)
+    name = name or "table"
+    setmetatable(t, {
+        __newindex = function()
+            cc.throw("<%s:%s> is readonly table", name, tostring(t))
+        end,
+        __index = function(_, key)
+            cc.throw("<%s:%s> not found key: %s", name, tostring(t), key)
+        end
+    })
+    return t
+end
