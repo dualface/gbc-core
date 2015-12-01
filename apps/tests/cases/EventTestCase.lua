@@ -66,7 +66,7 @@ function EventTestCase:bindingTest()
     check.equals(sheep:eat(), "sheep eat")
 
     local event
-    local eventName = "run"
+    local eventName = "RUN"
     sheep:addEventListener(eventName, function(evt)
         event = evt
     end)

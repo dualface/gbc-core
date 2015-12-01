@@ -33,9 +33,9 @@ local _TEST_REDIS_KEY = 'jobs.test.number'
 local _flush
 
 function JobsTestCase:setup()
-    local config = self.connect.config.server
-    self._jobs = self.connect:getJobs()
-    self._redis = self.connect:getRedis()
+    local config = self.instance.config.server
+    self._jobs  = self.instance:getJobs()
+    self._redis = self.instance:getRedis()
     _flush(self._jobs, self._redis)
 end
 

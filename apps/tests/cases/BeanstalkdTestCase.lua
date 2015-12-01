@@ -31,16 +31,15 @@ local BeanstalkdTestCase = cc.class("BeanstalkdTestCase", tests.TestCase)
 
 local _newbean, _flush
 
-local DEFAULT_TUBE = "default"
-local TEST_TUBE    = "_test_"
-local JOB_PRIORITY = 0
-local JOB_DELAY    = 1
-local JOB_TTR      = 2
-local JOB_WORD     = "hello, number is " .. math.random(1, 100)
-
+local _DEFAULT_TUBE = "default"
+local _TEST_TUBE    = "_test_"
+local _JOB_PRIORITY = 0
+local _JOB_DELAY    = 1
+local _JOB_TTR      = 2
+local _JOB_WORD     = "hello, number is " .. math.random(1, 100)
 
 function BeanstalkdTestCase:setup()
-    self._beanstalkd = _newbean(self.connect.config.server.beanstalkd)
+    self._beanstalkd = _newbean(self.instance.config.server.beanstalkd)
     _flush(self._beanstalkd)
 end
 
@@ -53,13 +52,13 @@ function BeanstalkdTestCase:basicsTest()
     local errors = bean.ERRORS
 
     -- add job, reserve it
-    local id = bean:put(JOB_WORD, JOB_PRIORITY, JOB_DELAY, JOB_TTR)
+    local id = bean:put(_JOB_WORD, _JOB_PRIORITY, _JOB_DELAY, _JOB_TTR)
     check.isInt(id)
     local job = bean:reserve()
-    check.equals(job, {id = id, data = JOB_WORD})
+    check.equals(job, {id = id, data = _JOB_WORD})
 
     -- sleep, reserve again with deadline_soon
-    helper.sleep(JOB_TTR - 1)
+    helper.sleep(_JOB_TTR - 1)
 
     check.equals({bean:reserve(0)}, {nil, errors.DEADLINE_SOON})
     check.equals({bean:touch(job.id)}, {true})
@@ -80,14 +79,14 @@ function BeanstalkdTestCase:releaseTest()
     local errors = bean.ERRORS
 
     -- add job, reserve it, release it
-    local id = bean:put(JOB_WORD, 0, JOB_DELAY, JOB_TTR)
+    local id = bean:put(_JOB_WORD, 0, _JOB_DELAY, _JOB_TTR)
     check.isInt(id)
     local job = bean:reserve()
-    check.equals(job, {id = id, data = JOB_WORD})
-    check.equals({bean:release(job.id, JOB_PRIORITY, JOB_DELAY)}, {true})
+    check.equals(job, {id = id, data = _JOB_WORD})
+    check.equals({bean:release(job.id, _JOB_PRIORITY, _JOB_DELAY)}, {true})
 
     -- release non exists job
-    check.equals({bean:release(job.id, JOB_PRIORITY, JOB_DELAY)}, {nil, errors.NOT_FOUND})
+    check.equals({bean:release(job.id, _JOB_PRIORITY, _JOB_DELAY)}, {nil, errors.NOT_FOUND})
     -- delete it
     check.equals({bean:delete(job.id)}, {true})
 
@@ -99,10 +98,10 @@ function BeanstalkdTestCase:changestateTest()
     local errors = bean.ERRORS
 
     -- add job, peek it
-    local id = bean:put(JOB_WORD, 0, JOB_DELAY, JOB_TTR)
+    local id = bean:put(_JOB_WORD, 0, _JOB_DELAY, _JOB_TTR)
     check.isInt(id)
 
-    local expected = {id = id, data = JOB_WORD}
+    local expected = {id = id, data = _JOB_WORD}
     local job = bean:peek(id)
     check.equals(job, expected)
 
@@ -112,14 +111,14 @@ function BeanstalkdTestCase:changestateTest()
 
     -- reserve it, bury reserved job, peek buried job
     check.equals({bean:reserve()}, {expected})
-    check.equals({bean:bury(job.id, JOB_PRIORITY)}, {true})
+    check.equals({bean:bury(job.id, _JOB_PRIORITY)}, {true})
     local job = bean:peek("buried")
     check.equals(job, expected)
 
     -- kick it
     check.equals({bean:kick(100)}, {1})
     -- wait it ready
-    helper.sleep(JOB_DELAY)
+    helper.sleep(_JOB_DELAY)
     local job = bean:peek("ready")
     check.equals(job, expected)
 
@@ -131,7 +130,7 @@ function BeanstalkdTestCase:statsTest()
     local errors = bean.ERRORS
 
     -- add job
-    local id = bean:put(JOB_WORD, 0, JOB_DELAY, JOB_TTR)
+    local id = bean:put(_JOB_WORD, 0, _JOB_DELAY, _JOB_TTR)
     check.isInt(id)
 
     -- get job info
@@ -140,8 +139,8 @@ function BeanstalkdTestCase:statsTest()
     check.equals(res["state"], "delayed")
 
     -- get tube info
-    local res = bean:statsTube(TEST_TUBE)
-    check.equals(res["name"], TEST_TUBE)
+    local res = bean:statsTube(_TEST_TUBE)
+    check.equals(res["name"], _TEST_TUBE)
     check.equals(res["current-jobs-delayed"], "1")
 
     -- get system info
@@ -152,16 +151,16 @@ function BeanstalkdTestCase:statsTest()
     -- list tubes
     local tubes = bean:listTubes()
     check.isTable(tubes)
-    check.contains(tubes, TEST_TUBE)
+    check.contains(tubes, _TEST_TUBE)
 
     -- list used tube
     local tube = bean:listTubeUsed()
-    check.equals(tube, TEST_TUBE)
+    check.equals(tube, _TEST_TUBE)
 
     -- list watched tubes
     local tubes = bean:listTubesWatched()
     check.isTable(tubes)
-    check.contains(tubes, TEST_TUBE)
+    check.contains(tubes, _TEST_TUBE)
 
     return true
 end
@@ -171,13 +170,13 @@ function BeanstalkdTestCase:tubeTest()
     local errors = bean.ERRORS
 
     -- use, watch, ignore
-    check.equals({bean:use(TEST_TUBE)}, {TEST_TUBE})
+    check.equals({bean:use(_TEST_TUBE)}, {_TEST_TUBE})
 
-    local count = bean:watch(TEST_TUBE)
+    local count = bean:watch(_TEST_TUBE)
     check.isInt(count)
     check.greaterThan(count, 0)
 
-    local count2 = bean:ignore(DEFAULT_TUBE)
+    local count2 = bean:ignore(_DEFAULT_TUBE)
     check.isInt(count2)
 
     return true
@@ -186,11 +185,11 @@ end
 -- private
 
 _newbean = function(config)
-    local beanstalkd = Beanstalkd:create()
+    local beanstalkd = Beanstalkd.new()
     beanstalkd:connect(config.host, config.port)
-    beanstalkd:use(TEST_TUBE)
-    beanstalkd:watch(TEST_TUBE)
-    beanstalkd:ignore(DEFAULT_TUBE)
+    beanstalkd:use(_TEST_TUBE)
+    beanstalkd:watch(_TEST_TUBE)
+    beanstalkd:ignore(_DEFAULT_TUBE)
     return beanstalkd
 end
 

@@ -8,4 +8,4 @@ source "$ROOT_DIR/bin/shell_func.sh"
 
 if [ $? -ne 0 ] ; then echo "Terminating..." >&2; exit 1; fi
 
-multitail -csn -cS Apache -ke '^[0-9/]+ [0-9][0-9]:' -ke ' [0-9]+#[0-9]+: ' -ke ' functions\.lua:75: printlog\(\):' -ke ', client: .+$' -ke '\[lua\] debug.lua:[0-9]+: dump\(\)' "$ROOT_DIR/logs/nginx-error.log"
+multitail -csn -cS Apache -ke '^[0-9/]+ [0-9][0-9]:' -ke ' [0-9]+#[0-9]+: ' -ke ' debug\.lua:[0-9]+: _printlog\(\):' -ke ', client: .+$' -ke '\[lua\] debug.lua:[0-9]+: dump\(\)' "$ROOT_DIR/logs/nginx-error.log"

@@ -22,14 +22,14 @@ THE SOFTWARE.
 
 ]]
 
-local CLIBase = cc.import("#gbc").server.CLIBase
-local CLI = cc.class("CLI", CLIBase)
+local gbc = cc.import("#gbc")
+local WorkerInstance = cc.class("WorkerInstance", gbc.WorkerInstanceBase)
 
-function CLI:ctor(config)
-    config.app.actionPackage = "cases"
-    config.app.actionModuleSuffix = "TestCase"
-    config.app.actionMethodSuffix = "Test"
-    CLI.super.ctor(self, config)
+function WorkerInstance:ctor(config, ...)
+    config.app.actionPackage      = ""
+    config.app.actionModuleSuffix = "Action"
+    config.app.actionMethodSuffix = "Action"
+    WorkerInstance.super.ctor(self, config, ...)
 end
 
-return CLI
+return WorkerInstance

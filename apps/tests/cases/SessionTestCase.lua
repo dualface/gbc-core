@@ -40,7 +40,7 @@ local _KEYS = table.readonly({
 local _newredis
 
 function SessionTestCase:setup()
-    self._redis = _newredis(self.connect.config.server.redis)
+    self._redis = _newredis(self.instance.config.server.redis)
 end
 
 function SessionTestCase:teardown()
@@ -108,7 +108,7 @@ function SessionTestCase:expiredTest()
     return true
 end
 
--- private methods
+-- private
 
 _newredis = function(config)
     local redis, err = helper.newredis(config)

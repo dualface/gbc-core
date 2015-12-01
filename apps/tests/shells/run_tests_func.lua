@@ -24,7 +24,6 @@ THE SOFTWARE.
 
 local os_execute    = os.execute
 local os_remove     = os.remove
-local os_tmpname    = os.tmpname
 local string_format = string.format
 local string_lower  = string.lower
 local string_sub    = string.sub
@@ -40,7 +39,7 @@ local Factory = cc.import("#gbc").Factory
 
 local Tests = cc.class("Tests")
 
-local _CURL_PATTERN = "curl -s --no-keepalive -o '%s' '%s'"
+local _CURL_PATTERN = "curl -s --no-keepalive -o - '%s'"
 
 local _parseargs, _findtests
 local _testsrv, _testcli
@@ -66,7 +65,7 @@ function Tests:run(args)
 
     local pass
     for _, casename in ipairs(opts.tests) do
-        if string.sub(casename, -8) ~= "TestCase" then
+        if string_sub(casename, -8) ~= "TestCase" then
             casename = string.ucfirst(string.lower(casename)) .. "TestCase"
         end
 
@@ -76,6 +75,11 @@ function Tests:run(args)
             cc.printf("ERR: not found test '%s'\n\n%s", casename, testCaseClass)
             break
         end
+        if type(testCaseClass) ~= "table" then
+            cc.printf("ERR: '%s' isn't module", casename)
+            break
+        end
+
         local actionPackageName = string_lower(string_sub(casename, 1, -9))
         local tests = {}
         for methodName, _2 in pairs(testCaseClass) do
@@ -177,8 +181,8 @@ _parseargs = function(args)
 end
 
 _findtests = function(rootdir)
-    local command = string_format('ls "%s"', rootdir)
-    local h = io.popen(command)
+    local cmd = string_format('ls "%s"', rootdir)
+    local h = io.popen(cmd)
     local res = h:read("*a")
     h:close()
 
@@ -195,17 +199,16 @@ _findtests = function(rootdir)
 end
 
 _testsrv = function(self, action)
-    local tmpfile = os_tmpname()
     local url = string_format(self._url, action)
-    local cmd = string_format(_CURL_PATTERN, tmpfile, url)
-    os_execute(cmd)
-    local contents = io.readfile(tmpfile)
-    os_remove(tmpfile)
-    return string.rtrim(contents)
+    local cmd = string_format(_CURL_PATTERN, url)
+    local h = io.popen(cmd)
+    local res = h:read("*a")
+    h:close()
+    return res
 end
 
 _testcli = function(self, action)
-    local cmd = Factory.create(self._config, "CLI", arg)
+    local cmd = Factory.create(self._config, "CommandLineInstance", arg)
     return cmd:runAction(action)
 end
 
@@ -238,6 +241,6 @@ local appRootPath  = ROOT_DIR ..  "/apps/tests"
 local appConfig    = appConfigs[appRootPath]
 
 cc.exports.runTests = function(arg)
-    local tests = Tests:create(appConfig, appRootPath)
+    local tests = Tests.new(appConfig, appRootPath)
     tests:run(arg)
 end
