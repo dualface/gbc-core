@@ -23,19 +23,18 @@ THE SOFTWARE.
 ]]
 
 local ipairs             = ipairs
-local ngx_thread_spawn   = ngx.thread.spawn
 local ngx_thread_kill    = ngx.thread.kill
+local ngx_thread_spawn   = ngx.thread.spawn
 local string_byte        = string.byte
 local string_split       = string.split
 local string_sub         = string.sub
 local table_concat       = table.concat
+local table_insert       = table.insert
 local table_remove       = table.remove
 local tostring           = tostring
 local unpack             = unpack
 
 local NginxRedisLoop = cc.class("NginxRedisLoop")
-
-local _CMD_CHANNEL = "_GBC_LOOP_CMD_CHANNEL"
 
 local _loop, _cleanup, _onmessage, _onerror
 
@@ -53,15 +52,14 @@ function NginxRedisLoop:start(onmessage, cmdchannel)
     end
     local onmessage = onmessage or _onmessage
     local onerror = _onerror
-    cmdchannel = cmdchannel or _CMD_CHANNEL
     self._cmdchannel = cmdchannel
     self._thread = ngx_thread_spawn(_loop, self, onmessage, onerror)
-    self._redis:publish(cmdchannel, self._id, "PING") -- make loop run
+    self._redis:publish(cmdchannel, self._id, "!PING") -- make loop run
     return 1
 end
 
 function NginxRedisLoop:stop()
-    self._redis:publish(self._cmdchannel, "QUIT " .. self._id)
+    self._redis:publish(self._cmdchannel, "!STOP")
     _cleanup(self)
 end
 
@@ -78,6 +76,7 @@ for _, cmd in ipairs(_COMMANDS) do
         for _, arg in ipairs({...}) do
             args[#args + 1] = tostring(arg)
         end
+        table_insert(args, 1, "!REDIS")
         return self._redis:publish(self._cmdchannel, table_concat(args, " "))
     end
 end
@@ -105,7 +104,31 @@ _loop = function(self, onmessage, onerror)
         local channel = res[2]
         local msg     = res[3]
 
-        if channel ~= cmdchannel then
+        if channel == cmdchannel then
+            local parts = string_split(msg, " ")
+            local cmd = parts[1]
+            cc.printinfo("[RedisSub:%s] COMMAND: %s", id, msg)
+
+            if cmd == "!STOP" then
+                break -- stop loop
+            end
+
+            if cmd == "!PING" then
+                goto wait_next_msg
+            end
+
+            if cmd == "!REDIS" then
+                table_remove(parts, 1)
+                local ok, err = subredis:doCommand(unpack(parts))
+                if not ok then
+                    cc.printwarn("[RedisSub:%s] redis failed, %s", id, err)
+                end
+                goto wait_next_msg
+            end
+
+            -- unknown command, forward it
+            onmessage(channel, msg, nil, id)
+        else
             if msgtype == "message" then
                 onmessage(channel, msg, nil, id)
             elseif msgtype == "pmessage" then
@@ -116,37 +139,13 @@ _loop = function(self, onmessage, onerror)
             else
                 cc.printinfo("[RedisSub:%s] %s", id, table_concat(res, " "))
             end
-            goto wait_next_msg
-        end
-
-        local parts = string_split(msg, " ")
-        local cmd = parts[1]
-        local cmdid = parts[2]
-        if cmdid ~= id then
-            goto wait_next_msg
-        end
-
-        cc.printinfo("[RedisSub:%s] FORWARD: %s", id, msg)
-
-        if cmd == "QUIT" then
-            break -- stop loop
-        end
-
-        if cmd == "PING" then
-            goto wait_next_msg
-        end
-
-        table_remove(parts, 2) -- remove id
-        local ok, err = subredis:doCommand(unpack(parts))
-        if not ok then
-            cc.printwarn("[RedisSub:%s] redis failed, %s", id, err)
         end
 
 ::wait_next_msg::
 
     end
 
-    cc.printinfo("[RedisSub:%s] QUIT", id)
+    cc.printinfo("[RedisSub:%s] STOPPED", id)
 
     subredis:unsubscribe()
     subredis:setKeepAlive()

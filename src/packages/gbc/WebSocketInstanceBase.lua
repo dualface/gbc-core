@@ -38,15 +38,16 @@ local type             = type
 local json      = cc.import("#json")
 local Constants = cc.import(".Constants")
 
+local json_encode = json.encode
+local json_decode = json.decode
+
 local InstanceBase = cc.import(".InstanceBase")
 local WebSocketInstanceBase = cc.class("WebSocketInstanceBase", InstanceBase)
 
 local _EVENT = table.readonly({
-    BEFORE_CONNECT_READY = "BEFORE_CONNECT_READY",
-    AFTER_CONNECT_READY  = "AFTER_CONNECT_READY",
-    BEFORE_CONNECT_CLOSE = "BEFORE_CONNECT_CLOSE",
-    AFTER_CONNECT_CLOSE  = "AFTER_CONNECT_CLOSE",
-    RECV_MESSAGE         = "RECV_MESSAGE",
+    CONNECTED       = "CONNECTED",
+    DISCONNECTED    = "DISCONNECTED",
+    CONTROL_MESSAGE = "CONTROL_MESSAGE",
 })
 
 WebSocketInstanceBase.EVENT = _EVENT
@@ -88,19 +89,17 @@ function WebSocketInstanceBase:runEventLoop()
     if not token then
         cc.throw(err)
     end
+    self._connectToken = token
 
     -- generate connect id and channel
-    local connectChannel = Constants.CONNECT_CHANNEL_PREFIX .. token
-    self._connectToken = token
-    self._connectChannel = connectChannel
-
     local redis = self:getRedis()
     local connectId = tostring(redis:incr(Constants.NEXT_CONNECT_ID_KEY))
     self._connectId = connectId
 
-    -- before connect ready
-    cc.printinfo("[websocket:%s] before connect ready", connectId)
-    self:dispatchEvent(_EVENT.BEFORE_CONNECT_READY)
+    local connectChannel = Constants.CONNECT_CHANNEL_PREFIX .. tostring(connectId)
+    self._connectChannel = connectChannel
+    local controlChannel = Constants.CONTROL_CHANNEL_PREFIX .. tostring(connectId)
+    self._controlChannel = controlChannel
 
     -- create websocket server
     local server = require("resty.websocket.server")
@@ -119,25 +118,27 @@ function WebSocketInstanceBase:runEventLoop()
         cc.throw(err)
     end
 
-    local connectChannel = self._connectChannel
     loop:start(function(channel, msg)
-        self:dispatchEvent({
-            name    = _EVENT.RECV_MESSAGE,
-            channel = channel,
-            message = msg
-        })
-
-        if channel == connectChannel and msg == "QUIT" then
-            socket:send_close()
+        if channel == controlChannel then
+            self:dispatchEvent({
+                name    = _EVENT.CONTROL_MESSAGE,
+                channel = channel,
+                message = msg
+            })
+            if msg == Constants.CLOSE_CONNECT then
+                socket:send_close()
+            end
         else
             socket:send_text(msg)
         end
-    end, connectChannel)
+    end, controlChannel)
+
+    loop:subscribe(connectChannel)
     self._subloop = loop
 
-    -- after connect ready
-    cc.printinfo("[websocket:%s] after connect ready", connectId)
-    self:dispatchEvent(_EVENT.AFTER_CONNECT_READY)
+    -- connected
+    cc.printinfo("[websocket:%s] connected", connectId)
+    self:dispatchEvent(_EVENT.CONNECTED)
 
     -- event loop
     local frames = {}
@@ -175,6 +176,8 @@ function WebSocketInstanceBase:runEventLoop()
             break
         end
 
+        self:heartbeat()
+
         if #frames > 0 then
             -- merging fragmented frames
             frames[#frames + 1] = frame
@@ -204,28 +207,28 @@ function WebSocketInstanceBase:runEventLoop()
 
     end -- while
 
-    -- before connect close
-    cc.printinfo("[websocket:%s] before connect close", connectId)
-    self:dispatchEvent(_EVENT.BEFORE_CONNECT_CLOSE)
-
-    -- close connect
-    socket:send_close()
-    socket = nil
-
+    -- stop loop
     loop:stop()
     loop = nil
-
-    self._socket = nil
     self._subloop = nil
+    self._socket = nil
 
-    -- after connect close
-    cc.printinfo("[websocket:%s] after connect close", connectId)
-    self:dispatchEvent(_EVENT.AFTER_CONNECT_CLOSE)
+    -- disconnected
+    self:dispatchEvent(_EVENT.DISCONNECTED)
+    cc.printinfo("[websocket:%s] disconnected", connectId)
 end
 
-function WebSocketInstanceBase:sendMessageToSelf(message)
-    if self.config.app.messageFormat == Constants.MESSAGE_FORMAT_JSON and type(message) == "table" then
-        message = json.encode(message)
+function WebSocketInstanceBase:heartbeat()
+end
+
+function WebSocketInstanceBase:sendMessage(message, format)
+    format = format or self.config.app.websocketMessageFormat
+    if type(message) == "table" then
+        if format == Constants.MESSAGE_FORMAT_JSON then
+            message = json_encode(message)
+        else
+            -- TODO: support more message formats
+        end
     end
     self._socket:send_text(tostring(message))
 end
@@ -265,7 +268,10 @@ _processMessage = function(self, rawMessage, messageType)
     end
 
     local rtype = type(result)
-    if rtype == "nil" then return end
+    if rtype == "nil" then
+        return
+    end
+
     if rtype ~= "table" then
         if msgid then
            cc.printwarn("action \"%s\" return invalid result for message [__id:\"%s\"]", actionName, msgid)
@@ -284,7 +290,7 @@ _processMessage = function(self, rawMessage, messageType)
     end
 
     result.__id = msgid
-    local message = json.encode(result)
+    local message = json_encode(result)
     local bytes, err = self._socket:send_text(message)
     if err then
         return nil, string.format("send message to client failed, %s", err)
@@ -301,7 +307,7 @@ _parseMessage = function(rawMessage, messageType, messageFormat)
 
     -- TODO: support message format plugin
     if messageFormat == "json" then
-        local message = json.decode(rawMessage)
+        local message = json_decode(rawMessage)
         if type(message) == "table" then
             return message
         else

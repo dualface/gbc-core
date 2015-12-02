@@ -155,7 +155,6 @@ end
 
 -- private
 
-
 _gensid = function(secret)
     math.newrandomseed()
 

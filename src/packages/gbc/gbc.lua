@@ -36,6 +36,8 @@ local _M = {
 
     WorkerInstanceBase      = cc.import(".WorkerInstanceBase", _CUR),
     WorkerBootstrap         = cc.import(".WorkerBootstrap", _CUR),
+
+    Broadcast               = cc.import(".Broadcast", _CUR),
 }
 
 if ngx then
