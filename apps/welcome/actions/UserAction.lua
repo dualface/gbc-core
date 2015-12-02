@@ -2,7 +2,7 @@
 
 Copyright (c) 2015 gameboxcloud.com
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
+Permission is hereby granted, free of chargse, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -22,83 +22,73 @@ THE SOFTWARE.
 
 ]]
 
+local Session = cc.import("#session")
+
 local gbc = cc.import("#gbc")
-local Online = cc.import("#online")
+local UserAction = cc.class("UserAction", gbc.ActionBase)
 
-local UserAction = cc.class("UserAction", gbc.server.ActionBase)
+local _opensession
 
-function UserAction:oninit()
-    self._online = Online:create(connect)
+function UserAction:init()
+    self._redis = self.instance:getRedis()
 end
 
-function UserAction:pingAction(arg)
-    return {text = "pong"}
-end
-
-function UserAction:loginAction(arg)
-    local username = arg.username
+function UserAction:signinAction(args)
+    local username = args.username
     if not username then
-        cc.throw("not set argument: \"username\"")
-    end
-
-    -- check username is exists
-    if self._online:isExists(username) then
-        cc.throw("username \"%s\" is exists", username)
+        cc.throw("not set argsument: \"username\"")
     end
 
     -- start session
-    local session = self.connect:newSession()
+    local session = Session.new(self._redis)
+    session:start()
     session:set("username", username)
-
-    -- generating tag by session id
-    local sid = session:getSid()
-    local tag = ngx.md5(sid)
-    session:set("tag", tag)
-
-    -- set count value
-    local count = 0
-    session:set("count", count)
+    session:set("count", 0)
     session:save()
 
     -- return result
-    return {sid = sid, tag = tag, count = count}
+    return {sid = session:getSid(), count = 0}
 end
 
-function UserAction:logoutAction(arg)
-    local sid = arg.sid
-    if not sid then
-        cc.throw("not set argument: \"sid\"")
-    end
+function UserAction:signoutAction(args)
+    local session = _opensession(self._redis, args)
 
-    local session = self.connect:openSession(sid)
-    if not session then
-        cc.throw("session is expired, or invalid session id")
-    end
+    -- send control message to websocket connect
+    local connectId = session:get("connect")
+    local broadcast = gbc.Broadcast.new(self._redis)
+    broadcast:sendControlMessage(connectId, gbc.Constants.CLOSE_CONNECT)
 
-    -- close websocket connect
-    self.connect:closeConnect(session:getConnectId())
-    -- destroy session
-    self.connect:destroySession()
+    -- delete session
+    session:destroy()
+
     return {ok = "ok"}
 end
 
-function UserAction:countAction(arg)
-    local sid = arg.sid
-    if not sid then
-        cc.throw("not set argument: \"sid\"")
-    end
-
-    local session = self.connect:openSession(sid)
-    if not session then
-        cc.throw("session is expired, or invalid session id")
-    end
-
-    -- update count value
+function UserAction:countAction(args)
+    -- update count value in session
+    local session = _opensession(self._redis, args)
     local count = session:get("count")
     count = count + 1
     session:set("count", count)
     session:save()
+
     return {count = count}
+end
+
+-- private
+
+_opensession = function(redis, args)
+    local sid = args.sid
+    if not sid then
+        cc.throw("not set argsument: \"sid\"")
+    end
+
+    local session = Session.new(redis)
+    session:start(sid)
+    if not session then
+        cc.throw("session is expired, or invalid session id")
+    end
+    return session
 end
 
 return UserAction

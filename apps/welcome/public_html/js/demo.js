@@ -6,441 +6,369 @@ var State = {
     CONNECTED: 3
 };
 
-var tests = {
-    opts: {
-        server_addr: null,
-        http_entry: "welcome_api",
-        http_server_addr: null,
-        websocket_entry: "welcome_socket",
-        websocket_server_addr: null
-    },
-
-    status: {
-        state: State.IDLE,
-
-        username: null,
-        session_id: null,
-        connect_tag: null,
-
-        socket: null,
-        msg_id: 0,
-        callbacks: {}
-    },
-
-    events: {
-        allusers: function(data) {
-            var users = data["users"];
-            if (users) {
-                var online_users_select = $("#online_users_select");
-                online_users_select.empty();
-                for (var i = 0; i < users.length; ++i) {
-                    var user = users[i];
-                    var username = $("<div/>").text(user.username).html();
-                    online_users_select.append($("<option></option>").val(user.tag).text(user.username));
-                }
-                online_users_select.prop("selectedIndex", -1);
-            }
-        },
-
-        adduser: function(data) {
-            var online_users_select = $("#online_users_select");
-            online_users_select.append($("<option></option>").val(data.tag).text(data.username));
-        },
-
-        removeuser: function(data) {
-            var online_users_select_options = $("#online_users_select > option");
-            online_users_select_options.each(function() {
-                if ($(this).text() == data.username) {
-                    $(this).remove();
-                    // tests.on_destuserchanged();
-                    return;
-                }
-            });
-        }
-    },
-
-    prepare: function() {
-        var self = this;
-        $("#server_addr_input").val(document.location.host);
-
-        $("#sign_button").click(function() {
-            if (self.status.state == State.IDLE) {
-                self.signin();
-            } else {
-                self.signout();
-            }
-            return false;
-        });
-
-        $("#add_counter_button").click(function() {
-            self.add_counter();
-            return false;
-        });
-
-        $("#online_users_select").change(function() {
-            if (this.selectedIndex >= 0) {
-                $("#dest_connect_tag_input").val(this.options[this.selectedIndex].value);
-            } else {
-                $("#dest_connect_tag_input").val("");
-            }
-        });
-        $("#send_message_button").click(function() {
-            var tag = $("#dest_connect_tag_input").val();
-            var message = $("#message_input").val();
-            if (tag == "") {
-                self.show_error("Please enter Connect Tag, or choose user from Online Users list.");
-                return;
-            }
-            if (message == "") {
-                self.show_error("Please enter message.");
-                return;
-            }
-
-            self.send_message(tag, message);
-        });
-
-        $("#clear_logs_button").click(function() {
-            log.clear();
-            return false;
-        });
-        $("#insert_mark_button").click(function() {
-            log.add_mark();
-            return false;
-        })
-
-        self.update_ui();
-    },
-
-    update_ui: function() {
-        var self = this;
-
-        var state = self.status.state;
-        $("#server_addr_input").prop("disabled", state != State.IDLE);
-        $("#username_input").prop("disabled", state != State.IDLE);
-
-        if (state != State.CONNECTING && state != State.CONNECTED) {
-            $("#session_id_input").val("");
-            $("#connect_tag_input").val("");
-            $("#counter_value_input").val("");
-            $("#online_users_select").empty();
-            $("#dest_connect_tag_input").val("");
-        }
-
-        $("#add_counter_button").prop("disabled", state != State.CONNECTED);
-        $("#online_users_select").prop("disabled", state != State.CONNECTED);
-        $("#dest_connect_tag_input").prop("disabled", state != State.CONNECTED);
-        $("#message_input").prop("disabled", state != State.CONNECTED);
-        $("#send_message_button").prop("disabled", state != State.CONNECTED);
-
-        if (state == State.IDLE) {
-            $("#sign_button").text("Sign In").prop("disabled", false);
-        } else if (state == State.SIGNIN || state == State.CONNECTING) {
-            $("#sign_button").text("Connecting").prop("disabled", true);
-        } else if (state == State.CONNECTED) {
-            $("#sign_button").text("Sign Out").prop("disabled", false);
-        } else {
-            $("#sign_button").text("-").prop("disabled", true);
-        }
-    },
-
-    cleanup: function() {
-        var self = this;
-        var opts = self.opts;
-        opts.http_server_addr = null;
-        opts.websocket_server_addr = null;
-
-        var status = self.status;
-        status.state = State.IDLE;
-        status.username = null;
-        status.session_id = null;
-        status.connect_tag = null;
-        status.socket = null;
-        status.msg_id = 0;
-        status.callbacks = {};
-    },
-
-    signin: function() {
-        var self = this;
-        if (self.status.state != State.IDLE) {
-            return;
-        }
-
-        var username = $("#username_input").val();
-        if (username === "") {
-            self.show_error("PLEASE ENTER username");
-            return;
-        }
-
-        var opts = self.opts;
-        opts.server_addr = $("#server_addr_input").val();
-        opts.http_server_addr = "http://" + opts.server_addr + "/" + opts.http_entry
-        opts.websocket_server_addr = "ws://" + opts.server_addr + "/" + opts.websocket_entry
-
-        var status = self.status;
-        status.state = State.SIGNIN;
-        status.username = username;
-
-        self.update_ui();
-
-        var data = {"username": username}
-        log.add_mark();
-        log.add("SIGN IN");
-        self.http_request("user.login", data, function(res) {
-            if (!self.validate_result(res, ["sid", "tag", "count"])) {
-                status.state = State.IDLE;
-            } else {
-                status.state = State.CONNECTING;
-                status.session_id = res["sid"].toString();
-                status.connect_tag = res["tag"].toString();
-                log.add("GET SESSION ID: " + status.session_id);
-
-                var count = parseInt(res["count"]);
-                log.add("count = " + count.toString());
-                $("#session_id_input").val(status.session_id);
-                $("#connect_tag_input").val(status.connect_tag);
-                $("#counter_value_input").val(count);
-
-                self.connect_websocket();
-            }
-
-            self.update_ui();
-        }, function() {
-            status.state = State.IDLE;
-            self.update_ui();
-        });
-    },
-
-    signout: function() {
-        var self = this;
-        var status = self.status;
-        if (status.session_id === null) {
-            log.add("ALREADY SIGN OUT");
-            return;
-        }
-
-        log.add_mark();
-        log.add("SIGN OUT");
-
-        self.http_request("user.logout", {"sid": status.session_id}, function(res) {
-            if (status.socket) {
-                // will call cleanup() and update_ui()
-                status.socket.close();
-            } else {
-                self.cleanup();
-                self.update_ui();
-            }
-        });
-    },
-
-    add_counter: function() {
-        var self = this;
-        var status = self.status;
-
-        if (status.session_id === null) {
-            log.add("SIGN IN FIRST");
-            return;
-        }
-
-        self.http_request("user.count", {"sid": status.session_id}, function(res) {
-            if (!self.validate_result(res, ["count"])) return;
-
-            var count = parseInt(res["count"]);
-            log.add("count = " + count.toString());
-            $("#counter_value_input").val(count.toString());
-        });
-    },
-
-    send_message: function(tag, message) {
-        var self = this;
-
-        tag = tag.toString();
-        message = message.toString();
-
-        var data = {
-            "action": "chat.sendmessage",
-            "tag": tag,
-            "message": message
-        };
-        self.send_data(data);
-    },
-
-    show_error: function(message) {
-        var modal = UIkit.modal("#alert_dialog");
-        modal.show();
-        $("#error_alert").text(message);
-    },
-
-    validate_result: function(res, fields) {
-        var err = res["err"];
-        if (typeof err !== "undefined") {
-            return false;
-        }
-
-        for (var i = 0; i < fields.length; i++) {
-            var field = fields[i];
-            var v = res[field];
-            if (typeof v === "undefined") {
-                return false;
-            }
-        }
-        return true;
-    },
-
-    http_request: function(action, data, callback, fail) {
-        var self = this;
-        var opts = self.opts;
-        var url = opts.http_server_addr + "?action=" + action;
-        log.add("HTTP: " + url);
-        $.post(url, data, function(res) {
-            if (res.err) {
-                var err = "ERR: " + res.err;
-                self.show_error(err);
-                log.add(err);
-            }
-            callback(res);
-        }, "json")
-            .fail(function() {
-                log.add("HTTP: " + url + " FAILED");
-                if (fail) {
-                    fail();
-                }
-            });
-    },
-
-    connect_websocket: function() {
-        var self = this;
-        var opts = self.opts;
-        var status = self.status;
-
-        if (status.socket !== null) {
-            log.add("ALREADY CONNECTED");
-            return;
-        }
-
-        if (status.session_id === null) {
-            log.add("SIGN IN FIRST");
-            return;
-        }
-
-        var protocol = "gbc-" + status.session_id;
-        log.add("CONNECT WEBSOCKET with PROTOCOL: " + protocol.toString());
-
-        var socket = new WebSocket(opts.websocket_server_addr, protocol);
-        socket.onopen = function() {
-            log.add("WEBSOCKET CONNECTED");
-            status.state = State.CONNECTED;
-            self.update_ui();
-        };
-        socket.onerror = function(error) {
-            if (!(error instanceof Event)) {
-                log.add("ERR: " + error.toString());
-            }
-        };
-        socket.onmessage = function(event) {
-            log.add("WEBSOCKET RECV: " + event.data.toString());
-            var data = JSON.parse(event.data);
-            if (data["__id"]) {
-                var msgid = data["__id"].toString();
-                if (typeof status.callbacks[msgid] !== "undefined") {
-                    var callback = status.callbacks[msgid];
-                    status.callbacks[msgid] = null;
-                    callback(data);
-                }
-            } else if (data["name"]) {
-                var events = self.events;
-                var name = data["name"].toString();
-                if (isfunction(events[name])) {
-                    events[name](data);
-                }
-            }
-        };
-        socket.onclose = function() {
-            log.add("WEBSOCKET DISCONNECTED");
-            self.cleanup();
-            self.update_ui();
-        };
-
-        status.socket = socket;
-    },
-
-    send_data: function(data, callback) {
-        var self = this;
-        var status = self.status;
-
-        if (status.socket === null) {
-            log.add("NOT CONNECTED");
-            return;
-        }
-
-        status.msg_id++;
-        data["__id"] = status.msg_id;
-        var json_str = JSON.stringify(data);
-
-        if (isfunction(callback)) {
-            status.callbacks[status.msg_id.toString()] = callback;
-        }
-
-        status.socket.send(json_str);
-        log.add("WEBSOCKET SEND: " + json_str);
-    }
-};
-
-// ----
-
 var f2num = function(n, l) {
-    if (typeof l == "undefined") l = 2;
+    if (typeof l === "undefined") l = 2;
     while (n.length < l) {
         n = "0" + n;
     }
     return n;
 }
 
-var isfunction = function(functionToCheck) {
-    var getType = {};
-    return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+var HTTP_ENTRY      = "welcome_api";
+var WEBSOCKET_ENTRY = "welcome_socket";
+
+var DemoApp = function (apphtml) {
+    var self = this;
+
+    self._state    = State.IDLE;
+    self._socket   = null;
+
+    self._apphtml  = apphtml;
 }
 
-var log = {
-    opts: {
-        lasttime: 0
-    },
+DemoApp.prototype.init = function() {
+    var self = this;
 
-    add: function(message) {
-        var self = this;
-        var opts = self.opts;
+    var apphtml = self._apphtml;
+    self._usernameInput     = apphtml.find("#username");
+    self._serverAddrInput   = apphtml.find("#serverAddr");
+    self._counterValueInput = apphtml.find("#counterValue");
+    self._selectUserInput   = apphtml.find("#selectUser");
+    self._messageInput      = apphtml.find("#message");
 
-        var log = $("#log");
-        var now = new Date();
-        var nowtime = now.getTime();
-        if (opts.lasttime > 0 && nowtime - opts.lasttime > 10000) { // 10s
-            $("#log").prepend("-------------------------\n");
+    self._signInButton      = apphtml.find("#signInButton");
+    self._addCounterButton  = apphtml.find("#addCounterButton");
+    self._sendMessageButton = apphtml.find("#sendMessageButton");
+
+    self._alertDialogHtml   = apphtml.find("#alertDialog");
+    self._logHtml           = apphtml.find("#log");
+
+    self._signInButton.click(function() {
+        if (self._state === State.IDLE) {
+            self.signIn();
+        } else {
+            self.signOut();
         }
-        opts.lasttime = nowtime;
+    });
 
-        var time = f2num(now.getHours().toString())
-                 + ":" + f2num(now.getMinutes().toString())
-                 + ":" + f2num(now.getSeconds().toString());
-        message = $("<div/>").text(message).html();
-        message = message.replace("\n", "<br />\n");
-        log.prepend("[<strong>" + time + "</strong>] " + message + "\n");
-        log.scrollTop(log.prop("scrollHeight"));
-    },
+    self._addCounterButton.click(function() {
+        self.addCounter();
+    });
 
-    add_mark: function() {
-        var self = this;
-        var log = $("#log");
-        log.prepend("<strong>--------<strong>\n");
-        log.scrollTop(log.prop("scrollHeight"));
-    },
+    self._sendMessageButton.click(function() {
+        var username = self._selectUserInput.val();
+        var message = self._messageInput.val();
+        self.sendMessage(username, message);
+    });
 
-    clear: function() {
-        $('#log').empty();
+    apphtml.find("#clearLogsButton").click(function() {
+        self.clearLogs();
+    });
+
+    apphtml.find("#insertMarkButton").click(function() {
+        self.insertLogMark();
+    });
+
+
+    self._serverAddrInput.val(document.location.host);
+
+    self._updateUI();
+}
+
+DemoApp.prototype.signIn = function() {
+    var self = this;
+
+    var username = self._usernameInput.val();
+    if (username === "") {
+        self._showError("PLEASE ENTER username");
+        return;
+    }
+
+    var serverAddr = self._serverAddrInput.val();
+    if (serverAddr === "") {
+        self._showError("PLEASE ENTER server addr");
+        return;
+    }
+
+    self._httpServerAddr = "http://" + serverAddr + "/" + HTTP_ENTRY;
+    self._websocketServerAddr = "ws://" + serverAddr + "/" + WEBSOCKET_ENTRY;
+
+    self._state = State.SIGNIN;
+
+    self._appendLogMark();
+    self._appendLog("SIGN IN " + serverAddr);
+
+    var values = {"username": username}
+    self._sendHttpRequest("user.signin", values, function(res) {
+        if (!self._validateResult(res, ["sid", "count"])) {
+            self._state = State.IDLE;
+            self._showError("Get invalid result");
+            self._appendLog(res.toString());
+        } else {
+            self._state = State.CONNECTING;
+            self._sid = res["sid"];
+            self._appendLog("GET SESSION ID: " + self._sid);
+
+            var count = parseInt(res["count"]);
+            self._appendLog("count = " + count.toString());
+            self._counterValueInput.val(count);
+
+            self._connectWebSocket(self._sid);
+        }
+
+        self._updateUI();
+    }, function() {
+        self._state = State.IDLE;
+        self._updateUI();
+    });
+
+    self._updateUI();
+}
+
+DemoApp.prototype.signOut = function() {
+    var self = this;
+
+    self._appendLogMark();
+    self._appendLog("SIGN OUT");
+
+    self._sendHttpRequest("user.signout", {"sid": self._sid}, function(res) {
+        if (self._socket) {
+            // will call cleanup() and updateUI()
+            self._socket.close();
+        } else {
+            self._cleanup();
+            self._updateUI();
+        }
+    });
+}
+
+DemoApp.prototype.addCounter = function() {
+    var self = this;
+
+    self._sendHttpRequest("user.count", {"sid": self._sid}, function(res) {
+        if (!self._validateResult(res, ["count"])) return;
+
+        var count = parseInt(res["count"]).toString();
+        self._appendLog("count = " + count);
+        self._counterValueInput.val(count);
+    });
+}
+
+DemoApp.prototype.sendMessage = function(username, message) {
+    var self = this;
+
+    if (username === "" || username === null) {
+        self._showError("Please choose user from online users list.");
+        return;
+    }
+
+    if (message === "") {
+        self._showError("Please enter message.");
+    }
+
+    var data = {
+        action: "chat.sendmessage",
+        username: username,
+        message: message
+    };
+    self._sendWebSocketMessage(data);
+}
+
+DemoApp.prototype._updateUI = function() {
+    var self = this;
+
+    var state = self._state;
+    self._serverAddrInput.prop("disabled", state != State.IDLE);
+    self._usernameInput.prop("disabled", state != State.IDLE);
+
+    if (state != State.CONNECTING && state != State.CONNECTED) {
+        self._counterValueInput.val("");
+        self._selectUserInput.empty();
+    }
+
+    self._addCounterButton.prop("disabled", state != State.CONNECTED);
+    self._selectUserInput.prop("disabled", state != State.CONNECTED);
+    self._messageInput.prop("disabled", state != State.CONNECTED);
+    self._sendMessageButton.prop("disabled", state != State.CONNECTED);
+
+    if (state === State.IDLE) {
+        self._signInButton.text("Sign In").prop("disabled", false);
+    } else if (state === State.SIGNIN || state === State.CONNECTING) {
+        self._signInButton.text("Connecting").prop("disabled", true);
+    } else if (state === State.CONNECTED) {
+        self._signInButton.text("Sign Out").prop("disabled", false);
+    } else {
+        self._signInButton.text("-").prop("disabled", true);
     }
 }
 
-// ----
+DemoApp.prototype._cleanup = function() {
+    self._state               = State.IDLE;
+    self._socket              = null;
+    self._sid                 = null;
+    self._httpServerAddr      = null;
+    self._websocketServerAddr = null;
+}
 
-$(document).ready(function() {
-    tests.prepare();
-});
+DemoApp.prototype._validateResult = function(res, fields) {
+    var err = res["err"];
+    if (typeof err !== "undefined") {
+        return false;
+    }
 
+    for (var i = 0; i < fields.length; i++) {
+        var field = fields[i];
+        var v = res[field];
+        if (typeof v === "undefined") {
+            return false;
+        }
+    }
+    return true;
+}
+
+DemoApp.prototype._sendHttpRequest = function(action, values, callback, fail) {
+    var self = this;
+
+    var url = self._httpServerAddr + "?action=" + action;
+    self._appendLog("HTTP: " + url);
+
+    $.post(url, values, function(res) {
+        if (res.err) {
+            var err = "ERR: " + res.err;
+            self._showError(err);
+            self._appendLog(err);
+        }
+        callback(res);
+    }, "json")
+    .fail(function() {
+        self._appendLog("HTTP: " + url + " FAILED");
+        if (fail) {
+            fail();
+        }
+    });
+}
+
+DemoApp.prototype._sendWebSocketMessage = function(data) {
+    var self = this;
+
+    var str = JSON.stringify(data);
+    self._socket.send(str);
+    self._appendLog("WEBSOCKET SEND: " + str);
+}
+
+DemoApp.prototype._connectWebSocket = function(sid) {
+    var self = this;
+
+    var protocol = "gbc-auth-" + sid;
+    self._appendLog("CONNECT WEBSOCKET with PROTOCOL: " + protocol);
+
+    var socket = new WebSocket(self._websocketServerAddr, protocol);
+    socket.onopen = function() {
+        self._appendLog("WEBSOCKET CONNECTED");
+        self._state = State.CONNECTED;
+        self._updateUI();
+    }
+
+    socket.onerror = function(error) {
+        if (!(error instanceof Event)) {
+            self._appendLog("ERR: " + error.toString());
+        }
+    }
+
+    socket.onmessage = function(event) {
+        self._appendLog("WEBSOCKET RECV: " + event.data.toString());
+
+        var msg = JSON.parse(event.data);
+        if (typeof msg == "object" && msg.name) {
+            var handler = self._messageHandlers[msg.name];
+            if (handler) {
+                handler(self, msg);
+            }
+        } else {
+            self._appendLog("INVALID MSG: " + event.data.toString());
+        }
+    }
+
+    socket.onclose = function() {
+        self._state = State.IDLE;
+        self._appendLog("WEBSOCKET DISCONNECTED");
+        self._cleanup();
+        self._updateUI();
+    }
+
+    self._socket = socket;
+}
+
+DemoApp.prototype._messageHandlers = {
+    LIST_ALL_USERS: function(self, data) {
+        var users = data["users"];
+        if (!users) {
+            return;
+        }
+
+        self._selectUserInput.empty();
+        for (var i = 0; i < users.length; ++i) {
+            var username = users[i];
+            var username_html = $("<div/>").text(users[i]).html();
+            self._selectUserInput.append($("<option></option>")
+                .val(username)
+                .text(username_html));
+        }
+        self._selectUserInput.prop("selectedIndex", 0);
+    },
+
+    ADD_USER: function(self, data) {
+        var username = data.username;
+        self._selectUserInput.append($("<option></option>")
+            .val(username)
+            .text(username));
+    },
+
+    REMOVE_USER: function(self, data) {
+        var username = data.username;
+        self._selectUserInput.find("> option").each(function() {
+            if ($(this).val() === username) {
+                $(this).remove();
+                return;
+            }
+        });
+    },
+
+    MESSAGE: function(self, data) {
+        var username = data.sender;
+        var message = data.body;
+        UIkit.notify({
+            message: "<strong>" + username + "</strong> say:<br />" + message,
+            status: 'info',
+            timeout: 5000,
+            pos: 'bottom-right'
+        });
+    }
+}
+
+DemoApp.prototype._showError = function(message) {
+    var self = this;
+    self._alertDialogHtml.find("#alertContents").text(message);
+    var modal = UIkit.modal(self._alertDialogHtml);
+    modal.show();
+}
+
+DemoApp.prototype._appendLogMark = function() {
+    var self = this;
+
+    self._logHtml.prepend("<strong>--------<strong>\n");
+    self._logHtml.scrollTop(self._logHtml.prop("scrollHeight"));
+}
+
+DemoApp.prototype._appendLog = function(message) {
+    var self = this;
+
+    var now = new Date();
+    var time = f2num(now.getHours().toString())
+                 + ":" + f2num(now.getMinutes().toString())
+                 + ":" + f2num(now.getSeconds().toString());
+    message = $("<div/>").text(message).html();
+    message = message.replace("\n", "<br />\n");
+    self._logHtml.prepend("[<strong>" + time + "</strong>] " + message + "\n");
+    self._logHtml.scrollTop(self._logHtml.prop("scrollHeight"));
+}
