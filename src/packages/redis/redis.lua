@@ -399,8 +399,8 @@ _readreply = function(self, socket)
         return string_sub(line, 2)
 
     elseif prefix == 42 then -- char '*'
-        -- print("multi-bulk reply: ", n)
         local n = tonumber(string_sub(line, 2))
+        -- print("multi-bulk reply: ", n)
         if n < 0 then
             return _null
         end
