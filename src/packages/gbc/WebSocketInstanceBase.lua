@@ -133,7 +133,7 @@ function WebSocketInstanceBase:runEventLoop()
         end
     end, controlChannel)
 
-    loop:subscribe(connectChannel)
+    loop:subscribe(connectChannel, Constants.BROADCAST_ALL_CHANNEL)
     self._subloop = loop
 
     -- connected
@@ -209,7 +209,6 @@ function WebSocketInstanceBase:runEventLoop()
 
     -- stop loop
     loop:stop()
-    loop = nil
     self._subloop = nil
     self._socket = nil
 
@@ -219,18 +218,6 @@ function WebSocketInstanceBase:runEventLoop()
 end
 
 function WebSocketInstanceBase:heartbeat()
-end
-
-function WebSocketInstanceBase:sendMessage(message, format)
-    format = format or self.config.app.websocketMessageFormat
-    if type(message) == "table" then
-        if format == Constants.MESSAGE_FORMAT_JSON then
-            message = json_encode(message)
-        else
-            -- TODO: support more message formats
-        end
-    end
-    self._socket:send_text(tostring(message))
 end
 
 -- add methods

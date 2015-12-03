@@ -34,18 +34,30 @@ local Broadcast = cc.class("Broadcast")
 
 local _formatmsg
 
-function Broadcast:ctor(redis)
+function Broadcast:ctor(redis, websocketInstance)
     self._redis = redis
+    self._websocketInstance = websocketInstance
 end
 
 function Broadcast:sendMessage(connectId, message, format)
     format = format or Constants.MESSAGE_FORMAT_JSON
     message = _formatmsg(message, format)
-    local connectChannel = Constants.CONNECT_CHANNEL_PREFIX .. connectId
-    local ok, err = self._redis:publish(connectChannel, message)
-    if not ok then
-        cc.printwarn("[broadcast] %s", err)
+
+    if self._websocketInstance and self._websocketInstance._connectId == connectId then
+        self._websocketInstance._socket:send_text(tostring(message))
+    else
+        local connectChannel = Constants.CONNECT_CHANNEL_PREFIX .. connectId
+        local ok, err = self._redis:publish(connectChannel, message)
+        if not ok then
+            cc.printwarn("[broadcast] %s", err)
+        end
     end
+end
+
+function Broadcast:sendMessageToAll(message, format)
+    format = format or self.config.app.websocketMessageFormat
+    message = _formatmsg(message, format)
+    self._redis:publish(Constants.BROADCAST_ALL_CHANNEL, message)
 end
 
 function Broadcast:sendControlMessage(connectId, message)

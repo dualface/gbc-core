@@ -19,6 +19,7 @@ _M.DEFAULT_MESSAGE_FORMAT            = _M.MESSAGE_FORMAT_JSON
 _M.NEXT_CONNECT_ID_KEY               = "_NEXT_CONNECT_ID"
 _M.CONNECT_CHANNEL_PREFIX            = "_CN_"
 _M.CONTROL_CHANNEL_PREFIX            = "_CT_"
+_M.BROADCAST_ALL_CHANNEL             = "_CN_ALL"
 
 -- beanstalkd
 _M.BEANSTALKD_JOB_TUBE_PATTERN       = "job-%s" -- job-<appindex>
