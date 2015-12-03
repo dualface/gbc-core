@@ -41,8 +41,6 @@ function WebSocketInstance:ctor(config)
     WebSocketInstance.super.ctor(self, config)
     self:addEventListener(_EVENT.CONNECTED, cc.handler(self, self.onConnected))
     self:addEventListener(_EVENT.DISCONNECTED, cc.handler(self, self.onDisconnected))
-
-    self._broadcast = Broadcast.new(self:getRedis())
 end
 
 function WebSocketInstance:sendMessageToUser(recipient, message)
@@ -95,6 +93,7 @@ function WebSocketInstance:onConnected()
 
     -- send all usernames to current client
     local users = online:getAll()
+    self._broadcast = Broadcast.new(self:getRedis(), self)
     self._broadcast:sendMessage(id, {name = _LIST_ALL_USERS, users = users})
     -- subscribe online users event
     self:subscribe(online:getChannel())

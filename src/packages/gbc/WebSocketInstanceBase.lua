@@ -200,7 +200,7 @@ function WebSocketInstanceBase:runEventLoop()
                 cc.printerror("[websocket:%s] process %s message failed, %s", connectId, ftype, err)
             end
         else
-            cc.printwarn("[websocket:%s] unknwon frame type \"%s\"", connectId, tostring(ftype))
+            cc.printwarn("[websocket:%s] unknown frame type \"%s\"", connectId, tostring(ftype))
         end
 
 ::recv_next_message::
