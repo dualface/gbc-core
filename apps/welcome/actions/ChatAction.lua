@@ -19,4 +19,14 @@ function ChatAction:sendmessageAction(arg)
     self.instance:sendMessageToUser(username, message)
 end
 
+function ChatAction:sendmessagetoallAction(arg)
+    local message = arg.message
+    if not message then
+        cc.throw("not set argument: \"message\"")
+    end
+
+    -- forward message to all clients
+    self.instance:sendMessageToAll(message)
+end
+
 return ChatAction

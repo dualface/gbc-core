@@ -39,6 +39,7 @@ DemoApp.prototype.init = function() {
     self._signInButton      = apphtml.find("#signInButton");
     self._addCounterButton  = apphtml.find("#addCounterButton");
     self._sendMessageButton = apphtml.find("#sendMessageButton");
+    self._sendMessageToAllButton = apphtml.find("#sendMessageToAllButton");
 
     self._alertDialogHtml   = apphtml.find("#alertDialog");
     self._logHtml           = apphtml.find("#log");
@@ -59,6 +60,11 @@ DemoApp.prototype.init = function() {
         var username = self._selectUserInput.val();
         var message = self._messageInput.val();
         self.sendMessage(username, message);
+    });
+
+    self._sendMessageToAllButton.click(function() {
+        var message = self._messageInput.val();
+        self.sendMessageToAll(message);
     });
 
     apphtml.find("#clearLogsButton").click(function() {
@@ -174,6 +180,20 @@ DemoApp.prototype.sendMessage = function(username, message) {
     self._sendWebSocketMessage(data);
 }
 
+DemoApp.prototype.sendMessageToAll = function(message) {
+    var self = this;
+
+    if (message === "") {
+        self._showError("Please enter message.");
+    }
+
+    var data = {
+        action: "chat.sendmessagetoall",
+        message: message
+    };
+    self._sendWebSocketMessage(data);
+}
+
 DemoApp.prototype._updateUI = function() {
     var self = this;
 
@@ -190,6 +210,7 @@ DemoApp.prototype._updateUI = function() {
     self._selectUserInput.prop("disabled", state != State.CONNECTED);
     self._messageInput.prop("disabled", state != State.CONNECTED);
     self._sendMessageButton.prop("disabled", state != State.CONNECTED);
+    self._sendMessageToAllButton.prop("disabled", state != State.CONNECTED);
 
     if (state === State.IDLE) {
         self._signInButton.text("Sign In").prop("disabled", false);

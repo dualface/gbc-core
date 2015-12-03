@@ -62,6 +62,14 @@ function WebSocketInstance:sendMessageToUser(recipient, message)
     }, self.config.app.websocketMessageFormat)
 end
 
+function WebSocketInstance:sendMessageToAll(message)
+    self._broadcast:sendMessageToAll({
+        name      = "MESSAGE",
+        sender    = self._username,
+        body      = message
+    }, self.config.app.websocketMessageFormat)
+end
+
 function WebSocketInstance:onConnected()
     local redis = self:getRedis()
 
@@ -79,16 +87,17 @@ function WebSocketInstance:onConnected()
     -- add user to online users list
     local online = Online.new(redis)
     online:add(username)
-    -- send all usernames to current client
-    local users = online:getAll()
-    self:sendMessage({name = _LIST_ALL_USERS, users = users})
-    -- subscribe online users event
-    self:subscribe(online:getChannel())
 
     -- map username <-> connect id
     local id = self._connectId
     redis:hset(_CONNECT_TO_USERNAME, id, username)
     redis:hset(_USERNAME_TO_CONNECT, username, id)
+
+    -- send all usernames to current client
+    local users = online:getAll()
+    self._broadcast:sendMessage(id, {name = _LIST_ALL_USERS, users = users})
+    -- subscribe online users event
+    self:subscribe(online:getChannel())
 
     self._session = session
     self._online = online
