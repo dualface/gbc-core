@@ -100,7 +100,7 @@ DEST_BIN_DIR=$DEST_DIR/bin
 OPENRESETY_CONFIGURE_ARGS=""
 
 if [ $OSTYPE == "UBUNTU" ] ; then
-    apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip supervisor
+    apt-get install -y --force-yes build-essential libpcre3-dev libssl-dev git-core unzip supervisor
 elif [ $OSTYPE == "CENTOS" ]; then
     yum groupinstall -y "Development Tools"
     yum install -y pcre-devel zlib-devel openssl-devel unzip supervisor

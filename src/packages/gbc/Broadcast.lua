@@ -62,7 +62,7 @@ end
 
 function Broadcast:sendControlMessage(connectId, message)
     local controlChannel = Constants.CONTROL_CHANNEL_PREFIX .. connectId
-    local ok, er = self._redis:publish(controlChannel, tostring(message))
+    local ok, err = self._redis:publish(controlChannel, tostring(message))
     if not ok then
         cc.printwarn("[broadcast] %s", err)
     end
