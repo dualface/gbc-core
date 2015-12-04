@@ -68,11 +68,11 @@ DemoApp.prototype.init = function() {
     });
 
     apphtml.find("#clearLogsButton").click(function() {
-        self.clearLogs();
+        self._clearLogs();
     });
 
     apphtml.find("#insertMarkButton").click(function() {
-        self.insertLogMark();
+        self._appendLogMark();
     });
 
 
@@ -392,4 +392,8 @@ DemoApp.prototype._appendLog = function(message) {
     message = message.replace("\n", "<br />\n");
     self._logHtml.prepend("[<strong>" + time + "</strong>] " + message + "\n");
     self._logHtml.scrollTop(self._logHtml.prop("scrollHeight"));
+}
+
+DemoApp.prototype._clearLogs = function() {
+    this._logHtml.empty();
 }
