@@ -84,10 +84,10 @@ _opensession = function(redis, args)
     end
 
     local session = Session.new(redis)
-    session:start(sid)
-    if not session then
+    if not session:start(sid) then
         cc.throw("session is expired, or invalid session id")
     end
+
     return session
 end
 
