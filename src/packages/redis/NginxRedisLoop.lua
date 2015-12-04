@@ -57,7 +57,7 @@ function NginxRedisLoop:start(onmessage, cmdchannel)
     if not res then
         return nil, err
     end
-    cc.printinfo("[RedisSub:%s] SUB %s, count %s", self._id, res[2], res[3])
+    cc.printinfo("[RedisSub:%s] %s", self._id, table_concat(res, " "))
 
     self._thread = ngx_thread_spawn(_loop, self, onmessage, onerror)
     return 1
@@ -88,86 +88,88 @@ end
 
 -- private
 
+local _skipmsgtypes = {
+    subscribe    = true,
+    unsubscribe  = true,
+    psubscribe   = true,
+    punsubscribe = true,
+}
+
 _loop = function(self, onmessage, onerror)
     local cmdchannel = self._cmdchannel
     local subredis   = self._subredis
     local id         = self._id
+    local running    = true
+    local DEBUG = cc.DEBUG > cc.DEBUG_WARN
 
-    while true do
+    local msgtype, channel, msg, pchannel
+
+    while running do
         -- cc.printinfo("[RedisSub:%s] READ REPLY", id)
         local res, err = subredis:readReply()
         if not res then
-            if err == "timeout" then
-                goto wait_next_msg
+            if err ~= "timeout" then
+                onerror(err, id)
+                running = false
+            end
+        end
+
+        while res do -- process message
+
+            msgtype = res[1]
+            channel = res[2]
+            msg     = res[3]
+
+            if _skipmsgtypes[msgtype] then
+                if DEBUG then
+                    cc.printinfo("[RedisSub:%s] %s", id, table_concat(res, " "))
+                end
+                break -- goto readReply
             end
 
-            onerror(err, id)
-            break
-        end
+            if channel ~= cmdchannel then
+                -- general message
+                if msgtype == "message" then
+                    -- msgtype, channel, msg
+                    onmessage(channel, msg, nil, id)
+                elseif msgtype == "pmessage" then
+                    pchannel = res[2]
+                    channel  = res[3]
+                    msg      = res[4]
+                    onmessage(channel, msg, pchannel, id)
+                else
+                    cc.printwarn("[RedisSub:%s] invalid message, %s", id, table_concat(res, " "))
+                end
+                break -- goto readReply
+            end
 
-        local msgtype = res[1]
-        local channel = res[2]
-        local msg     = res[3]
-
-        -- subscribe message
-        if msgtype == "subscribe" or msgtype == "psubscribe" then
-            cc.printinfo("[RedisSub:%s] SUB %s, count %s", id, channel, msg)
-            goto wait_next_msg
-        end
-
-        if msgtype == "unsubscribe" or msgtype == "punsubscribe" then
-            cc.printinfo("[RedisSub:%s] UNSUB %s, count %s", id, channel, msg)
-            goto wait_next_msg
-        end
-
-        if channel ~= cmdchannel then
-            -- general message
-            if msgtype == "message" then
+            if string_byte(msg) ~= 33 --[[ ! ]] then
+                -- forward control message
                 onmessage(channel, msg, nil, id)
-            elseif msgtype == "pmessage" then
-                local pchannel = channel
-                channel = msg
-                msg = res[4]
-                onmessage(channel, msg, pchannel, id)
-            else
-                cc.printinfo("[RedisSub:%s] readreply2, %s", id, table_concat(res, " "))
+                break -- goto readReply
             end
 
-            goto wait_next_msg
-        end
-
-        -- control message
-        if string_byte(msg) ~= 33 --[[ ! ]] then
-            -- forward control message
-            onmessage(channel, msg, nil, id)
-            goto wait_next_msg
-        end
-
-        local parts = string_split(msg, " ")
-        local cmd = parts[1]
-        cc.printinfo("[RedisSub:%s] COMMAND: %s", id, msg)
-
-        if cmd == "!STOP" then
-            break -- stop loop
-        end
-
-        if cmd == "!REDIS" then
-            table_remove(parts, 1)
-            local res, err = subredis:doCommand(unpack(parts))
-            if not res then
-                cc.printwarn("[RedisSub:%s] redis failed, %s", id, err)
+            -- control message
+            local parts = string_split(msg, " ")
+            local cmd = parts[1]
+            if cmd == "!STOP" then
+                running = false
+                break -- stop loop
+            elseif cmd == "!REDIS" then
+                table_remove(parts, 1)
+                res, err = subredis:doCommand(unpack(parts))
+                if not res then
+                    cc.printwarn("[RedisSub:%s] redis failed, %s", id, err)
+                    break -- goto readReply
+                end
             else
-                cc.printinfo("[RedisSub:%s] SUB %s, count %s", id, res[2], res[3])
+                -- unknown control message
+                cc.printwarn("[RedisSub:%s] unknown control message, %s", id, msg)
+                break -- goto readReply
             end
-            goto wait_next_msg
-        end
 
-        -- unknown control message
-        cc.printwarn("[RedisSub:%s] unknown control message, %s", id, msg)
-
-::wait_next_msg::
-
-    end
+        end -- repeat process message
+    end -- repeat readReply
 
     cc.printinfo("[RedisSub:%s] STOPPED", id)
 

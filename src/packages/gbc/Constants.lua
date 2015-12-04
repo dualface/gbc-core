@@ -35,6 +35,6 @@ _M.WEBSOCKET_DEFAULT_MAX_PAYLOAD_LEN = 16 * 1024 -- 16KB
 _M.STRIP_LUA_PATH_PATTERN            = "[/%.%a%-]+/([%a%-]+%.lua:%d+: )"
 
 -- control message
-_M.CLOSE_CONNECT                     = "!SEND_CLOSE"
+_M.CLOSE_CONNECT                     = "SEND_CLOSE"
 
 return table.readonly(_M)
