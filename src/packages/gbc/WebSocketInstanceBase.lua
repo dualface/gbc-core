@@ -176,8 +176,6 @@ function WebSocketInstanceBase:runEventLoop()
             break
         end
 
-        self:heartbeat()
-
         if #frames > 0 then
             -- merging fragmented frames
             frames[#frames + 1] = frame
@@ -204,6 +202,8 @@ function WebSocketInstanceBase:runEventLoop()
         end
 
 ::recv_next_message::
+
+        self:heartbeat()
 
     end -- while
 
