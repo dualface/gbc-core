@@ -202,17 +202,13 @@ _updateRedisConfig = function()
     end
 
     local host = _getValue(config, "server.redis.host")
+    local port = _getValue(config, "server.redis.port", 6379)
     if host then
         contents = string.gsub(contents, "[# \t]*bind[ \t]+[%d\\.]+", "bind 127.0.0.1")
+        contents = string.gsub(contents, "[# \t]*port[ \t]+%d+", "port " .. port)
     else
         contents = string.gsub(contents, "[# \t]*bind[ \t]+[%d\\.]+", "# bind 127.0.0.1")
-    end
-
-    local port = _getValue(config, "server.redis.port")
-    if port then
-        contents = string.gsub(contents, "\n[# \t]*port[ \t]+[%d]+", string.format("\nport %s", tostring(port)))
-    else
-        contents = string.gsub(contents, "\n[# \t]*port[ \t]+[%d]+", "\nport 6379")
+        contents = string.gsub(contents, "[# \t]*port[ \t]+%d+", "port 0")
     end
 
     io.writefile(VAR_REDIS_CONF_PATH, contents)
