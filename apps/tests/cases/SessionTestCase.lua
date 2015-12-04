@@ -96,14 +96,15 @@ function SessionTestCase:expiredTest()
     session:save()
     check.isTrue(session:isAlive())
 
-    session:setKeepAlive(2)
+    local expired = 2
+    session:setKeepAlive(expired)
+    check.equals(session:getExpired(), expired)
     helper.sleep(1)
     check.isTrue(session:isAlive())
     check.equals(session:get(_KEYS.NUMBER_KEY), number)
 
     helper.sleep(2)
     check.isFalse(session:isAlive())
-    check.equals(session:get(_KEYS.NUMBER_KEY), nil)
 
     return true
 end

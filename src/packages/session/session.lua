@@ -44,7 +44,7 @@ local _DEFAULT_EXPIRED        = 60 * 5 -- 5m
 local _DEFAULT_SID_KEY_PREFIX = "_SID_"
 local _DEFAULT_SECRET         = "1b876ea6"
 
-local _gensid, _cleanup
+local _gensid
 
 function Session:ctor(redis, config)
     config = config or {}
@@ -52,32 +52,39 @@ function Session:ctor(redis, config)
     self._prefix  = config.prefix or _DEFAULT_SID_KEY_PREFIX
     self._secret  = config.secret or _DEFAULT_SECRET
     self._redis   = redis
-    self._values  = {}
-    self._saved   = false
 end
 
 function Session:start(sid)
+    local create = sid == nil
     if type(sid) == "nil" then
         sid = _gensid(self._secret)
     elseif type(sid) ~= "string" or sid == "" then
-        cc.throw("Session:start() - invalid sid '%s'", tostring(sid))
+        cc.throw("[Session] invalid sid '%s'", tostring(sid))
     end
 
-    local redis = self._redis
     local key = self._prefix .. sid
-    local res, err = self._redis:get(key)
-    if not res then
-        cc.throw("Session:start() - redis failed, %s", err)
+
+    if create then
+        self._values = {}
+        self._sid = sid
+        self._key = key
+    else
+        local redis = self._redis
+        local res, err = self._redis:get(key)
+        if not res then
+            return false, err
+        end
+        if res == redis.null then
+            return false, string_format("not found session '%s'", sid)
+        end
+
+        self._values = checktable(json.decode(res))
+        self._sid = sid
+        self._key = key
+        self:setKeepAlive()
     end
 
-    if res ~= redis.null then
-        self._values = json.decode(res)
-        self._saved = true
-    end
-    self._values = checktable(self._values)
-    self._sid = sid
-    self._key = key
-    self:setKeepAlive()
+    return true
 end
 
 function Session:getSid()
@@ -89,68 +96,95 @@ function Session:getExpired()
 end
 
 function Session:get(key)
-    if type(key) ~= "string" or key == "" then
-        cc.throw("Session:get() - invalid key '%s'", tostring(key))
+    if not self._values then
+        cc.throw("[Session] get key '%s' failed, not initialized", key)
     end
+
+    if type(key) ~= "string" or key == "" then
+        cc.throw("[Session] invalid get key '%s'", tostring(key))
+    end
+
     return self._values[key]
 end
 
 function Session:set(key, value)
-    if type(key) ~= "string" or key == "" then
-        cc.throw("Session:set() - invalid key '%s'", tostring(key))
+    if not self._values then
+        cc.throw("[Session] set key '%s' failed, not initialized", key)
     end
+
+    if type(key) ~= "string" or key == "" then
+        cc.throw("[Session] invalid set key '%s'", tostring(key))
+    end
+
     self._values[key] = value
 end
 
 function Session:save()
-    if not self._key then
-        cc.throw("Session:save() - not set sid")
+    if not self._values then
+        cc.throw("[Session] save failed, not initialized")
     end
 
-    local j = json.encode(self._values)
-    if type(j) ~= "string" then
-        cc.throw("Session:save() - serializing failed")
+    local jsonstr = json.encode(self._values)
+    if type(jsonstr) ~= "string" then
+        return false, "serializing failed"
     end
 
-    local ok, err = self._redis:set(self._key, j, "EX", self._expired)
+    local ok, err = self._redis:set(self._key, jsonstr, "EX", self._expired)
     if not ok then
-        cc.throw("Session:save() - redis failed, %s", err)
+        return false, err
     end
 
-    self._saved = true
+    return true
 end
 
 function Session:setKeepAlive(expired)
-    local ok, err = self._redis:expire(self._key, expired or self._expired)
-    if not ok then
-        cc.throw("Session:setKeepAlive() - redis failed, %s", err)
+    if not self._values then
+        cc.throw("[Session] set keep alive failed, not initialized")
     end
+
+    if expired then
+        self._expired = expired
+    end
+    local ok, err = self._redis:expire(self._key, self._expired)
+    if not ok then
+        return false, err
+    end
+
+    return true
 end
 
 function Session:isAlive()
+    if not self._values then
+        cc.throw("[Session] check alive failed, not initialized")
+    end
+
     local res, err = self._redis:exists(self._key)
     if not res then
-        cc.throw("Session:isAlive() - redis failed, %s", err)
+        return false, err
     end
+
     if tostring(res) == "1" then
         return true
-    elseif self._saved then
-        _cleanup(self)
     end
-    return false
+
+    return false, string_format("not found session '%s'", self._sid)
 end
 
 function Session:destroy()
-    if not self._key then
-        cc.throw("Session:destroy() - not set sid")
+    if not self._values then
+        cc.throw("[Session] destroy failed, not initialized")
     end
 
     local ok, err = self._redis:del(self._key)
-    if not ok then
-        cc.throw("Session:destroy() - redis failed, %s", err)
-    end
+    self._values = nil
+    self._redis = nil
+    self._sid = nil
+    self._key = nil
 
-    _cleanup(self)
+    if not ok then
+        return false, err
+    end
+    return true
 end
 
 -- private
@@ -171,14 +205,6 @@ _gensid = function(secret)
     local mask = string.format("%0.5f|%0.10f|%s", now, random, secret)
     local origin = string.format("%s|%s", addr, mask)
     return md5(origin)
-end
-
-_cleanup = function(self)
-    self._redis  = nil
-    self._values = {}
-    self._sid    = nil
-    self._key    = nil
-    self._saved  = false
 end
 
 return Session
