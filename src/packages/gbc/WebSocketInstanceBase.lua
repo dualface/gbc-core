@@ -36,6 +36,7 @@ local tostring         = tostring
 local type             = type
 
 local json      = cc.import("#json")
+local msgpack   = cc.import("#MessagePack")
 local Constants = cc.import(".Constants")
 
 local json_encode = json.encode
@@ -295,6 +296,13 @@ _parseMessage = function(rawMessage, messageType, messageFormat)
     -- TODO: support message format plugin
     if messageFormat == "json" then
         local message = json_decode(rawMessage)
+        if type(message) == "table" then
+            return message
+        else
+            cc.throw("not supported message format \"%s\"", type(message))
+        end
+    elseif messageFormat == "mpack" then
+        local message = msgpack.unpack(rawMessage)
         if type(message) == "table" then
             return message
         else
