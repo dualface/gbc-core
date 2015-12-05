@@ -63,8 +63,6 @@ cc.DEBUG_INFO    = 2
 cc.DEBUG_VERBOSE = 3
 cc.DEBUG         = cc.DEBUG_DEBUG
 
-cc.GBC_VERSION = "0.8.0"
-
 local _loaded = {}
 -- loader
 function cc.import(name, current)
