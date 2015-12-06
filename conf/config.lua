@@ -29,6 +29,8 @@ local config = {
     apps = {
         welcome = "_GBC_CORE_ROOT_/apps/welcome",
         tests   = "_GBC_CORE_ROOT_/apps/tests",
+        game    = "_GBC_CORE_ROOT_/appGames/game",
+        master  = "_GBC_CORE_ROOT_/appGames/master",
     },
 
     -- default app config
@@ -58,9 +60,9 @@ local config = {
 
         -- internal memory database
         redis = {
-            socket     = "unix:_GBC_CORE_ROOT_/tmp/redis.sock",
-            -- host       = "127.0.0.1",
-            -- port       = 6379,
+            --socket     = "unix:_GBC_CORE_ROOT_/tmp/redis.sock",
+            host       = "127.0.0.1",
+            port       = 6379,
             timeout    = 10 * 1000, -- 10 seconds
         },
 

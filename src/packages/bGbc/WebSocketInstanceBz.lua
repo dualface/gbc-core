@@ -1,7 +1,7 @@
 local Session = cc.import("#session")
 local gbc = cc.import("#gbc")
 
-local ConnectIDService = cc.import("service.ConnectIDService")
+local ConnectIDService = cc.import("#bService").ConnectIDService
 
 local Broadcast = gbc.Broadcast
 

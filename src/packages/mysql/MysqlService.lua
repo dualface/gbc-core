@@ -61,6 +61,25 @@ function MysqlService:query(queryStr)
     return self._mysql:query(queryStr)
 end
 
+function MysqlService:select(tableName, where)
+    local sql
+    if where then
+        local whereFields = {}
+
+        for name, value in pairs(where) do
+            whereFields[#whereFields + 1] = self:_escapeName(name) .. "=" .. self:_escapeValue(value)
+        end
+
+        sql = string.format("SELECT * FROM %s WHERE %s",
+        self:_escapeName(tableName),
+        table.concat(whereFields, " AND "))
+    else
+        sql = string.format("SELECT * FROM %s",
+        self:_escapeName(tableName))
+    end
+    return self:query(sql)
+end
+
 function MysqlService:insert(tableName, params)
     local fieldNames = {}
     local fieldValues = {}
