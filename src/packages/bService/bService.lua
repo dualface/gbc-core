@@ -5,6 +5,8 @@ local _M = {
     Rank   = cc.import(".RankService"),
     Room   = cc.import(".RoomService"),
     Shop   = cc.import(".ShopService"),
+
+    ConnectIDService = cc.import(".ConnectIDService"),
 }
 
 return _M

@@ -1,6 +1,4 @@
-
--- local ngx_null = ngx.null
--- local table_map = table.map
+local json = cc.import("#json")
 local json_encode = json.encode
 -- local json_decode = json.decode
 

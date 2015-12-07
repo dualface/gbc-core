@@ -1,5 +1,5 @@
 local MySQL = {}
-local mysqlService = cc.load("mysql").service
+local mysqlService = cc.import("#mysql").service
 
 function MySQL:getConnect(config)
     if ngx.ctx[MySQL] then

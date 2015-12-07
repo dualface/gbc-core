@@ -13,6 +13,7 @@ function WebSocketInstanceBz:ctor(config)
     WebSocketInstanceBz.super.ctor(self, config)
     self:addEventListener(_EVENT.CONNECTED, cc.handler(self, self.onConnected))
     self:addEventListener(_EVENT.DISCONNECTED, cc.handler(self, self.onDisconnected))
+    self:addEventListener(_EVENT.CONTROL_MESSAGE, cc.handler(self, self.onControlMessage))
 end
 
 function WebSocketInstanceBz:initInstance()
@@ -31,6 +32,13 @@ function WebSocketInstanceBz:sendMessageToUser(user, message)
     end
 end
 
+function WebSocketInstanceBz:sendMessageToSelf(message)
+    local connectId = self._connectId
+    if connectId and self._Broadcast then
+        self._Broadcast:sendMessage(connectId, message, self.config.app.websocketMessageFormat)
+    end
+end
+
 function WebSocketInstanceBz:closeConnect()
     local cid = self._connectId
     if cid and self._Broadcast then
@@ -42,54 +50,56 @@ function WebSocketInstanceBz:verifyToken(token)
     return token
 end
 
-local _LOCK_SID = "_LOCK_SID"
-function WebSocketInstanceBz:lockSID(sid)
-    local ret = self:getRedis():hincrby(_LOCK_SID, sid, 1)
-    if ret > 1 then
-        return false
-    else
-        return true
+function WebSocketInstanceBz:authConnect()
+    local token, err = WebSocketInstanceBz.super.authConnect(self)
+    if token then
+        token = self:verifyToken(token)
     end
+    return token, err
 end
 
-function WebSocketInstanceBz:unlockSID(sid)
-    self:getRedis():hdel(_LOCK_SID, sid)
+function WebSocketInstanceBz:onLoadUser()
+    return nil
+end
+
+function WebSocketInstanceBz:onUnloadUser()
+end
+
+function WebSocketInstanceBz:onControlMessage()
 end
 
 function WebSocketInstanceBz:onConnected()
-    local cid = self._connectId
+    local connectId = self._connectId
     local redis = self:getRedis()
-    local sid = self:verifyToken(self._connectToken)
-    if not sid then
-        self:closeConnect()
-        cc.throw("verifyToken failed")
-    end
-    if not self:lockSID(sid) then
-        self:closeConnect()
-        cc.throw("sid:"..sid.." is been used")
-    end
+    local sid = self._connectToken
 
     local session = Session.new(redis)
     session:start(sid)
-    local user = session:get("user")
-    if user then
+    local ok, user = pcall(function()
+        return self:onLoadUser(session)
+    end)
+    if ok then
         self:initInstance()
-        self._ConnIDs:save(cid, user)
+        self._ConnIDs:save(connectId, user)
         self._session = session
     else
-        self:closeConnect()
-        cc.throw("can not find the user")
+        cc.printerror(user)
     end
 end
 
 function WebSocketInstanceBz:onDisconnected()
-    local cid = self._connectId
+    local ok, err = pcall(function()
+        return self:onUnloadUser()
+    end)
+    if not ok then
+        cc.printerror(err)
+    end
+    local connectId = self._connectId
     if self._ConnIDs then
-        self._ConnIDs:remove(cid)
+        self._ConnIDs:remove(connectId)
     end
     if self._session then
-        local sid = self._session:getSid()
-        self:unlockSID(sid)
+        self._session:destroy()
     end
 end
 

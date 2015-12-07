@@ -1,5 +1,7 @@
 local http = require("resty.http")
-local HttpClient = class("HttpClient")
+local HttpClient = cc.class("HttpClient")
+
+local json = cc.import("#json")
 
 function HttpClient:ctor(url)
     self._url = url

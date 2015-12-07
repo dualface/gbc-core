@@ -84,9 +84,13 @@ function WebSocketInstanceBase:run()
     end)
 end
 
+function WebSocketInstanceBase:authConnect()
+    return _authConnect()
+end
+
 function WebSocketInstanceBase:runEventLoop()
     -- auth client
-    local token, err = _authConnect()
+    local token, err = self:authConnect()
     if not token then
         cc.throw(err)
     end
@@ -301,7 +305,7 @@ _parseMessage = function(rawMessage, messageType, messageFormat)
         else
             cc.throw("not supported message format \"%s\"", type(message))
         end
-    elseif messageFormat == "mpack" then
+    elseif messageFormat == Constants.MESSAGE_FORMAT_MPACK then
         local message = msgpack.unpack(rawMessage)
         if type(message) == "table" then
             return message

@@ -31,6 +31,7 @@ local Constants = cc.import(".Constants")
 local json_encode = json.encode
 
 local Broadcast = cc.class("Broadcast")
+local msgpack   = cc.import("#MessagePack")
 
 local _formatmsg
 
@@ -74,7 +75,8 @@ _formatmsg = function(message, format)
     if type(message) == "table" then
         if format == Constants.MESSAGE_FORMAT_JSON then
             message = json_encode(message)
-        else
+        elseif format == Constants.MESSAGE_FORMAT_MPACK then
+            message = msgpack.pack(message)
             -- TODO: support more message formats
         end
     end

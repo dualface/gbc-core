@@ -16,6 +16,9 @@ function ConnectIDService:getTag(connectid)
 end
 
 function ConnectIDService:save(connectid, tag)
+    if not tag or not connectid then 
+        cc.printerror("ConnectIDService param error")
+    end
     local redis = self._Redis
     redis:initPipeline()
     redis:hset(CONNECTS_ID_DICT, connectid, tag)
