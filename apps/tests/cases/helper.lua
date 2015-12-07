@@ -5,7 +5,7 @@ local Beanstalkd = cc.import("#beanstalkd")
 local _M = {}
 
 _M.newredis = function(config)
-    local redis = Redis.new()
+    local redis = Redis:new()
     local ok, err
     if config.socket then
         ok, err = redis:connect(config.socket)
@@ -19,7 +19,7 @@ _M.newredis = function(config)
 end
 
 _M.newbeanstalkd = function(config)
-    local bean = Beanstalkd.new()
+    local bean = Beanstalkd:new()
     local ok, err = bean:connect(config.host, config.port)
     if not ok then
         return nil, err

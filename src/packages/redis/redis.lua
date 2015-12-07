@@ -307,12 +307,12 @@ function Redis:makeSubscribeLoop(id)
         return nil, "not support subscribe loop in current platform"
     end
 
-    local subredis = Redis.new()
+    local subredis = Redis:new()
     local ok, err = subredis:connect(self._config.host, self._config.port)
     if not ok then
         return nil, err
     end
-    return Loop.new(self, subredis, id)
+    return Loop:new(self, subredis, id)
 end
 
 function Redis:hashToArray(hash)

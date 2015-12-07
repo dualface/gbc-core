@@ -43,7 +43,7 @@ function MysqlService:ctor(config)
     end
 
     self._config = config
-    self._mysql = MysqlAdapter.new(config)
+    self._mysql = MysqlAdapter:new(config)
 end
 
 function MysqlService:close()

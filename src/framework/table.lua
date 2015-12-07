@@ -26,7 +26,7 @@ local pairs = pairs
 
 local ok, table_new = pcall(require, "table.new")
 if not ok or type(table_new) ~= "function" then
-    function table.new()
+    function table:new()
         return {}
     end
 end

@@ -54,7 +54,7 @@ function Factory.create(config, classname, ...)
         cls = cc.import("." .. classname .. "Base", _CUR)
     end
 
-    return cls.new(config, ...)
+    return cls:new(config, ...)
 end
 
 function Factory.makeAppConfigs(appKeys, serverConfig, defaultPackagePath)

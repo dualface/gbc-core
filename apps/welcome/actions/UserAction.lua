@@ -40,7 +40,7 @@ function UserAction:signinAction(args)
     end
 
     -- start session
-    local session = Session.new(self._redis)
+    local session = Session:new(self._redis)
     session:start()
     session:set("username", username)
     session:set("count", 0)
@@ -55,7 +55,7 @@ function UserAction:signoutAction(args)
 
     -- send control message to websocket connect
     local connectId = session:get("connect")
-    local broadcast = gbc.Broadcast.new(self._redis)
+    local broadcast = gbc.Broadcast:new(self._redis)
     broadcast:sendControlMessage(connectId, gbc.Constants.CLOSE_CONNECT)
 
     -- delete session
@@ -83,7 +83,7 @@ _opensession = function(redis, args)
         cc.throw("not set argsument: \"sid\"")
     end
 
-    local session = Session.new(redis)
+    local session = Session:new(redis)
     if not session:start(sid) then
         cc.throw("session is expired, or invalid session id")
     end

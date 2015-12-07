@@ -73,7 +73,7 @@ function WebSocketInstance:onConnected()
 
     -- get username from session
     local sid = self._connectToken -- token is session id
-    local session = Session.new(redis)
+    local session = Session:new(redis)
     session:start(sid)
     local username = session:get("username")
     self._username = username
@@ -83,7 +83,7 @@ function WebSocketInstance:onConnected()
     self._session = session
 
     -- add user to online users list
-    local online = Online.new(redis)
+    local online = Online:new(redis)
     online:add(username)
 
     -- map username <-> connect id
@@ -93,7 +93,7 @@ function WebSocketInstance:onConnected()
 
     -- send all usernames to current client
     local users = online:getAll()
-    self._broadcast = Broadcast.new(self:getRedis(), self)
+    self._broadcast = Broadcast:new(self:getRedis(), self)
     self._broadcast:sendMessage(id, {name = _LIST_ALL_USERS, users = users})
     -- subscribe online users event
     self:subscribe(online:getChannel())
