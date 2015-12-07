@@ -76,6 +76,7 @@ function cc.import(name, current)
         name = string_sub(name, 2)
         name = string_format("packages.%s.%s", name, name)
     end
+
     if first ~= 46 --[[ "." ]] then
         _loaded[_name] = require(name)
         return _loaded[_name]
@@ -86,28 +87,15 @@ function cc.import(name, current)
         current = v
     end
 
-    local parts = {}
-    local offset = 1
-    while true do
-        local pos = string_find(current, ".", offset, true)
+    _name = current .. name
+    if not _loaded[_name] then
+        local pos = string_find(current, "%.[^%.]*$")
         if pos then
-            parts[#parts + 1] = string_sub(current, offset, pos - 1)
-            offset = pos + 1
-        else
-            parts[#parts + 1] = string_sub(current, offset)
-            break
+            current = string_sub(current, 1, pos - 1)
         end
-    end
 
-    offset = 1
-    while string_byte(name, offset) == 46 do
-        table.remove(parts)
-        offset = offset + 1
+        _loaded[_name] = require(current .. name)
     end
-
-    parts[#parts + 1] = string_sub(name, offset)
-    name = table_concat(parts, ".")
-    _loaded[_name] = require(name)
     return _loaded[_name]
 end
 
