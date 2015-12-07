@@ -55,7 +55,7 @@ function EventTestCase:bindingTest()
     end
 
     -- create object
-    local sheep = Sheep.new()
+    local sheep = Sheep:new()
 
     -- add binding
     cc.bind(sheep, Event)

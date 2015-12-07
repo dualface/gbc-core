@@ -185,7 +185,7 @@ end
 -- private
 
 _newbean = function(config)
-    local beanstalkd = Beanstalkd.new()
+    local beanstalkd = Beanstalkd:new()
     beanstalkd:connect(config.host, config.port)
     beanstalkd:use(_TEST_TUBE)
     beanstalkd:watch(_TEST_TUBE)

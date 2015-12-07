@@ -48,6 +48,6 @@ local globalConfig = dofile(ROOT_DIR .. "/tmp/config.lua")
 cc.DEBUG = globalConfig.DEBUG
 
 local gbc = cc.import("#gbc")
-local bootstrap = gbc.WorkerBootstrap.new(appKeys, globalConfig)
+local bootstrap = gbc.WorkerBootstrap:new(appKeys, globalConfig)
 
 bootstrap:runapp(APP_ROOT_PATH)

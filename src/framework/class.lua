@@ -55,7 +55,35 @@ _setmetatableindex = function(target, index)
     end
 end
 
-_iskindof = function(target, classname)
+_iskindofinternal = function(mt, classname)
+    if not mt then return false end
+
+    local index = rawget(mt, "__index")
+    if not index then return false end
+
+    local cname = rawget(index, "__cname")
+    if cname == classname then return true end
+
+    return _iskindofinternal(getmetatable(index), classname)
+end
+
+local function _new(cls, ...)
+    local create = cls.__create
+    local instance
+    if create then
+        instance = create(...)
+    else
+        instance = {}
+    end
+    _setmetatableindex(instance, cls)
+    instance.class = cls
+    instance:ctor(...)
+    return instance
+end
+
+-- exports
+
+function cc.iskindof(target, classname)
     local targetType = type(target)
     if targetType ~= "userdata" and targetType ~= "table" then
         return false
@@ -77,45 +105,9 @@ _iskindof = function(target, classname)
     return _iskindofinternal(mt, classname)
 end
 
-_iskindofinternal = function(mt, classname)
-    if not mt then return false end
-
-    local index = rawget(mt, "__index")
-    if not index then return false end
-
-    local cname = rawget(index, "__cname")
-    if cname == classname then return true end
-
-    return _iskindofinternal(getmetatable(index), classname)
-end
-
--- exports
-
 function cc.class(classname, super)
     -- create class
-    local cls = {__cname = classname}
-
-    cls.new = function(...)
-        local create = cls.__create
-        local instance
-        if create then
-            instance = create(...)
-        else
-            instance = {}
-        end
-        _setmetatableindex(instance, cls)
-        instance.class = cls
-        instance:ctor(...)
-        return instance
-    end
-
-    cls.create = function(_cls, ...)
-        return cls.new(...)
-    end
-
-    cls.iskindof = function(target)
-        return _iskindof(target, cls.__cname)
-    end
+    local cls = {__cname = classname, new = _new}
 
     -- set super class
     local superType = type(super)

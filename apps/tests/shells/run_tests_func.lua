@@ -241,6 +241,6 @@ local appRootPath  = ROOT_DIR ..  "/apps/tests"
 local appConfig    = appConfigs[appRootPath]
 
 cc.exports.runTests = function(arg)
-    local tests = Tests.new(appConfig, appRootPath)
+    local tests = Tests:new(appConfig, appRootPath)
     tests:run(arg)
 end

@@ -91,7 +91,7 @@ function InstanceBase:runAction(actionName, args)
             cc.throw("can't access this action via request type \"%s\"", currentRequestType)
         end
 
-        action = actionModule.new(self)
+        action = actionModule:new(self)
         self._actions[actionModulePath] = action
     end
 
@@ -111,7 +111,7 @@ function InstanceBase:getRedis()
     local redis = self._redis
     if not redis then
         local config = self.config.server.redis
-        redis = Redis.new()
+        redis = Redis:new()
 
         local ok, err
         if config.socket then
@@ -132,7 +132,7 @@ end
 function InstanceBase:getJobs(opts)
     local jobs = self._jobs
     if not jobs then
-        local bean   = Beanstalkd.new()
+        local bean   = Beanstalkd:new()
         local config = self.config.server.beanstalkd
         local try    = 3
         while true do
@@ -151,7 +151,7 @@ function InstanceBase:getJobs(opts)
         bean:watch(tube)
         bean:ignore("default")
 
-        jobs = Jobs.new(bean, self:getRedis())
+        jobs = Jobs:new(bean, self:getRedis())
         self._jobs = jobs
     end
     return jobs

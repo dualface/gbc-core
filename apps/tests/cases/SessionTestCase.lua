@@ -48,7 +48,7 @@ end
 
 function SessionTestCase:createTest()
     local redis = self._redis
-    local session = Session.new(redis)
+    local session = Session:new(redis)
     session:start()
 
     local sid = session:getSid()
@@ -68,7 +68,7 @@ function SessionTestCase:createTest()
     session:save()
 
     -- create an other session use same sid
-    local session2 = Session.new(redis)
+    local session2 = Session:new(redis)
     session2:start(sid)
 
     check.equals(session:get(_KEYS.NUMBER_KEY), number)
@@ -85,7 +85,7 @@ end
 
 function SessionTestCase:expiredTest()
     local redis = self._redis
-    local session = Session.new(redis, {expired = 1})
+    local session = Session:new(redis, {expired = 1})
     session:start()
 
     local number = math.random(1, 100000)
