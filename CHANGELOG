@@ -16,6 +16,7 @@
     -   upgrade all libs
     -   improved cc.class(), cc.bind(), cc.unbind()
     -   improved cc.import()
+    -   remove mysql driver
 
 -   BUGFIX:
     -   fix Job Worker
