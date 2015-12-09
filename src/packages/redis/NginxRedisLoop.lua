@@ -45,7 +45,7 @@ function NginxRedisLoop:ctor(redis, subredis, id)
     self._id = id .. "_" .. string_sub(tostring(self), 10)
 end
 
-function NginxRedisLoop:start(onmessage, cmdchannel)
+function NginxRedisLoop:start(onmessage, cmdchannel, ...)
     if not self._subredis then
         return nil, "not initialized"
     end
@@ -53,7 +53,7 @@ function NginxRedisLoop:start(onmessage, cmdchannel)
     local onerror = _onerror
     self._cmdchannel = cmdchannel
 
-    local res, err = self._subredis:subscribe(cmdchannel)
+    local res, err = self._subredis:subscribe(cmdchannel, ...)
     if not res then
         return nil, err
     end

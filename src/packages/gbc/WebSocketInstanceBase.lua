@@ -131,9 +131,7 @@ function WebSocketInstanceBase:runEventLoop()
         else
             socket:send_text(msg)
         end
-    end, controlChannel)
-
-    loop:subscribe(connectChannel, Constants.BROADCAST_ALL_CHANNEL)
+    end, controlChannel, connectChannel, Constants.BROADCAST_ALL_CHANNEL)
     self._subloop = loop
 
     -- connected
