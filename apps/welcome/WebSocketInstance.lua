@@ -58,10 +58,13 @@ function WebSocketInstance:onConnected()
     self._online = online
 end
 
-function WebSocketInstance:onDisconnected()
-    -- remove user from online list
-    local username = self._session:get("username")
-    self._online:remove(username)
+function WebSocketInstance:onDisconnected(event)
+    if event.reason ~= gbc.Constants.CLOSE_CONNECT then
+        -- connection interrupted unexpectedly, remove user from online list
+        cc.printwarn("[websocket:%s] connection interrupted unexpectedly", self:getConnectId())
+        local username = self._session:get("username")
+        self._online:remove(username)
+    end
 end
 
 function WebSocketInstance:heartbeat()

@@ -47,28 +47,30 @@ function Broadcast:sendMessage(connectId, message, format)
     message = _formatmsg(message, format)
 
     if self._websocketInstance and self._websocketInstance:getConnectId() == connectId then
-        self._websocketInstance._socket:send_text(tostring(message))
+        return self._websocketInstance._socket:send_text(tostring(message))
     else
         local connectChannel = Constants.CONNECT_CHANNEL_PREFIX .. connectId
         local ok, err = self._redis:publish(connectChannel, message)
         if not ok then
-            cc.printwarn("[broadcast] %s", err)
+            return nil, err
         end
+        return 1
     end
 end
 
 function Broadcast:sendMessageToAll(message, format)
     format = format or self._messageType
     message = _formatmsg(message, format)
-    self._redis:publish(Constants.BROADCAST_ALL_CHANNEL, message)
+    return self._redis:publish(Constants.BROADCAST_ALL_CHANNEL, message)
 end
 
 function Broadcast:sendControlMessage(connectId, message)
     local controlChannel = Constants.CONTROL_CHANNEL_PREFIX .. connectId
-    local ok, er = self._redis:publish(controlChannel, tostring(message))
+    local ok, err = self._redis:publish(controlChannel, tostring(message))
     if not ok then
-        cc.printwarn("[broadcast] %s", err)
+        return nil, err
     end
+    return 1
 end
 
 -- private

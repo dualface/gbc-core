@@ -112,6 +112,9 @@ function WebSocketInstanceBase:runEventLoop()
     end
     self._socket = socket
 
+    -- tracking socket close reason
+    local closeReason = ""
+
     -- create subscribe loop
     local loop, err = self:getRedis():makeSubscribeLoop(connectId)
     if not loop then
@@ -126,6 +129,7 @@ function WebSocketInstanceBase:runEventLoop()
                 message = msg
             })
             if msg == Constants.CLOSE_CONNECT then
+                closeReason = Constants.CLOSE_CONNECT
                 socket:send_close()
             end
         else
@@ -171,6 +175,7 @@ function WebSocketInstanceBase:runEventLoop()
             end
 
             cc.printwarn("[websocket:%s] failed to receive frame, type \"%s\", %s", connectId, ftype, err)
+            closeReason = ftype
             break
         end
 
@@ -211,7 +216,7 @@ function WebSocketInstanceBase:runEventLoop()
     self._socket = nil
 
     -- disconnected
-    self:dispatchEvent(_EVENT.DISCONNECTED)
+    self:dispatchEvent({name = _EVENT.DISCONNECTED, reason = reason})
     cc.printinfo("[websocket:%s] disconnected", connectId)
 end
 

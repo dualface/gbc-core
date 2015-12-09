@@ -22,6 +22,8 @@ THE SOFTWARE.
 
 ]]
 
+local string_format = string.format
+
 local json = cc.import("#json")
 local gbc = cc.import("#gbc")
 
@@ -56,12 +58,18 @@ function Online:add(username, connectId)
     redis:sadd(_ONLINE_SET, username)
     -- send event to all clients
     redis:publish(_ONLINE_CHANNEL, json.encode({name = _EVENT.ADD_USER, username = username}))
-    redis:commitPipeline()
+    return redis:commitPipeline()
 end
 
 function Online:remove(username)
     local redis = self._redis
-    local connectId = redis:hget(_USERNAME_TO_CONNECT, username)
+    local connectId, err = redis:hget(_USERNAME_TO_CONNECT, username)
+    if not connectId then
+        return nil, err
+    end
+    if connectId == redis.null then
+        return nil, string_format("not found username '%s'", username)
+    end
 
     redis:initPipeline()
     -- remove map
@@ -70,9 +78,12 @@ function Online:remove(username)
     -- remove username from set
     redis:srem(_ONLINE_SET, username)
     redis:publish(_ONLINE_CHANNEL, json.encode({name = _EVENT.REMOVE_USER, username = username}))
-    redis:commitPipeline()
+    local res, err = redis:commitPipeline()
+    if not res then
+        return nil, err
+    end
 
-    self._broadcast:sendControlMessage(connectId, gbc.Constants.CLOSE_CONNECT)
+    return self._broadcast:sendControlMessage(connectId, gbc.Constants.CLOSE_CONNECT)
 end
 
 function Online:getChannel()
@@ -84,21 +95,19 @@ function Online:sendMessage(recipient, event)
     -- query connect id by recipient
     local connectId, err = redis:hget(_USERNAME_TO_CONNECT, recipient)
     if not connectId then
-        cc.printwarn(err)
-        return
+        return nil, err
     end
 
     if connectId == redis.null then
-        cc.printwarn("not found recipient '%s'", recipient)
-        return
+        return nil, string_format("not found recipient '%s'", recipient)
     end
 
     -- send message to connect id
-    self._broadcast:sendMessage(connectId, event)
+    return self._broadcast:sendMessage(connectId, event)
 end
 
 function Online:sendMessageToAll(event)
-    self._broadcast:sendMessageToAll(event)
+    return self._broadcast:sendMessageToAll(event)
 end
 
 return Online
