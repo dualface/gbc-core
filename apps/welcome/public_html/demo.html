@@ -72,20 +72,47 @@
                 <form class="uk-form uk-form-horizontal">
                 <fieldset data-uk-margin>
                     <div class="uk-form-row">
-                        <label class="uk-form-label" for="selectUser">Online Users:</label>
+                        <label class="uk-form-label" for="selectUser">Online Users :</label>
                         <select id="selectUser" disabled></select>
                     </div>
 
                     <div class="uk-form-row">
                         <label class="uk-form-label" for="message">Message :</label>
-                        <input class="uk-form-width-large" type="text" id="message" placeholder="Enter message" disabled />
+                        <input class="uk-form-width-medium" type="text" id="message" placeholder="Enter message" value="hello"  disabled />
                         <button class="uk-button" id="sendMessageButton" onclick="return false;" disabled>Send</button>
                         <button class="uk-button" id="sendMessageToAllButton" onclick="return false;" disabled>Send to All</button>
                     </div>
                 </fieldset>
                 </form>
+            </div>
 
-                <hr />
+            <div class="uk-panel uk-panel-box uk-panel-header">
+                <h3 class="uk-panel-title">Send message to Delay Job</h3>
+                <form class="uk-form uk-form-horizontal">
+                <fieldset data-uk-margin>
+                    <div class="uk-form-row">
+                        <label class="uk-form-label">Delay :</label>
+                        <input type="radio" id="selectDelay1" name="selectDelay" value="1" checked disabled />
+                        <label for="selectDelay1">1 second</label>
+                        &nbsp;&nbsp;&nbsp;
+                        <input type="radio" id="selectDelay2" name="selectDelay" value="5" disabled />
+                        <label for="selectDelay2">5 seconds</label>
+                        &nbsp;&nbsp;&nbsp;
+                        <input type="radio" id="selectDelay3" name="selectDelay" value="10" disabled />
+                        <label for="selectDelay3">10 seconds</label>
+                    </div>
+
+                    <div class="uk-form-row">
+                        <label class="uk-form-label" for="jobMessage">Job Message :</label>
+                        <input class="uk-form-width-medium" type="text" id="jobMessage" placeholder="Enter message" value="hello" disabled />
+                        <button class="uk-button" id="sendJobMessageButton" onclick="return false;" disabled>Send to Job</button>
+                    </div>
+                </fieldset>
+                </form>
+            </div>
+
+            <div class="uk-panel uk-panel-box uk-panel-header">
+                <h3 class="uk-panel-title">Logs</h3>
 
                 <pre id="log"></pre>
                 <button class="uk-button" id="clearLogsButton" onclick="return false;">Clear Logs</button>

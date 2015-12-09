@@ -5,9 +5,9 @@ local ChatAction = cc.class("ChatAction", gbc.ActionBase)
 ChatAction.ACCEPTED_REQUEST_TYPE = "websocket"
 
 function ChatAction:sendmessageAction(arg)
-    local username = arg.username
-    if not username then
-        cc.throw("not set argument: \"username\"")
+    local recipient = arg.recipient
+    if not recipient then
+        cc.throw("not set argument: \"recipient\"")
     end
 
     local message = arg.message
@@ -16,7 +16,13 @@ function ChatAction:sendmessageAction(arg)
     end
 
     -- forward message to other client
-    self.instance:sendMessageToUser(username, message)
+    local instance = self:getInstance()
+    instance:getOnline():sendMessage(recipient, {
+        name      = "MESSAGE",
+        sender    = instance:getUsername(),
+        recipient = recipient,
+        body      = message,
+    })
 end
 
 function ChatAction:sendmessagetoallAction(arg)
@@ -26,7 +32,13 @@ function ChatAction:sendmessagetoallAction(arg)
     end
 
     -- forward message to all clients
-    self.instance:sendMessageToAll(message)
+    local instance = self:getInstance()
+    instance:getOnline():sendMessageToAll({
+        name      = "MESSAGE",
+        sender    = instance:getUsername(),
+        recipient = recipient,
+        body      = message,
+    })
 end
 
 return ChatAction
