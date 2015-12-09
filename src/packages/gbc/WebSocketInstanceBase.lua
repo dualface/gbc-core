@@ -74,7 +74,7 @@ function WebSocketInstanceBase:run()
     end, function(err)
         err = tostring(err)
         if cc.DEBUG > cc.DEBUG_WARN then
-            ngx_log(ngx.ERR, err .. debug.traceback("", 4))
+            ngx_log(ngx.ERR, err .. debug.traceback("", 3))
         else
             ngx_log(ngx.ERR, err)
         end
@@ -218,6 +218,22 @@ function WebSocketInstanceBase:runEventLoop()
 end
 
 function WebSocketInstanceBase:heartbeat()
+end
+
+function WebSocketInstanceBase:getConnectToken()
+    return self._connectToken
+end
+
+function WebSocketInstanceBase:getConnectId()
+    return self._connectId
+end
+
+function WebSocketInstanceBase:getConnectChannel()
+    return self._connectChannel
+end
+
+function WebSocketInstanceBase:getControlChannel()
+    return self._controlChannel
 end
 
 -- add methods

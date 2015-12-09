@@ -39,7 +39,8 @@ local _JOB_TTR      = 2
 local _JOB_WORD     = "hello, number is " .. math.random(1, 100)
 
 function BeanstalkdTestCase:setup()
-    self._beanstalkd = _newbean(self.instance.config.server.beanstalkd)
+    local config = self:getInstanceConfig()
+    self._beanstalkd = _newbean(instance.config.server.beanstalkd)
     _flush(self._beanstalkd)
 end
 

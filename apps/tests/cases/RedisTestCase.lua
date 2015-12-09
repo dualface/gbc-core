@@ -40,7 +40,8 @@ end
 local _newredis, _runcmds
 
 function RedisTestCase:setup()
-    self._redis = _newredis(self.instance.config.server.redis)
+    local config = self:getInstanceConfig()
+    self._redis = _newredis(config.server.redis)
 end
 
 function RedisTestCase:teardown()
@@ -168,7 +169,8 @@ function RedisTestCase:pubsubTest()
     })
 
     -- use an other instance publish message to channels
-    local redis2 = _newredis(self.instance.config.server.redis)
+    local config = self:getInstanceConfig()
+    local redis2 = _newredis(config.server.redis)
     redis2:publish(channel1, "hello")
 
     check.equals(redis:readReply(), {
@@ -227,7 +229,7 @@ function RedisTestCase:loopTest()
     local msgs = {}
     local loop, err = redis:makeSubscribeLoop()
     if not loop then
-        check.equals(self.instance:getRequestType(), "cli")
+        check.equals(self:getInstance():getRequestType(), "cli")
         return true
     end
 

@@ -8,7 +8,7 @@ function JobsAction:triggingAction(job)
     local key = job.data.key
     local number = job.data.number
 
-    local redis = self.instance:getRedis()
+    local redis = self:getInstance():getRedis()
     redis:set(key, number * 2)
 end
 
