@@ -1,5 +1,7 @@
 cc.exports.bz = cc.exports.bz or {}
 
+function bz.unuse() end
+
 function bz.diffTable(new, old)
     local ret = {}
     for k, v in pairs(new) do

@@ -27,8 +27,8 @@ local config = {
 
     -- all apps
     apps = {
-        welcome = "_GBC_CORE_ROOT_/apps/welcome",
-        tests   = "_GBC_CORE_ROOT_/apps/tests",
+        --welcome = "_GBC_CORE_ROOT_/apps/welcome",
+        --tests   = "_GBC_CORE_ROOT_/apps/tests",
         game    = "_GBC_CORE_ROOT_/appGames/game",
         master  = "_GBC_CORE_ROOT_/appGames/master",
     },
@@ -48,7 +48,7 @@ local config = {
         websocketsMaxPayloadLen    = 64 * 1024, -- 16KB
 
         jobMessageFormat           = "json",
-        numOfJobWorkers            = 2,
+        numOfJobWorkers            = 0,
     },
 
     -- server config
