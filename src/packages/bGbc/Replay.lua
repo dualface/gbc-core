@@ -27,12 +27,14 @@ function Replay:addErrorMsg(err)
     if self._EMap then
         local e = self._EMap[err]
         if e then
+            e.ecmd = err
             table.insert(self._Rep.updateList, {desc = "ErrorMsg", content = e})
             return
         end
     end
     table.insert(self._Rep.updateList, {desc = "ErrorMsg", content = {
-        einfo = err
+        einfo = err,
+        ecmd = err,
     }})
 end
 
