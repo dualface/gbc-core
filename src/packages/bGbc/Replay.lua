@@ -31,7 +31,9 @@ function Replay:addErrorMsg(err)
             return
         end
     end
-    table.insert(self._Rep.updateList, {desc = "ErrorMsg", content = err})
+    table.insert(self._Rep.updateList, {desc = "ErrorMsg", content = {
+        einfo = err
+    }})
 end
 
 function Replay:addMsg(name, data)

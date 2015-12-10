@@ -53,10 +53,14 @@ end
 
 --0移除不存在元素，1移除单个元素
 function FriendService:replyQuestion(nameself, nameother, isTrue)
+    if not self:isQuestion(nameself, nameother) then
+        return false
+    end
     if isTrue then
         self:setFriend(nameself, nameother)
     end
-    return self._Redis:srem(self:getSKey2(nameself), nameother)
+    self._Redis:srem(self:getSKey2(nameself), nameother)
+    return true
 end
 
 function FriendService:isQuestion(nameself, nameother)

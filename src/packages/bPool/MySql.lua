@@ -1,5 +1,5 @@
 local MySQL = {}
-local mysqlService = cc.import("#mysql").service
+local mysqlService = cc.import(".easyMysql")
 
 function MySQL:getConnect(config)
     if ngx.ctx[MySQL] then
@@ -7,7 +7,7 @@ function MySQL:getConnect(config)
     end
     if not config then return nil end
     local ok, db = pcall(function()
-            return mysqlService:create(config)
+            return mysqlService:new(config)
         end)
     if ok then
         ngx.ctx[MySQL] = db

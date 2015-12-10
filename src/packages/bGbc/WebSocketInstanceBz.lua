@@ -18,8 +18,8 @@ end
 
 function WebSocketInstanceBz:initInstance()
     local redis = self:getRedis()
-    self._ConnIDs = ConnectIDService:create(redis)
-    self._Broadcast = Broadcast:create(redis, self)
+    self._ConnIDs = ConnectIDService:new(redis)
+    self._Broadcast = Broadcast:new(redis, self)
 end
 
 function WebSocketInstanceBz:sendMessageToUser(user, message)
@@ -28,8 +28,10 @@ function WebSocketInstanceBz:sendMessageToUser(user, message)
         local connectId = cids:getConnectId(user)
         if connectId and self._Broadcast then
             self._Broadcast:sendMessage(connectId, message, self.config.app.websocketMessageFormat)
+            return true
         end
     end
+    return false
 end
 
 function WebSocketInstanceBz:sendMessageToSelf(message)
@@ -73,27 +75,27 @@ function WebSocketInstanceBz:onConnected()
     local redis = self:getRedis()
     local sid = self._connectToken
 
-    local session = Session.new(redis)
+    local session = Session:new(redis)
     session:start(sid)
-    local ok, user = pcall(function()
+
+    local ok, user = xpcall(function()
         return self:onLoadUser(session)
+    end, function(err)
+        cc.printwarn(debug.traceback(err, 4))
     end)
-    if ok then
+    if ok and user then
         self:initInstance()
         self._ConnIDs:save(connectId, user)
         self._session = session
-    else
-        cc.printerror(user)
     end
 end
 
 function WebSocketInstanceBz:onDisconnected()
-    local ok, err = pcall(function()
+    local _, _ = xpcall(function()
         return self:onUnloadUser()
+    end, function(err)
+        cc.printwarn(debug.traceback(err, 4))
     end)
-    if not ok then
-        cc.printerror(err)
-    end
     local connectId = self._connectId
     if self._ConnIDs then
         self._ConnIDs:remove(connectId)

@@ -26,7 +26,7 @@ function CacheService:push(key, data)
     redis:commitPipeline()
 end
 
-function CacheService:get(key)
+function CacheService:pop(key)
     local redis = self._Redis
     redis:initPipeline()
     redis:lrange(self:getLKey(key), 0, -1)

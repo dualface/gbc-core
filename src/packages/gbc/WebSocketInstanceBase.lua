@@ -243,7 +243,10 @@ end
 -- private
 
 _processMessage = function(self, rawMessage, messageType)
-    local message = _parseMessage(rawMessage, messageType, self.config.app.websocketMessageFormat)
+    local okp, message = pcall(function()
+        return _parseMessage(rawMessage, messageType, self.config.app.websocketMessageFormat)
+    end)
+    if not okp then return nil, message end
     local msgid = message.__id
     local actionName = message.action
     local err = nil
@@ -292,6 +295,14 @@ _processMessage = function(self, rawMessage, messageType)
 end
 
 _parseMessage = function(rawMessage, messageType, messageFormat)
+    if messageFormat == Constants.MESSAGE_FORMAT_MPACK then
+        local message = msgpack.unpack(rawMessage)
+        if type(message) == "table" then
+            return message
+        else
+            cc.throw("not supported message format \"%s\"", type(message))
+        end
+    end
     -- TODO: support message type plugin
     if messageType ~= Constants.WEBSOCKET_TEXT_MESSAGE_TYPE then
         cc.throw("not supported message type \"%s\"", messageType)
@@ -300,13 +311,6 @@ _parseMessage = function(rawMessage, messageType, messageFormat)
     -- TODO: support message format plugin
     if messageFormat == "json" then
         local message = json_decode(rawMessage)
-        if type(message) == "table" then
-            return message
-        else
-            cc.throw("not supported message format \"%s\"", type(message))
-        end
-    elseif messageFormat == Constants.MESSAGE_FORMAT_MPACK then
-        local message = msgpack.unpack(rawMessage)
         if type(message) == "table" then
             return message
         else

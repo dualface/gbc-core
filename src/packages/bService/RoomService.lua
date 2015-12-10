@@ -1,8 +1,8 @@
+local RoomService = cc.class("RoomService")
+
 local json = cc.import("#json")
 local json_encode = json.encode
--- local json_decode = json.decode
-
-local RoomService = cc.class("RoomService")
+local msgpack   = cc.import("#MessagePack")
 
 function RoomService:keyRoomSet()
     return "_ROOM:US:" .. self._RoomName
@@ -17,7 +17,6 @@ function RoomService:keyChannel()
 end
 
 function RoomService:ctor(connect, roomName)
-    cc.bind(self, "event")
     self.connect = connect
     self._Redis = connect:getRedis()
     self._RoomName = roomName
@@ -37,7 +36,11 @@ function RoomService:setEventsEnabled(enabled)
 end
 
 function RoomService:sendMessage(msg)
-    self._Redis:publish(self:keyChannel(), msg)
+    if type(msg) == "table" then
+        self._Redis:publish(self:keyChannel(), msgpack.pack(msg))
+    else
+        self._Redis:publish(self:keyChannel(), msg)
+    end
 end
 
 function RoomService:setMsgLength(len)
