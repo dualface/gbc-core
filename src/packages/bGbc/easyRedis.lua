@@ -38,7 +38,7 @@ function easyRedis:hincrby(redis, key, tdata)
     local result = {}
     local index = 1
     for k, v in pairs(tdata) do
-        redis:hincrby(key, v)
+        redis:hincrby(key, k, v)
         result[k] = index
         index = index + 1
     end
