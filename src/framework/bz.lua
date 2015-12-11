@@ -1,4 +1,5 @@
 cc.exports.bz = cc.exports.bz or {}
+local bz = cc.exports.bz
 
 function bz.unuse() end
 

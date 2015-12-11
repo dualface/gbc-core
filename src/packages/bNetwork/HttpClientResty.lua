@@ -12,8 +12,7 @@ function HttpClient:_request(data, method, Contenttype)
         data = json.encode(data)
     end
 
-     local ok, code, headers, status, body = http:new():request({
-        url = self._url,
+     local res, err = http:new():request_uri(self._url, {
         timeout = 3000,
         scheme = 'http',
         method = method,
@@ -22,12 +21,15 @@ function HttpClient:_request(data, method, Contenttype)
         },
         body = data,
     })
-
-    if Contenttype == "application/json" then
-        body = json.decode(body)
+    if not res then
+        cc.printinfo("failed to request:"..err)
+        return false
     end
 
-    return ok, code, body
+    if Contenttype == "application/json" then
+        res.body = json.decode(res.body)
+    end
+    return true, res.status, res.body
 end
 
 function HttpClient:Post(data)

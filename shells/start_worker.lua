@@ -40,6 +40,7 @@ ROOT_DIR = args[1]
 APP_ROOT_PATH = args[2]
 
 package.path = ROOT_DIR .. '/src/?.lua;' .. package.path
+package.path = ROOT_DIR .. '/src/lib/?.lua;' .. package.path
 
 require("framework.init")
 local appKeys = dofile(ROOT_DIR .. "/tmp/app_keys.lua")
