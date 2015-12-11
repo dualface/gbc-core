@@ -12,7 +12,6 @@ end
 
 function IP.getLocal()
     local hostname = socket.dns.gethostname()
-    cc.printinfo("hostname:"..hostname)
     return socket.dns.toip(hostname)
 end
 
