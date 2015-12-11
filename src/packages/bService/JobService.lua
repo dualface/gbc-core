@@ -24,6 +24,14 @@ function JobService:save(id, key)
     cc.printwarn("save %s :%d", key, id)
 end
 
+function JobService:getJob(key)
+    local var = self._Redis:get(self:getKey(key))
+    if var then
+        return tonumber(var) or 0
+    end
+    return 0
+end
+
 function JobService:delete(key)
     self._Redis:del(self:getKey(key))
 end
