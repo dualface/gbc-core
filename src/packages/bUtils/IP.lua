@@ -12,12 +12,8 @@ end
 
 function IP.getLocal()
     local hostname = socket.dns.gethostname()
-    local ip, list = IP.parseHostname(hostname)
-    if list[1] then
-        return list[1]
-    else
-        return ip
-    end
+    cc.printinfo("hostname:"..hostname)
+    return socket.dns.toip(hostname)
 end
 
 return IP
