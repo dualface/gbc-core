@@ -1,7 +1,6 @@
 local socket = require("socket")
 local IP = {}
 
-
 function IP.parseHostname(hostname)
     local ip, resolved = socket.dns.toip(hostname)
     local list = {}
@@ -13,7 +12,12 @@ end
 
 function IP.getLocal()
     local hostname = socket.dns.gethostname()
-    return socket.dns.toip(hostname)
+    local ip, list = IP.parseHostname(hostname)
+    if list[1] then
+        return list[1]
+    else
+        return ip
+    end
 end
 
 return IP
