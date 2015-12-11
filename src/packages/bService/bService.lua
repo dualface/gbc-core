@@ -6,6 +6,8 @@ local _M = {
     RoomService   = cc.import(".RoomService"),
     ShopService   = cc.import(".ShopService"),
 
+    JobService    = cc.import(".JobService"),
+
     ConnectIDService = cc.import(".ConnectIDService"),
 }
 

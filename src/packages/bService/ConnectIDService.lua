@@ -16,6 +16,10 @@ function ConnectIDService:getConnects()
     return self._Redis:smembers(CONNECTS)
 end
 
+function ConnectIDService:getConnectAmount()
+    return self._Redis:scard(CONNECTS)
+end
+
 function ConnectIDService:clearConnects()
     local redis = self._Redis
     redis:initPipeline()
