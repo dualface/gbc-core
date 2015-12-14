@@ -47,6 +47,7 @@ function WorkerInstanceBase:run()
 end
 
 function WorkerInstanceBase:runEventLoop()
+    local jobWorkerRequests = self.config.app.jobWorkerRequests
     local jobs     = self:getJobs({try = 3})
     local bean     = jobs:getBeanstalkd()
     local beanerrs = bean.ERRORS
@@ -56,6 +57,12 @@ function WorkerInstanceBase:runEventLoop()
    cc.printinfo("[%s] ready, waiting for job", tag)
 
     while true do
+        jobWorkerRequests = jobWorkerRequests - 1
+        if jobWorkerRequests < 0 then
+            cc.printinfo("[%s] job worker is done", tag)
+            break
+        end
+
         io_flush()
         local job, err = jobs:getready()
         if not job then
@@ -95,7 +102,7 @@ function WorkerInstanceBase:runEventLoop()
     end
 
     io_flush()
-    return 0
+    return 1
 end
 
 return WorkerInstanceBase

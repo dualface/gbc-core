@@ -50,4 +50,4 @@ cc.DEBUG = globalConfig.DEBUG
 local gbc = cc.import("#gbc")
 local bootstrap = gbc.WorkerBootstrap:new(appKeys, globalConfig)
 
-bootstrap:runapp(APP_ROOT_PATH)
+os.exit(bootstrap:runapp(APP_ROOT_PATH))

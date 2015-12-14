@@ -35,7 +35,7 @@ end
 function WorkerBootstrap:runapp(appRootPath)
     local appConfig = self._configs[appRootPath]
     local worker = Factory.create(appConfig, "WorkerInstance", nil, self._pid)
-    worker:run()
+    return worker:run()
 end
 
 return WorkerBootstrap
