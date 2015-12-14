@@ -116,12 +116,12 @@ function WebSocketInstanceBase:runEventLoop()
     local closeReason = ""
 
     -- create subscribe loop
-    local loop, err = self:getRedis():makeSubscribeLoop(connectId)
-    if not loop then
+    local sub, err = self:getRedis():makeSubscribeLoop(connectId)
+    if not sub then
         cc.throw(err)
     end
 
-    loop:start(function(channel, msg)
+    sub:start(function(channel, msg)
         if channel == controlChannel then
             self:dispatchEvent({
                 name    = _EVENT.CONTROL_MESSAGE,
@@ -136,7 +136,7 @@ function WebSocketInstanceBase:runEventLoop()
             socket:send_text(msg)
         end
     end, controlChannel, connectChannel, Constants.BROADCAST_ALL_CHANNEL)
-    self._subloop = loop
+    self._subloop = sub
 
     -- connected
     cc.printinfo("[websocket:%s] connected", connectId)
@@ -144,74 +144,72 @@ function WebSocketInstanceBase:runEventLoop()
 
     -- event loop
     local frames = {}
-    while true do
-        --[[
-        Receives a WebSocket frame from the wire.
-
-        In case of an error, returns two nil values and a string describing the error.
-
-        The second return value is always the frame type, which could be
-        one of continuation, text, binary, close, ping, pong, or nil (for unknown types).
-
-        For close frames, returns 3 values: the extra status message
-        (which could be an empty string), the string "close", and a Lua number for
-        the status code (if any). For possible closing status codes, see
-
-        http://tools.ietf.org/html/rfc6455#section-7.4.1
-
-        For other types of frames, just returns the payload and the type.
-
-        For fragmented frames, the err return value is the Lua string "again".
-        ]]
-        local frame, ftype, err = socket:recv_frame()
-        if err then
-            if err == "again" then
-                frames[#frames + 1] = frame
-                goto recv_next_message
-            end
-
-            if string_sub(err, -7) == "timeout" then
-                goto recv_next_message
-            end
-
-            cc.printwarn("[websocket:%s] failed to receive frame, type \"%s\", %s", connectId, ftype, err)
-            closeReason = ftype
-            break
-        end
-
-        if #frames > 0 then
-            -- merging fragmented frames
-            frames[#frames + 1] = frame
-            frame = table_concat(frames)
-            frames = {}
-        end
-
-        if ftype == "close" then
-            break -- exit event loop
-        elseif ftype == "ping" then
-            local bytes, err = socket:send_pong()
-            if err then
-                cc.printwarn("[websocket:%s] failed to send pong, %s", connectId, err)
-            end
-        elseif ftype == "pong" then
-            -- client ponged
-        elseif ftype == "text" or ftype == "binary" then
-            local ok, err = _processMessage(self, frame, ftype)
-            if err then
-                cc.printerror("[websocket:%s] process %s message failed, %s", connectId, ftype, err)
-            end
-        else
-            cc.printwarn("[websocket:%s] unknown frame type \"%s\"", connectId, tostring(ftype))
-        end
-
-::recv_next_message::
-
+    local running = true
+    while running do
         self:heartbeat()
 
-    end -- while
+        while true do
+            --[[
+            Receives a WebSocket frame from the wire.
 
-    -- stop loop
-    loop:stop()
+            In case of an error, returns two nil values and a string describing the error.
+
+            The second return value is always the frame type, which could be
+            one of continuation, text, binary, close, ping, pong, or nil (for unknown types).
+
+            For close frames, returns 3 values: the extra status message
+            (which could be an empty string), the string "close", and a Lua number for
+            the status code (if any). For possible closing status codes, see
+
+            http://tools.ietf.org/html/rfc6455#section-7.4.1
+
+            For other types of frames, just returns the payload and the type.
+
+            For fragmented frames, the err return value is the Lua string "again".
+            ]]
+            local frame, ftype, err = socket:recv_frame()
+            if err then
+                if err == "again" then
+                    frames[#frames + 1] = frame
+                    break -- recv next message
+                end
+
+                if string_sub(err, -7) == "timeout" then
+                    break -- recv next message
+                end
+
+                cc.printwarn("[websocket:%s] failed to receive frame, type \"%s\", %s", connectId, ftype, err)
+                closeReason = ftype
+                running = false -- stop loop
+                break
+            end
+
+            if #frames > 0 then
+                -- merging fragmented frames
+                frames[#frames + 1] = frame
+                frame = table_concat(frames)
+                frames = {}
+            end
+
+            if ftype == "close" then
+                running = false -- stop loop
+                break
+            elseif ftype == "ping" then
+                socket:send_pong()
+            elseif ftype == "pong" then
+                -- client ponged
+            elseif ftype == "text" or ftype == "binary" then
+                local ok, err = _processMessage(self, frame, ftype)
+                if err then
+                    cc.printerror("[websocket:%s] process %s message failed, %s", connectId, ftype, err)
+                end
+            else
+                cc.printwarn("[websocket:%s] unknown frame type \"%s\"", connectId, tostring(ftype))
+            end
+        end -- rect next message
+    end -- loop
+
+    sub:stop()
     self._subloop = nil
     self._socket = nil
 

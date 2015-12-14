@@ -40,7 +40,7 @@ local _JOB_WORD     = "hello, number is " .. math.random(1, 100)
 
 function BeanstalkdTestCase:setup()
     local config = self:getInstanceConfig()
-    self._beanstalkd = _newbean(instance.config.server.beanstalkd)
+    self._beanstalkd = _newbean(config.server.beanstalkd)
     _flush(self._beanstalkd)
 end
 

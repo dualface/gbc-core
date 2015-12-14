@@ -53,53 +53,56 @@ function WorkerInstanceBase:runEventLoop()
     local beanerrs = bean.ERRORS
     local appname  = self.config.app.appName
     local tag      = string_format("%s:%s", appname, self._tag)
+    local running  = true
 
-   cc.printinfo("[%s] ready, waiting for job", tag)
+    cc.printinfo("[%s] ready, waiting for job", tag)
 
-    while true do
-        jobWorkerRequests = jobWorkerRequests - 1
-        if jobWorkerRequests < 0 then
-            cc.printinfo("[%s] job worker is done", tag)
-            break
-        end
-
-        io_flush()
-        local job, err = jobs:getready()
-        if not job then
-            if err == beanerrs.TIMED_OUT then
-                goto wait_next_job
-            end
-            if err == beanerrs.DEADLINE_SOON then
-               cc.printinfo("[%s] deadline soon", tag)
-                goto wait_next_job
-            end
-           cc.printwarn("[%s] reserve job failed, %s", tag, err)
+    while running do
+        while true do
             io_flush()
-            break
-        end
 
-        if not job.id then
-           cc.printinfo("[%s] get a invalid job", tag)
-            goto wait_next_job
-        else
-           cc.printinfo("[%s] get a job %s, action: %s", tag, job.id, job.action)
-        end
-
-        -- handle the job
-        local actionName = job.action
-        local res = self:runAction(actionName, job)
-        if res ~= false then
-            -- delete job
-            local ok, err = jobs:delete(job.id)
-            if not ok then
-               cc.printwarn("[%s] delete job %s failed, %s", tag, job.id, err)
-            else
-               cc.printinfo("[%s] job %s done", tag, job.id)
+            jobWorkerRequests = jobWorkerRequests - 1
+            if jobWorkerRequests < 0 then
+                cc.printinfo("[%s] job worker is done", tag)
+                running = false -- stop loop
+                break
             end
-        end
 
-::wait_next_job::
-    end
+            local job, err = jobs:getready()
+            if not job then
+                if err == beanerrs.TIMED_OUT then
+                    break -- wait next job
+                end
+                if err == beanerrs.DEADLINE_SOON then
+                    cc.printinfo("[%s] deadline soon", tag)
+                    break -- wait next job
+                end
+
+                cc.printwarn("[%s] reserve job failed, %s", tag, err)                running = false -- stop loop
+                break
+            end
+
+            if not job.id then
+                cc.printinfo("[%s] get a invalid job", tag)
+                break -- wait next job
+            else
+                cc.printinfo("[%s] get a job %s, action: %s", tag, job.id, job.action)
+            end
+
+            -- handle the job
+            local actionName = job.action
+            local res = self:runAction(actionName, job)
+            if res ~= false then
+                -- delete job
+                local ok, err = jobs:delete(job.id)
+                if not ok then
+                    cc.printwarn("[%s] delete job %s failed, %s", tag, job.id, err)
+                else
+                    cc.printinfo("[%s] job %s done", tag, job.id)
+                end
+            end
+        end -- wait next job
+    end -- loop
 
     io_flush()
     return 1
