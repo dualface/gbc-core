@@ -24,14 +24,18 @@ end
 
 function WebSocketInstanceBz:sendMessageToUser(user, message)
     local cids = self._ConnIDs
-    if cids then
-        local connectId = cids:getConnectId(user)
-        if connectId and self._Broadcast then
-            self._Broadcast:sendMessage(connectId, message, self.config.app.websocketMessageFormat)
-            return true
-        end
+    if not cids then
+        return false
     end
-    return false
+
+    local connectId = cids:getConnectId(user)
+    if connectId == ngx.null then
+        return false
+    end
+    if connectId and self._Broadcast then
+        self._Broadcast:sendMessage(connectId, message, self.config.app.websocketMessageFormat)
+        return true
+    end
 end
 
 function WebSocketInstanceBz:sendMessageToSelf(message)

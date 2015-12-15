@@ -25,7 +25,11 @@ function easyRedis:hmget(redis, key, tdata)
         if v and type(tdata[k]) == "number" then
             result[k] = cc.checknumber(v)
         else
-            result[k] = v
+            if v ~= ngx.null then
+                result[k] = v
+            else
+                result[k] = nil
+            end
         end
     end
 
