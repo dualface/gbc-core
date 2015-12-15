@@ -65,7 +65,7 @@ end
 
 function FriendService:isQuestion(nameself, nameother)
     if nameself == nameother then return false end
-    return self._Redis:sismember(self:getSKey2(nameother), nameself) == 1
+    return self._Redis:sismember(self:getSKey2(nameself), nameother) == 1
 end
 
 function FriendService:getQuestions(name)
