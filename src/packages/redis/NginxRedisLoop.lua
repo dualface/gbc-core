@@ -45,7 +45,7 @@ function NginxRedisLoop:ctor(redis, subredis, id)
     self._id = id .. "_" .. string_sub(tostring(self), 10)
 end
 
-function NginxRedisLoop:start(onmessage, cmdchannel)
+function NginxRedisLoop:start(onmessage, cmdchannel, ...)
     if not self._subredis then
         return nil, "not initialized"
     end
@@ -53,7 +53,7 @@ function NginxRedisLoop:start(onmessage, cmdchannel)
     local onerror = _onerror
     self._cmdchannel = cmdchannel
 
-    local res, err = self._subredis:subscribe(cmdchannel)
+    local res, err = self._subredis:subscribe(cmdchannel, ...)
     if not res then
         return nil, err
     end
@@ -110,7 +110,8 @@ _loop = function(self, onmessage, onerror)
         if not res then
             if err ~= "timeout" then
                 onerror(err, id)
-                running = false
+                running = false -- stop loop
+                break
             end
         end
 
@@ -124,7 +125,7 @@ _loop = function(self, onmessage, onerror)
                 if DEBUG then
                     cc.printinfo("[RedisSub:%s] %s", id, table_concat(res, " "))
                 end
-                break -- goto readReply
+                break -- read reply
             end
 
             if channel ~= cmdchannel then
@@ -140,36 +141,36 @@ _loop = function(self, onmessage, onerror)
                 else
                     cc.printwarn("[RedisSub:%s] invalid message, %s", id, table_concat(res, " "))
                 end
-                break -- goto readReply
+                break -- read reply
             end
 
             if string_byte(msg) ~= 33 --[[ ! ]] then
                 -- forward control message
                 onmessage(channel, msg, nil, id)
-                break -- goto readReply
+                break -- read reply
             end
 
             -- control message
             local parts = string_split(msg, " ")
             local cmd = parts[1]
             if cmd == "!STOP" then
-                running = false
-                break -- stop loop
+                running = false -- stop loop
+                break
             elseif cmd == "!REDIS" then
                 table_remove(parts, 1)
                 res, err = subredis:doCommand(unpack(parts))
                 if not res then
                     cc.printwarn("[RedisSub:%s] redis failed, %s", id, err)
-                    break -- goto readReply
+                    break -- read reply
                 end
             else
                 -- unknown control message
                 cc.printwarn("[RedisSub:%s] unknown control message, %s", id, msg)
-                break -- goto readReply
+                break -- read reply
             end
 
-        end -- repeat process message
-    end -- repeat readReply
+        end -- read reply
+    end -- loop
 
     cc.printinfo("[RedisSub:%s] STOPPED", id)
 

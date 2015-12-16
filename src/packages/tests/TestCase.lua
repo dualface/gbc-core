@@ -36,7 +36,7 @@ function TestCase:init()
         if type(method) == "function" and string_sub(name, -4) == "Test" then
             self[name] = function(...)
                 self:setup()
-                local res = {method(self, ...)}
+                local res = {method(...)}
                 self:teardown()
                 return unpack(res)
             end

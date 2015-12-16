@@ -40,7 +40,8 @@ local _KEYS = table.readonly({
 local _newredis
 
 function SessionTestCase:setup()
-    self._redis = _newredis(self.instance.config.server.redis)
+    local config = self:getInstanceConfig()
+    self._redis = _newredis(config.server.redis)
 end
 
 function SessionTestCase:teardown()

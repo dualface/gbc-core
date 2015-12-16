@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 ]]
 
+local string_format = string.format
 local pairs = pairs
 
 local ok, table_new = pcall(require, "table.new")
@@ -109,10 +110,10 @@ function table.readonly(t, name)
     name = name or "table"
     setmetatable(t, {
         __newindex = function()
-            cc.throw("<%s:%s> is readonly table", name, tostring(t))
+            error(string_format("<%s:%s> is readonly table", name, tostring(t)))
         end,
         __index = function(_, key)
-            cc.throw("<%s:%s> not found key: %s", name, tostring(t), key)
+            error(string_format("<%s:%s> not found key: %s", name, tostring(t), key))
         end
     })
     return t

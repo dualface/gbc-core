@@ -35,43 +35,49 @@ local msgpack   = cc.import("#MessagePack")
 
 local _formatmsg
 
-function Broadcast:ctor(redis, websocketInstance)
+function Broadcast:ctor(redis, messageType, websocketInstance)
     self._redis = redis
-    self._websocketInstance = websocketInstance
+    self._messageType = messageType
+    if websocketInstance and websocketInstance.getConnectId then
+        self._websocketInstance = websocketInstance
+    end
 end
 
 function Broadcast:sendMessage(connectId, message, format)
-    format = format or Constants.MESSAGE_FORMAT_JSON
+    format = format or self._messageType
     message = _formatmsg(message, format)
 
-    if self._websocketInstance and self._websocketInstance._connectId == connectId then
-        self._websocketInstance._socket:send_text(tostring(message))
+    if self._websocketInstance and self._websocketInstance:getConnectId() == connectId then
+        return self._websocketInstance._socket:send_text(tostring(message))
     else
         local connectChannel = Constants.CONNECT_CHANNEL_PREFIX .. connectId
         local ok, err = self._redis:publish(connectChannel, message)
         if not ok then
-            cc.printwarn("[broadcast] %s", err)
+            return nil, err
         end
+        return 1
     end
 end
 
 function Broadcast:sendMessageToAll(message, format)
-    format = format or self.config.app.websocketMessageFormat
+    format = format or self._messageType
     message = _formatmsg(message, format)
-    self._redis:publish(Constants.BROADCAST_ALL_CHANNEL, message)
+    return self._redis:publish(Constants.BROADCAST_ALL_CHANNEL, message)
 end
 
 function Broadcast:sendControlMessage(connectId, message)
     local controlChannel = Constants.CONTROL_CHANNEL_PREFIX .. connectId
     local ok, err = self._redis:publish(controlChannel, tostring(message))
     if not ok then
-        cc.printwarn("[broadcast] %s", err)
+        return nil, err
     end
+    return 1
 end
 
 -- private
 
 _formatmsg = function(message, format)
+    format = format or Constants.MESSAGE_FORMAT_JSON
     if type(message) == "table" then
         if format == Constants.MESSAGE_FORMAT_JSON then
             message = json_encode(message)

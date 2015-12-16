@@ -30,19 +30,15 @@ DemoApp.prototype.init = function() {
     var self = this;
 
     var apphtml = self._apphtml;
+
+    // sign in
     self._usernameInput     = apphtml.find("#username");
     self._serverAddrInput   = apphtml.find("#serverAddr");
     self._counterValueInput = apphtml.find("#counterValue");
-    self._selectUserInput   = apphtml.find("#selectUser");
-    self._messageInput      = apphtml.find("#message");
-
     self._signInButton      = apphtml.find("#signInButton");
     self._addCounterButton  = apphtml.find("#addCounterButton");
-    self._sendMessageButton = apphtml.find("#sendMessageButton");
-    self._sendMessageToAllButton = apphtml.find("#sendMessageToAllButton");
 
-    self._alertDialogHtml   = apphtml.find("#alertDialog");
-    self._logHtml           = apphtml.find("#log");
+    self._serverAddrInput.val(document.location.host);
 
     self._signInButton.click(function() {
         if (self._state === State.IDLE) {
@@ -56,16 +52,37 @@ DemoApp.prototype.init = function() {
         self.addCounter();
     });
 
+    // job
+    self._selectDelayInput = apphtml.find("input[name=selectDelay]");    self._jobMessageInput = apphtml.find("#jobMessage");
+    self._sendJobMessageButton = apphtml.find("#sendJobMessageButton");
+
+    self._sendJobMessageButton.click(function() {
+        var delay = apphtml.find("input[name=selectDelay]:checked").val();
+        var message = self._jobMessageInput.val();
+        self.sendJobMessage(delay, message);
+    });
+
+    // chat
+    self._selectUserInput   = apphtml.find("#selectUser");
+    self._messageInput      = apphtml.find("#message");
+    self._sendMessageButton = apphtml.find("#sendMessageButton");
+    self._sendMessageToAllButton = apphtml.find("#sendMessageToAllButton");
+
     self._sendMessageButton.click(function() {
-        var username = self._selectUserInput.val();
+        var recipient = self._selectUserInput.val();
         var message = self._messageInput.val();
-        self.sendMessage(username, message);
+        self.sendMessage(recipient, message);
     });
 
     self._sendMessageToAllButton.click(function() {
         var message = self._messageInput.val();
         self.sendMessageToAll(message);
     });
+
+    // log
+
+    self._alertDialogHtml   = apphtml.find("#alertDialog");
+    self._logHtml           = apphtml.find("#log");
 
     apphtml.find("#clearLogsButton").click(function() {
         self._clearLogs();
@@ -75,9 +92,7 @@ DemoApp.prototype.init = function() {
         self._appendLogMark();
     });
 
-
-    self._serverAddrInput.val(document.location.host);
-
+    // init
     self._updateUI();
 }
 
@@ -151,7 +166,7 @@ DemoApp.prototype.signOut = function() {
 DemoApp.prototype.addCounter = function() {
     var self = this;
 
-    self._sendHttpRequest("user.count", {"sid": self._sid}, function(res) {
+    self._sendHttpRequest("user.count", {sid: self._sid}, function(res) {
         if (!self._validateResult(res, ["count"])) return;
 
         var count = parseInt(res["count"]).toString();
@@ -160,10 +175,24 @@ DemoApp.prototype.addCounter = function() {
     });
 }
 
-DemoApp.prototype.sendMessage = function(username, message) {
+DemoApp.prototype.sendJobMessage = function(delay, message) {
     var self = this;
 
-    if (username === "" || username === null) {
+    if (message === "") {
+        self._showError("Please enter message.");
+    }
+
+    self._sendHttpRequest("user.addjob", {
+        sid: self._sid,
+        delay: delay,
+        message: message
+    });
+}
+
+DemoApp.prototype.sendMessage = function(recipient, message) {
+    var self = this;
+
+    if (recipient === "" || recipient === null) {
         self._showError("Please choose user from online users list.");
         return;
     }
@@ -174,7 +203,7 @@ DemoApp.prototype.sendMessage = function(username, message) {
 
     var data = {
         action: "chat.sendmessage",
-        username: username,
+        recipient: recipient,
         message: message
     };
     self._sendWebSocketMessage(data);
@@ -198,19 +227,15 @@ DemoApp.prototype._updateUI = function() {
     var self = this;
 
     var state = self._state;
+
+    // sign in
     self._serverAddrInput.prop("disabled", state != State.IDLE);
     self._usernameInput.prop("disabled", state != State.IDLE);
+    self._addCounterButton.prop("disabled", state != State.CONNECTED);
 
     if (state != State.CONNECTING && state != State.CONNECTED) {
         self._counterValueInput.val("");
-        self._selectUserInput.empty();
     }
-
-    self._addCounterButton.prop("disabled", state != State.CONNECTED);
-    self._selectUserInput.prop("disabled", state != State.CONNECTED);
-    self._messageInput.prop("disabled", state != State.CONNECTED);
-    self._sendMessageButton.prop("disabled", state != State.CONNECTED);
-    self._sendMessageToAllButton.prop("disabled", state != State.CONNECTED);
 
     if (state === State.IDLE) {
         self._signInButton.text("Sign In").prop("disabled", false);
@@ -221,6 +246,21 @@ DemoApp.prototype._updateUI = function() {
     } else {
         self._signInButton.text("-").prop("disabled", true);
     }
+
+    // job
+    self._selectDelayInput.prop("disabled", state != State.CONNECTED);
+    self._jobMessageInput.prop("disabled", state != State.CONNECTED);
+    self._sendJobMessageButton.prop("disabled", state != State.CONNECTED);
+
+    // chat
+    if (state != State.CONNECTING && state != State.CONNECTED) {
+        self._selectUserInput.empty();
+    }
+
+    self._selectUserInput.prop("disabled", state != State.CONNECTED);
+    self._messageInput.prop("disabled", state != State.CONNECTED);
+    self._sendMessageButton.prop("disabled", state != State.CONNECTED);
+    self._sendMessageToAllButton.prop("disabled", state != State.CONNECTED);
 }
 
 DemoApp.prototype._cleanup = function() {
@@ -259,7 +299,15 @@ DemoApp.prototype._sendHttpRequest = function(action, values, callback, fail) {
             self._showError(err);
             self._appendLog(err);
         }
-        callback(res);
+        if (callback) {
+            callback(res);
+        } else {
+            if (res.ok) {
+                self._appendLog("OK");
+            } else {
+                self._appendLog("ERR, " + res.err);
+            }
+        }
     }, "json")
     .fail(function() {
         self._appendLog("HTTP: " + url + " FAILED");

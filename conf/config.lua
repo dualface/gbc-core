@@ -49,6 +49,7 @@ local config = {
 
         jobMessageFormat           = "json",
         numOfJobWorkers            = 0,
+        jobWorkerRequests          = 1000,
     },
 
     -- server config

@@ -25,8 +25,16 @@ THE SOFTWARE.
 local ActionBase = cc.class("ActionBase")
 
 function ActionBase:ctor(instance)
-    self.instance = instance
+    self._instance = instance
     self:init()
+end
+
+function ActionBase:getInstance()
+    return self._instance
+end
+
+function ActionBase:getInstanceConfig()
+    return self._instance.config
 end
 
 function ActionBase:init()

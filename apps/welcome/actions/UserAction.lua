@@ -22,16 +22,13 @@ THE SOFTWARE.
 
 ]]
 
+local Online = cc.import("#online")
 local Session = cc.import("#session")
 
 local gbc = cc.import("#gbc")
 local UserAction = cc.class("UserAction", gbc.ActionBase)
 
 local _opensession
-
-function UserAction:init()
-    self._redis = self.instance:getRedis()
-end
 
 function UserAction:signinAction(args)
     local username = args.username
@@ -40,7 +37,7 @@ function UserAction:signinAction(args)
     end
 
     -- start session
-    local session = Session:new(self._redis)
+    local session = Session:new(self:getInstance():getRedis())
     session:start()
     session:set("username", username)
     session:set("count", 0)
@@ -51,22 +48,18 @@ function UserAction:signinAction(args)
 end
 
 function UserAction:signoutAction(args)
-    local session = _opensession(self._redis, args)
-
-    -- send control message to websocket connect
-    local connectId = session:get("connect")
-    local broadcast = gbc.Broadcast:new(self._redis)
-    broadcast:sendControlMessage(connectId, gbc.Constants.CLOSE_CONNECT)
-
+    -- remove user from online list
+    local session = _opensession(self:getInstance(), args)
+    local online = Online:new(self:getInstance())
+    online:remove(session:get("username"))
     -- delete session
     session:destroy()
-
     return {ok = "ok"}
 end
 
 function UserAction:countAction(args)
     -- update count value in session
-    local session = _opensession(self._redis, args)
+    local session = _opensession(self:getInstance(), args)
     local count = session:get("count")
     count = count + 1
     session:set("count", count)
@@ -75,15 +68,55 @@ function UserAction:countAction(args)
     return {count = count}
 end
 
--- private
-
-_opensession = function(redis, args)
+function UserAction:addjobAction(args)
     local sid = args.sid
     if not sid then
         cc.throw("not set argsument: \"sid\"")
     end
 
+    local instance = self:getInstance()
+    local redis = instance:getRedis()
     local session = Session:new(redis)
+    if not session:start(sid) then
+        cc.throw("session is expired, or invalid session id")
+    end
+
+    local delay = cc.checkint(args.delay)
+    if delay <= 0 then
+        delay = 1
+    end
+    local message = args.message
+    if not message then
+        cc.throw("not set argument: \"message\"")
+    end
+
+    -- send message to job
+    local jobs = instance:getJobs()
+    local job = {
+        action = "/jobs/jobs.echo",
+        delay  = delay,
+        data   = {
+            username = session:get("username"),
+            message = message,
+        }
+    }
+    local ok, err = jobs:add(job)
+    if not ok then
+        return {err = err}
+    else
+        return {ok = "ok"}
+    end
+end
+
+-- private
+
+_opensession = function(instance, args)
+    local sid = args.sid
+    if not sid then
+        cc.throw("not set argsument: \"sid\"")
+    end
+
+    local session = Session:new(instance:getRedis())
     if not session:start(sid) then
         cc.throw("session is expired, or invalid session id")
     end
