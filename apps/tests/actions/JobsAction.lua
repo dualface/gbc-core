@@ -43,13 +43,13 @@ function JobsTestCase:teardown()
     _flush(self._jobs, self._redis)
 end
 
-function JobsTestCase:addTest()
+function JobsTestCase:addAction()
     local number = math.random(1, 10000)
     local data = {number = number, key = _TEST_REDIS_KEY}
 
     local delay = 1
     local jobid = self._jobs:add({
-        action = '/fixtures/jobs.trigging',
+        action = 'jobs.trigging',
         data = data,
         delay = delay,
     })
@@ -63,13 +63,13 @@ function JobsTestCase:addTest()
     return true
 end
 
-function JobsTestCase:atTest()
+function JobsTestCase:atAction()
     local number = math.random(20000, 30000)
     local data = {number = number, key = _TEST_REDIS_KEY}
 
     local time = os.time() + 1
     local jobid = self._jobs:at({
-        action = '/fixtures/jobs.trigging',
+        action = 'jobs.trigging',
         data = data,
         time = time,
     })
@@ -85,13 +85,13 @@ function JobsTestCase:atTest()
     return true
 end
 
-function JobsTestCase:getTest()
+function JobsTestCase:getAction()
     local number = math.random(40000, 50000)
     local data = {number = number, key = _TEST_REDIS_KEY}
 
     local delay = 2
     local jobid = self._jobs:add({
-        action = '/fixtures/jobs.trigging',
+        action = 'jobs.trigging',
         data = data,
         delay = delay,
     })

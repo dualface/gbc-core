@@ -47,7 +47,7 @@ end
 function SessionTestCase:teardown()
 end
 
-function SessionTestCase:createTest()
+function SessionTestCase:createAction()
     local redis = self._redis
     local session = Session:new(redis)
     session:start()
@@ -84,7 +84,7 @@ function SessionTestCase:createTest()
     return true
 end
 
-function SessionTestCase:expiredTest()
+function SessionTestCase:expiredAction()
     local redis = self._redis
     local session = Session:new(redis, {expired = 1})
     session:start()

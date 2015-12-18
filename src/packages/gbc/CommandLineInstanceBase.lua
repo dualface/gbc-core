@@ -30,8 +30,7 @@ local InstanceBase = cc.import(".InstanceBase")
 local CommandLineInstanceBase = cc.class("CommandLineInstanceBase", InstanceBase)
 
 function CommandLineInstanceBase:ctor(config, arg)
-    CommandLineInstanceBase.super.ctor(self, config)
-    self._requestType = Constants.CLI_REQUEST_TYPE
+    CommandLineInstanceBase.super.ctor(self, config, Constants.CLI_REQUEST_TYPE)
     self._requestParameters = cc.checktable(arg)
 end
 

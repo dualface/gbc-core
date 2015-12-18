@@ -42,13 +42,12 @@ local InstanceBase = cc.import(".InstanceBase")
 local HttpInstanceBase = cc.class("HttpInstanceBase", InstanceBase)
 
 function HttpInstanceBase:ctor(config)
-    HttpInstanceBase.super.ctor(self, config)
+    HttpInstanceBase.super.ctor(self, config, Constants.HTTP_REQUEST_TYPE)
 
     if config.app.httpMessageFormat then
         self.config.app.messageFormat = config.app.httpMessageFormat
     end
 
-    self._requestType       = Constants.HTTP_REQUEST_TYPE
     self._requestMethod     = req_get_method()
     self._requestParameters = req_get_uri_args()
 

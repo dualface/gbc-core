@@ -33,7 +33,7 @@ TestCase.ACCEPTED_REQUEST_TYPE = {"http", "cli"}
 function TestCase:init()
     local mt = getmetatable(self)
     for name, method in pairs(mt.__index) do
-        if type(method) == "function" and string_sub(name, -4) == "Test" then
+        if type(method) == "function" and string_sub(name, -6) == "Action" then
             self[name] = function(...)
                 self:setup()
                 local res = {method(...)}

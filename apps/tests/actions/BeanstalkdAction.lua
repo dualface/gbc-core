@@ -48,7 +48,7 @@ function BeanstalkdTestCase:teardown()
     _flush(self._beanstalkd)
 end
 
-function BeanstalkdTestCase:basicsTest()
+function BeanstalkdTestCase:basicsAction()
     local bean = self._beanstalkd
     local errors = bean.ERRORS
 
@@ -75,7 +75,7 @@ function BeanstalkdTestCase:basicsTest()
     return true
 end
 
-function BeanstalkdTestCase:releaseTest()
+function BeanstalkdTestCase:releaseAction()
     local bean = self._beanstalkd
     local errors = bean.ERRORS
 
@@ -94,7 +94,7 @@ function BeanstalkdTestCase:releaseTest()
     return true
 end
 
-function BeanstalkdTestCase:changestateTest()
+function BeanstalkdTestCase:changestateAction()
     local bean = self._beanstalkd
     local errors = bean.ERRORS
 
@@ -126,7 +126,7 @@ function BeanstalkdTestCase:changestateTest()
     return true
 end
 
-function BeanstalkdTestCase:statsTest()
+function BeanstalkdTestCase:statsAction()
     local bean = self._beanstalkd
     local errors = bean.ERRORS
 
@@ -166,7 +166,7 @@ function BeanstalkdTestCase:statsTest()
     return true
 end
 
-function BeanstalkdTestCase:tubeTest()
+function BeanstalkdTestCase:tubeAction()
     local bean = self._beanstalkd
     local errors = bean.ERRORS
 

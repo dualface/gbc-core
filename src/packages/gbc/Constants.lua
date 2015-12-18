@@ -7,10 +7,7 @@ _M.WEBSOCKET_REQUEST_TYPE            = "websocket"
 _M.CLI_REQUEST_TYPE                  = "cli"
 _M.WORKER_REQUEST_TYPE               = "worker"
 
--- action
-_M.ACTION_PACKAGE_NAME               = 'actions'
-_M.DEFAULT_ACTION_MODULE_SUFFIX      = 'Action'
-_M.DEFAULT_ACTION_METHOD_SUFFIX      = 'Action'
+-- message type
 _M.MESSAGE_FORMAT_JSON               = "json"
 _M.MESSAGE_FORMAT_TEXT               = "text"
 _M.DEFAULT_MESSAGE_FORMAT            = _M.MESSAGE_FORMAT_JSON

@@ -52,7 +52,7 @@ function RedisTestCase:teardown()
     self._redis = nil
 end
 
-function RedisTestCase:typesTest()
+function RedisTestCase:typesAction()
     local redis = self._redis
 
     -- check return types:
@@ -88,7 +88,7 @@ function RedisTestCase:typesTest()
     return true
 end
 
-function RedisTestCase:pipelineTest()
+function RedisTestCase:pipelineAction()
     local redis = self._redis
 
     local word = "hello world"
@@ -152,7 +152,7 @@ function RedisTestCase:pipelineTest()
     return true
 end
 
-function RedisTestCase:pubsubTest()
+function RedisTestCase:pubsubAction()
     local redis = self._redis
 
     local channel1 = "MSG_CHANNEL_1"
@@ -217,7 +217,7 @@ function RedisTestCase:pubsubTest()
     return true
 end
 
-function RedisTestCase:loopTest()
+function RedisTestCase:loopAction()
     local redis = self._redis
 
     local channel1 = "MSG_CHANNEL_1"

@@ -33,12 +33,11 @@ local type          = type
 local json      = cc.import("#json")
 local Constants = cc.import(".Constants")
 
-local CommandLineInstanceBase = cc.import(".CommandLineInstanceBase")
-local WorkerInstanceBase = cc.class("WorkerInstanceBase", CommandLineInstanceBase)
+local InstanceBase = cc.import(".InstanceBase")
+local WorkerInstanceBase = cc.class("WorkerInstanceBase", InstanceBase)
 
 function WorkerInstanceBase:ctor(config, args, tag)
-    WorkerInstanceBase.super.ctor(self, config)
-    self._requestType = Constants.WORKER_REQUEST_TYPE
+    WorkerInstanceBase.super.ctor(self, config, Constants.WORKER_REQUEST_TYPE)
     self._tag = tag or "worker"
 end
 
@@ -91,7 +90,14 @@ function WorkerInstanceBase:runEventLoop()
 
             -- handle the job
             local actionName = job.action
-            local res = self:runAction(actionName, job)
+            local _, res = xpcall(function()
+                return self:runAction(actionName, job)
+            end, function(err)
+                if cc.DEBUG > cc.DEBUG_WARN then
+                    err = debug.traceback(err, 3)
+                    cc.printwarn(err)
+                end
+            end)
             if res ~= false then
                 -- delete job
                 local ok, err = jobs:delete(job.id)

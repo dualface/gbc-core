@@ -52,37 +52,50 @@ local Constants  = cc.import(".Constants")
 
 local InstanceBase = cc.class("InstanceBase")
 
+local _MODULE_SUFFIX       = 'Action'
+local _MEHTOD_SUFFIX       = 'Action'
+local _CLI_PACKAGE_NAME    = 'commands'
+local _WORKER_PACKAGE_NAME = 'jobs'
+local _HTTP_PACKAGE_NAME   = 'actions'
+
 local _normalize, _getpath, _loadmodule, _checkreqtype
 
-function InstanceBase:ctor(config)
+function InstanceBase:ctor(config, requestType)
     self.config = table.copy(cc.checktable(config))
     local appConfig = self.config.app
+    appConfig.messageFormat = appConfig.messageFormat or Constants.MESSAGE_FORMAT
 
-    appConfig.actionPackage      = appConfig.actionPackage or Constants.ACTION_PACKAGE_NAME
-    appConfig.actionModuleSuffix = config.app.actionModuleSuffix or Constants.DEFAULT_ACTION_MODULE_SUFFIX
-    appConfig.actionMethodSuffix = config.app.actionMethodSuffix or Constants.DEFAULT_ACTION_METHOD_SUFFIX
-    appConfig.messageFormat      = appConfig.messageFormat or Constants.DEFAULT_MESSAGE_FORMAT
+    self._requestType = requestType
+    self._package = appConfig.package
+    if not self._package then
+        if requestType == Constants.CLI_REQUEST_TYPE then
+            self._package = _CLI_PACKAGE_NAME
+        elseif requestType == Constants.WORKER_REQUEST_TYPE then
+            self._package = _WORKER_PACKAGE_NAME
+        else
+            self._package = _HTTP_PACKAGE_NAME
+        end
+    end
 
-    self._requestType       = "unknown"
     self._requestParameters = nil
-    self._actions           = {}
+    self._modules = {}
 
     -- enable events
     cc.bind(self, Event)
 end
 
 function InstanceBase:getRequestType()
-    return self._requestType or "unknown"
+    return self._requestType
 end
 
 function InstanceBase:runAction(actionName, args)
     local appConfig = self.config.app
 
     local moduleName, methodName, folder = _normalize(actionName)
-    methodName = methodName .. appConfig.actionMethodSuffix
+    methodName = methodName .. _MEHTOD_SUFFIX
 
-    local actionModulePath = _getpath(moduleName, folder, appConfig)
-    local action = self._actions[actionModulePath]
+    local actionModulePath = _getpath(moduleName, folder, self._package)
+    local action = self._modules[actionModulePath]
     if not action then
         local actionModule = _loadmodule(actionModulePath)
         local acceptedRequestType = actionModule.ACCEPTED_REQUEST_TYPE or appConfig.defaultAcceptedRequestType
@@ -92,7 +105,7 @@ function InstanceBase:runAction(actionName, args)
         end
 
         action = actionModule:new(self)
-        self._actions[actionModulePath] = action
+        self._modules[actionModulePath] = action
     end
 
     local method = action[methodName]
@@ -202,12 +215,12 @@ _normalize = function(actionName)
     return table_concat(parts, "."), method, folder
 end
 
-_getpath = function(moduleName, folder, appConfig)
-    moduleName = moduleName .. appConfig.actionModuleSuffix
+_getpath = function(moduleName, folder, package)
+    moduleName = moduleName .. _MODULE_SUFFIX
     if folder ~= "" then
         return string_format("%s.%s", string.gsub(folder, "/", "."), moduleName)
     else
-        return string_format("%s.%s", appConfig.actionPackage, moduleName)
+        return string_format("%s.%s", package, moduleName)
     end
 end
 

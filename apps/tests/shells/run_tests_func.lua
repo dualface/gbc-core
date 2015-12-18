@@ -46,7 +46,7 @@ local _testsrv, _testcli
 local _help
 
 function Tests:ctor(appConfig, appRootPath)
-    self._url = string_format("http://localhost:%s/testcases/?action=%%s", tostring(appConfig.server.nginx.port))
+    self._url = string_format("http://localhost:%s/tests/?action=%%s", tostring(appConfig.server.nginx.port))
     self._config = appConfig
     self._root = appRootPath
 end
@@ -59,17 +59,18 @@ function Tests:run(args)
     end
 
     if #opts.tests == 0 then
-        local casesDir = self._root .. "/cases"
+        local casesDir = self._root .. "/actions"
         opts.tests = _findtests(casesDir)
     end
 
     local pass
     for _, casename in ipairs(opts.tests) do
-        if string_sub(casename, -8) ~= "TestCase" then
-            casename = string.ucfirst(string.lower(casename)) .. "TestCase"
+        if string_sub(casename, -6) ~= "Action" then
+            -- casename passed from command line arguments
+            casename = string.ucfirst(string.lower(casename)) .. "Action"
         end
 
-        local ok, testCaseClass = pcall(require, "cases." .. casename)
+        local ok, testCaseClass = pcall(require, "actions." .. casename)
         if not ok then
             -- testCaseClass is error message
             cc.printf("ERR: not found test '%s'\n\n%s", casename, testCaseClass)
@@ -80,11 +81,11 @@ function Tests:run(args)
             break
         end
 
-        local actionPackageName = string_lower(string_sub(casename, 1, -9))
+        local actionPackageName = string_lower(string_sub(casename, 1, -7))
         local tests = {}
         for methodName, _2 in pairs(testCaseClass) do
-            if string_sub(methodName, -4) == "Test" then
-                tests[#tests + 1] = actionPackageName .. "." .. string_lower(string_sub(methodName, 1, -5))
+            if string_sub(methodName, -6) == "Action" then
+                tests[#tests + 1] = actionPackageName .. "." .. string_lower(string_sub(methodName, 1, -7))
             end
         end
 
@@ -188,7 +189,7 @@ _findtests = function(rootdir)
 
     local cases = {}
     for _, file in ipairs(string.split(res, "\n")) do
-        if string.sub(file, -12) == "TestCase.lua" then
+        if string.sub(file, -10) == "Action.lua" then
             cases[#cases + 1] = string.sub(file, 1, -5)
         end
     end
@@ -208,7 +209,9 @@ _testsrv = function(self, action)
 end
 
 _testcli = function(self, action)
-    local cmd = Factory.create(self._config, "CommandLineInstance", arg)
+    local config = table.copy(self._config)
+    config.app.package = "actions"
+    local cmd = Factory.create(config, "CommandLineInstance", arg)
     return cmd:runAction(action)
 end
 

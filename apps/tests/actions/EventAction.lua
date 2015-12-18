@@ -37,7 +37,7 @@ end
 function EventTestCase:teardown()
 end
 
-function EventTestCase:bindingTest()
+function EventTestCase:bindingAction()
     local Animal = cc.class("Animal")
 
     function Animal:run()

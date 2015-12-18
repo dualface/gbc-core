@@ -55,7 +55,7 @@ WebSocketInstanceBase.EVENT = _EVENT
 local _processMessage, _parseMessage, _authConnect
 
 function WebSocketInstanceBase:ctor(config)
-    WebSocketInstanceBase.super.ctor(self, config)
+    WebSocketInstanceBase.super.ctor(self, config, Constants.WEBSOCKET_REQUEST_TYPE)
 
     local appConfig = self.config.app
     if config.app.websocketMessageFormat then
@@ -63,8 +63,6 @@ function WebSocketInstanceBase:ctor(config)
     end
     appConfig.websocketsTimeout = appConfig.websocketsTimeout or Constants.WEBSOCKET_DEFAULT_TIME_OUT
     appConfig.websocketsMaxPayloadLen = appConfig.websocketsMaxPayloadLen or Constants.WEBSOCKET_DEFAULT_MAX_PAYLOAD_LEN
-
-    self._requestType = Constants.WEBSOCKET_REQUEST_TYPE
 end
 
 function WebSocketInstanceBase:run()
