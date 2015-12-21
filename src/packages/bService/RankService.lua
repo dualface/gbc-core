@@ -40,17 +40,17 @@ end
 
 --从小到大, 获取自己的排名
 function RankService:getRank(name)
-    return self._Redis:zrank(self:getZKey(), name)
+    return tonumber(self._Redis:zrank(self:getZKey(), name)) or -1
 end
 
 --从大到小
 function RankService:getRRank(name)
-    return self._Redis:zrevrank(self:getZKey(), name)
+    return tonumber(self._Redis:zrevrank(self:getZKey(), name)) or -1
 end
 
 --统计分数之间的总数
 function RankService:count(min, max)
-    return self._Redis:zcount(self:getZKey(), min, max)
+    return tonumber(self._Redis:zcount(self:getZKey(), min, max)) or 0
 end
 
 --分数在min, max之间，递增排列

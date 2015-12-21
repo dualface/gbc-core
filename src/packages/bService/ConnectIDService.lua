@@ -9,7 +9,15 @@ function ConnectIDService:ctor(redis)
 end
 
 function ConnectIDService:getConnectId(tag)
-    return self._Redis:hget(CONNECTS_TAG_DICT, tag)
+    local id = self._Redis:hget(CONNECTS_TAG_DICT, tag)
+    if not id or id == self._Redis.null then return nil end 
+    return id
+end
+
+function ConnectIDService:getTag(connectid)
+    local tag = self._Redis:hget(CONNECTS_ID_DICT, connectid)
+    if not tag or tag == self._Redis.null then return nil end
+    return tag
 end
 
 function ConnectIDService:getConnects()
@@ -27,10 +35,6 @@ function ConnectIDService:clearConnects()
     redis:del(CONNECTS_TAG_DICT)
     redis:del(CONNECTS)
     redis:commitPipeline()
-end
-
-function ConnectIDService:getTag(connectid)
-    return self._Redis:hget(CONNECTS_ID_DICT, connectid)
 end
 
 function ConnectIDService:save(connectid, tag)

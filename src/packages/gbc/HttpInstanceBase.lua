@@ -89,8 +89,13 @@ function HttpInstanceBase:ctor(config)
     end
 end
 
+function HttpInstanceBase:onClose()
+    -- body
+end
+
 function HttpInstanceBase:run()
     local result, err = self:runEventLoop()
+    self:onClose()
     result, err = self:_genOutput(result, err)
     if err then
         -- return an error page with custom contents
