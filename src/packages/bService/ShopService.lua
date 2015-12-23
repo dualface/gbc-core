@@ -61,6 +61,10 @@ function ShopService:getSellList()
     return self._Redis:smembers(self:getSKeySell())
 end
 
+function ShopService:getSellCount()
+    return self._Redis:scard(self:getSKeySell())
+end
+
 function ShopService:getSaleList()
     return self._Redis:smembers(self:getSKeySale())
 end
