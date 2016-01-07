@@ -1,16 +1,21 @@
 local MissionService = cc.class("MissionService")
 
 function MissionService:ctor(connect, key)
+    self._Connect = connect
     self._Redis = connect:getRedis()
     self._Key = key
+    self:loadFromDB()
 end
+
+function MissionService:loadFromDB() end
+function MissionService:saveToDB() end
 
 function MissionService:getKey()
     return "Mission:"..self._Key
 end
 
-function MissionService:addMission(Missionid)
-    self._Redis:zadd(self:getKey(), 0, Missionid)
+function MissionService:addMission(Missionid, times)
+    self._Redis:zadd(self:getKey(), times or 0, Missionid)
 end
 
 function MissionService:removeMission(Missionid)
