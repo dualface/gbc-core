@@ -15,6 +15,7 @@ end
 function ShopService:getSKeySale()
     return "SHOP:Sa:"..self._Key
 end
+
 --更新次数的key
 function ShopService:getShopTimesKey()
     return "SHOP:UT:"..self._Key
@@ -36,16 +37,16 @@ function ShopService:getShopTimes()
     return tonumber(self._Redis:get(self:getShopTimesKey())) or 0
 end
 
-function ShopService:getShopUpdate()
-    return tonumber(self._Redis:get(self:getShopUpdateKey())) == 1
+function ShopService:canShopUpdate()
+    return tonumber(self._Redis:get(self:getShopUpdateKey())) <= os.time()
 end
 
-function ShopService:setShopUpdate(var)
-    if var then
-        self._Redis:set(self:getShopUpdateKey(), 1)
-    else
-        self._Redis:set(self:getShopUpdateKey(), 0)
-    end
+function ShopService:getShopUpdate()
+    return tonumber(self._Redis:get(self:getShopUpdateKey()))
+end
+
+function ShopService:setShopUpdate(time)
+    self._Redis:set(self:getShopUpdateKey(), time)
 end
 
 function ShopService:clear()
