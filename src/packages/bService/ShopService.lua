@@ -38,11 +38,11 @@ function ShopService:getShopTimes()
 end
 
 function ShopService:canShopUpdate()
-    return tonumber(self._Redis:get(self:getShopUpdateKey())) <= os.time()
+    return (tonumber(self._Redis:get(self:getShopUpdateKey())) or 0) <= os.time()
 end
 
 function ShopService:getShopUpdate()
-    return tonumber(self._Redis:get(self:getShopUpdateKey()))
+    return tonumber(self._Redis:get(self:getShopUpdateKey())) or 0
 end
 
 function ShopService:setShopUpdate(time)
