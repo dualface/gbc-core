@@ -34,4 +34,31 @@ function Time.getTimelines(gap)
     return ret
 end
 
+function Time.getDate(time)
+    return os.date("*t", time)
+end
+
+function Time.isNewDay(cdate, ldate)
+    if ldate.year ~= cdate.year or ldate.yday ~= cdate.yday then
+        return true
+    end
+    return false
+end
+
+function Time.isNewWeek(cdate, ldate)
+    local wdays = cdate.wday - ldate.wday
+    local ydays = cdate.yday - ldate.yday
+    if wdays >= 0 and ydays ~= 0 then
+        return true
+    end
+    return false
+end
+
+function Time.isNewMonth(cdate, ldate)
+    if ldate.year ~= cdate.year or ldate.month ~= cdate.month then
+        return true
+    end
+    return false
+end
+
 return Time

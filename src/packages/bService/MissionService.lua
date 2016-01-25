@@ -14,6 +14,18 @@ function MissionService:getKey()
     return "Mission:"..self._Key
 end
 
+function MissionService:getTimeKey()
+    return "Mission:Time:"..self._Key
+end
+
+function MissionService:getTime()
+    return tonumber(self._Redis:get(self:getTimeKey())) or 0
+end
+
+function MissionService:setTime(time)
+    self._Redis:set(self:getTimeKey(), time)
+end
+
 function MissionService:addMission(Missionid, times)
     self._Redis:zadd(self:getKey(), times or 0, Missionid)
 end
