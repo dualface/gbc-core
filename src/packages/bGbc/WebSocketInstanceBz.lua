@@ -81,14 +81,13 @@ function WebSocketInstanceBz:onConnected()
 
     local session = Session:new(redis)
     session:start(sid)
-
+    self:initInstance()
     local ok, user = xpcall(function()
         return self:onLoadUser(session)
     end, function(err)
         cc.printwarn(debug.traceback(err, 4))
     end)
     if ok and user then
-        self:initInstance()
         self._ConnIDs:save(connectId, user)
         self._session = session
     end

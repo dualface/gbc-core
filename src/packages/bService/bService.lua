@@ -10,6 +10,7 @@ local _M = {
     JobService    = cc.import(".JobService"),
 
     ConnectIDService = cc.import(".ConnectIDService"),
+    LockService     = cc.import(".LockService"),
 }
 
 return _M
