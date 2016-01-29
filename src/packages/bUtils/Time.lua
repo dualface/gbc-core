@@ -34,8 +34,25 @@ function Time.getTimelines(gap)
     return ret
 end
 
+function Time.getTimeDaysAfter(day)
+    local dt = os.date("*t")
+    local nextDate = {
+        year = dt.year,
+        yday = dt.yday + day,
+        hour = 23,
+        min = 59,
+        sec = 0,
+    }
+    return os.time(nextDate)
+end
+
 function Time.getDate(time)
     return os.date("*t", time)
+end
+
+function Time.getDaySeconds()
+    local date = os.date("*t", os.time())
+    return date.hour*60*60 + date.min*60 + date.sec
 end
 
 function Time.isNewDay(cdate, ldate)
