@@ -108,10 +108,14 @@ local ingnorList = {
 }
 
 function WarnChar:isIgnoreChar(char)
-    if char < '~' then
-        return true
-    end
     return ingnorList[char]
+end
+
+function WarnChar:isAsciiSymbol(char)
+    if char > '~' then
+        return false
+    end
+    return true
 end
 
 function WarnChar:replaceWithStar(str)
@@ -120,14 +124,22 @@ function WarnChar:replaceWithStar(str)
     local node = self._RootNode
     local word = {}
     local len = #chars
+    local ingoreAscii = false --忽略ascii
     while len >= index do
         local char = chars[index]
         if not self:isIgnoreChar(char) then
-            node = self:findNode(node, char)
+            if ingoreAscii then 
+                if not self:isAsciiSymbol(char) then
+                    node = self:findNode(node, char)
+                end
+            else
+                node = self:findNode(node, char)
+            end
         end
         if node == nil then
             index = index - #word
             node = self._RootNode
+            ingoreAscii = false
             word = {}
         elseif node.flag == 1 then
             table.insert(word, index)
@@ -136,7 +148,11 @@ function WarnChar:replaceWithStar(str)
             end
             node = self._RootNode
             word = {}
+            ingoreAscii = false
         else
+            if not ingoreAscii and not self:isAsciiSymbol(char) then
+                ingoreAscii = true
+            end
             table.insert(word, index)
         end
         index = index + 1
