@@ -73,6 +73,47 @@ function WarnChar:getCharArray(str)
     return array
 end
 
+local ingnorList = {
+    ['￥'] = true,
+    ['。'] = true,
+    ['＝'] = true,
+    ['？'] = true,
+    ['！'] = true,
+    ['，'] = true,
+    ['、'] = true,
+    ['；'] = true,
+    ['：'] = true,
+    ['「'] = true,
+    ['」'] = true,
+    ['『'] = true,
+    ['』'] = true,
+    ['‘'] = true,
+    ['’'] = true,
+    ['“'] = true,
+    ['”'] = true,
+    ['（'] = true,
+    ['）'] = true,
+    ['〔'] = true,
+    ['〕'] = true,
+    ['【'] = true,
+    ['】'] = true,
+    ['—'] = true,
+    ['…'] = true,
+    ['–'] = true,
+    ['．'] = true,
+    ['《'] = true,
+    ['》'] = true,
+    ['〈'] = true,
+    ['〉'] = true,
+}
+
+function WarnChar:isIgnoreChar(char)
+    if char < '~' then
+        return true
+    end
+    return ingnorList[char]
+end
+
 function WarnChar:replaceWithStar(str)
     local chars = self:getCharArray(str)
     local index = 1
@@ -81,7 +122,7 @@ function WarnChar:replaceWithStar(str)
     local len = #chars
     while len >= index do
         local char = chars[index]
-        if char ~= ' ' then
+        if not self:isIgnoreChar(char) then
             node = self:findNode(node, char)
         end
         if node == nil then
