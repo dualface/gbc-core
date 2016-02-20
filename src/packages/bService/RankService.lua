@@ -53,6 +53,10 @@ function RankService:count(min, max)
     return tonumber(self._Redis:zcount(self:getZKey(), min, max)) or 0
 end
 
+function RankService:getScore(name)
+    return tonumber(self._Redis:zscore(self:getZKey(), name)) or -1
+end
+
 --分数在min, max之间，递增排列
 function RankService:getRangeByScore(min, max)
     return self._Redis:zrangebyscore(self:getZKey(), min, max)
