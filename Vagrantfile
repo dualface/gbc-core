@@ -22,7 +22,7 @@ Vagrant.configure(2) do |config|
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
-  config.vm.network "forwarded_port", guest: 8088, host: 18088
+  config.vm.network "forwarded_port", guest: 8088, host: 8088
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -70,10 +70,4 @@ Vagrant.configure(2) do |config|
   #   sudo apt-get update
   #   sudo apt-get install -y apache2
   # SHELL
-
-  # restart nginx on the guest after the guest starts
-  config.trigger.after :up do
-    run_remote "/opt/gbc-core/start_server --debug"
-    puts "\nplease use browser open http://localhost:18088/\n"
-  end
 end

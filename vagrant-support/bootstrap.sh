@@ -20,5 +20,11 @@ cd /vagrant/
 sudo ./install.sh
 
 # done
-echo ALL DONE. please use browser open http://localhost:18088/
 
+
+/opt/gbc-core/start_server --debug
+
+echo ""
+echo ""
+echo ALL DONE. please use browser open http://localhost:8088/
+echo ""
