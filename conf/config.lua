@@ -28,7 +28,9 @@ local config = {
     -- all apps
     apps = {
         welcome = "_GBC_CORE_ROOT_/apps/welcome",
-        tests   = "_GBC_CORE_ROOT_/apps/tests",
+        --tests   = "_GBC_CORE_ROOT_/apps/tests",
+        game    = "_GBC_CORE_ROOT_/appGames/game",
+        master  = "_GBC_CORE_ROOT_/appGames/master",
     },
 
     -- default app config
@@ -43,11 +45,10 @@ local config = {
         websocketEnabled           = true,
         websocketMessageFormat     = "json",
         websocketsTimeout          = 60 * 1000, -- 60s
-        websocketsMaxPayloadLen    = 16 * 1024, -- 16KB
+        websocketsMaxPayloadLen    = 64 * 1024, -- 16KB
 
         jobMessageFormat           = "json",
-        numOfJobWorkers            = 2,
-
+        numOfJobWorkers            = 0,
         jobWorkerRequests          = 1000,
     },
 
@@ -60,9 +61,9 @@ local config = {
 
         -- internal memory database
         redis = {
-            socket     = "unix:_GBC_CORE_ROOT_/tmp/redis.sock",
-            -- host       = "127.0.0.1",
-            -- port       = 6379,
+            --socket     = "unix:_GBC_CORE_ROOT_/tmp/redis.sock",
+            host       = "127.0.0.1",
+            port       = 6379,
             timeout    = 10 * 1000, -- 10 seconds
         },
 

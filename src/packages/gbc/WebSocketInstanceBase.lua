@@ -36,6 +36,7 @@ local tostring         = tostring
 local type             = type
 
 local json      = cc.import("#json")
+local msgpack   = cc.import("#MessagePack")
 local Constants = cc.import(".Constants")
 
 local json_encode = json.encode
@@ -81,9 +82,13 @@ function WebSocketInstanceBase:run()
     end)
 end
 
+function WebSocketInstanceBase:authConnect()
+    return _authConnect()
+end
+
 function WebSocketInstanceBase:runEventLoop()
     -- auth client
-    local token, err = _authConnect()
+    local token, err = self:authConnect()
     if not token then
         cc.throw(err)
     end
@@ -253,7 +258,10 @@ end
 -- private
 
 _processMessage = function(self, rawMessage, messageType)
-    local message = _parseMessage(rawMessage, messageType, self.config.app.websocketMessageFormat)
+    local okp, message = pcall(function()
+        return _parseMessage(rawMessage, messageType, self.config.app.websocketMessageFormat)
+    end)
+    if not okp then return nil, message end
     local msgid = message.__id
     local actionName = message.action
     local err = nil
@@ -302,6 +310,14 @@ _processMessage = function(self, rawMessage, messageType)
 end
 
 _parseMessage = function(rawMessage, messageType, messageFormat)
+    if messageFormat == Constants.MESSAGE_FORMAT_MPACK then
+        local message = msgpack.unpack(rawMessage)
+        if type(message) == "table" then
+            return message
+        else
+            cc.throw("not supported message format \"%s\"", type(message))
+        end
+    end
     -- TODO: support message type plugin
     if messageType ~= Constants.WEBSOCKET_TEXT_MESSAGE_TYPE then
         cc.throw("not supported message type \"%s\"", messageType)

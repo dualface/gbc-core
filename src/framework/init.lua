@@ -36,6 +36,7 @@ socket = {} -- avoid require("socket") warning
 -- export global variable
 local _g = _G
 cc.exports = {}
+
 setmetatable(cc.exports, {
     __newindex = function(_, name, value)
         rawset(_g, name, value)
@@ -46,14 +47,16 @@ setmetatable(cc.exports, {
     end
 })
 
--- disable create unexpected global variable
-setmetatable(_g, {
-    __newindex = function(_, name, value)
-        local msg = string_format("USE \"cc.exports.%s = <value>\" INSTEAD OF SET GLOBAL VARIABLE", name)
-        print(debug.traceback(msg, 2))
-        if not ngx then print("") end
-    end
-})
+if ngx then
+    -- disable create unexpected global variable
+    setmetatable(_g, {
+        __newindex = function(_, name, value)
+            local msg = string_format("USE \"cc.exports.%s = <value>\" INSTEAD OF SET GLOBAL VARIABLE", name)
+            print(debug.traceback(msg, 2))
+            if not ngx then print("") end
+        end
+    })
+end
 
 --
 
@@ -108,3 +111,4 @@ require("framework.math")
 require("framework.ctype")
 require("framework.os")
 require("framework.io")
+require("framework.bz")

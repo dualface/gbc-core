@@ -35,7 +35,8 @@ local print           = print
 local string_format   = string.format
 local string_rep      = string.rep
 local string_upper    = string.upper
-local table_concat    = table.concat
+--local table_concat    = table.concat
+local table_insert = table.insert
 local tostring        = tostring
 
 function cc.throw(fmt, ...)
@@ -50,6 +51,10 @@ function cc.throw(fmt, ...)
     else
         error(msg, 0)
     end
+end
+
+function cc.error(errorname)
+    error(errorname, 0)
 end
 
 local function _dump_value(v)

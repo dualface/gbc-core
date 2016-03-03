@@ -22,33 +22,8 @@ THE SOFTWARE.
 
 ]]
 
-local args = {...}
+local _P = {}
 
-local help = function()
-    print [[
+_P.service = cc.import(".MysqlService")
 
-$ lua start_worker.lua <GBC_CORE_ROOT> <APP_ROOT_PATH>
-
-]]
-end
-
-if #args < 2 then
-    return help()
-end
-
-ROOT_DIR = args[1]
-APP_ROOT_PATH = args[2]
-
-package.path = ROOT_DIR .. '/src/?.lua;' .. package.path
-package.path = ROOT_DIR .. '/src/lib/?.lua;' .. package.path
-
-require("framework.init")
-local appKeys = dofile(ROOT_DIR .. "/tmp/app_keys.lua")
-local globalConfig = dofile(ROOT_DIR .. "/tmp/config.lua")
-
-cc.DEBUG = globalConfig.DEBUG
-
-local gbc = cc.import("#gbc")
-local bootstrap = gbc.WorkerBootstrap:new(appKeys, globalConfig)
-
-os.exit(bootstrap:runapp(APP_ROOT_PATH))
+return _P

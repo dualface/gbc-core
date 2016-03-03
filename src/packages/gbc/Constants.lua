@@ -9,6 +9,7 @@ _M.WORKER_REQUEST_TYPE               = "worker"
 
 -- message type
 _M.MESSAGE_FORMAT_JSON               = "json"
+_M.MESSAGE_FORMAT_MPACK              = "mpack"
 _M.MESSAGE_FORMAT_TEXT               = "text"
 _M.DEFAULT_MESSAGE_FORMAT            = _M.MESSAGE_FORMAT_JSON
 
