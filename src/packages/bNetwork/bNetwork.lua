@@ -1,4 +1,6 @@
-local _M = {}
+local _M = {
+    Rpc = cc.import(".Rpc")
+}
 
 if ngx then
     _M.HttpClient = cc.import(".HttpClientResty")

@@ -1,28 +1,29 @@
 local ShopService = cc.class("ShopService")
 
 --key，比如玩家的id
-function ShopService:ctor(connect, key)
+function ShopService:ctor(connect, key, shopName)
     self.connect = connect
     self._Redis = connect:getRedis()
     self._Key = key
+    self._ShopName = shopName or "SHOP"
 end
 
 --出售中的列表
 function ShopService:getSKeySell()
-    return "SHOP:Se:"..self._Key
+    return self._ShopName..":Se:"..self._Key
 end
 --已经出售的列表
 function ShopService:getSKeySale()
-    return "SHOP:Sa:"..self._Key
+    return self._ShopName..":Sa:"..self._Key
 end
 
 --更新次数的key
 function ShopService:getShopTimesKey()
-    return "SHOP:UT:"..self._Key
+    return self._ShopName..":UT:"..self._Key
 end
 
 function ShopService:getShopUpdateKey()
-    return "SHOP:UP:"..self._Key
+    return self._ShopName..":UP:"..self._Key
 end
 
 function ShopService:resetShopTimes()

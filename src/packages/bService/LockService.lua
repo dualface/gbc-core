@@ -24,4 +24,11 @@ function LockService:unLock()
     end
 end
 
+function LockService:clear()
+    local keys = self._Redis:keys("Lock:*")
+    for _, v in pairs(keys) do
+        self._Redis:del(v)
+    end
+end
+
 return LockService

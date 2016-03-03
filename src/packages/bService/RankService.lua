@@ -1,5 +1,5 @@
 local RankService = cc.class("RankService")
-
+local easyRedis = cc.import(".easyRedis")
 --最小排名为0
 function RankService:ctor(connect, RankName)
     self.connect = connect
@@ -9,6 +9,32 @@ end
 
 function RankService:getZKey()
     return "RANK:"..self._RankName
+end
+
+function RankService:getDataKey()
+    return "RANK:Data:"..self._RankName
+end
+
+function RankService:saveData(params)
+    local redis = self._Redis
+    local pKey = self:getDataKey()
+    return easyRedis:hmset(redis, pKey, params)
+end
+
+function RankService:incrData(keymap)
+    local redis = self._Redis
+    local pKey = self:getDataKey()
+    return easyRedis:hincrby(redis, pKey, keymap)
+end
+
+function RankService:getData(params)
+    local redis = self._Redis
+    local pKey = self:getDataKey()
+    return easyRedis:hmget(redis, pKey, params)
+end
+
+function RankService:clear()
+    self._Redis:del(self:getZKey())
 end
 
 --添加排名数据
@@ -27,6 +53,11 @@ function RankService:getRange(begin, ed, WITHSCORES)
     else
         return self._Redis:zrange(self:getZKey(), begin, ed)
     end
+end
+
+function RankService:getNameByRank(rank)
+    local ret = self:getRange(rank, rank)
+    return ret[1]
 end
 
 --从大到小
@@ -54,7 +85,9 @@ function RankService:count(min, max)
 end
 
 function RankService:getScore(name)
-    return tonumber(self._Redis:zscore(self:getZKey(), name)) or -1
+    local score = self._Redis:zscore(self:getZKey(), name)
+    score = tonumber(score) or -1
+    return score
 end
 
 --分数在min, max之间，递增排列

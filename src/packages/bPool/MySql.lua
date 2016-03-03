@@ -13,7 +13,7 @@ function MySQL:getConnect(config)
         ngx.ctx[MySQL] = db
         return db
     else
-        printWarn(db)
+        cc.printwarn(db)
         return nil
     end
 end

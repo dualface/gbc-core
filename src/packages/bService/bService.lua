@@ -11,6 +11,11 @@ local _M = {
 
     ConnectIDService = cc.import(".ConnectIDService"),
     LockService     = cc.import(".LockService"),
+    RandomNameService = cc.import(".RandomNameService"),
+
+    CacheKeyService = cc.import(".CacheKeyService"),
+
+    easyRedis = cc.import(".easyRedis"),
 }
 
 return _M
