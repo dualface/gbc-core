@@ -1,3 +1,5 @@
 .*
 apps/taptank/frameworks/
 shells/getopt_long
+devel/
+

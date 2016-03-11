@@ -1,50 +1,7 @@
 #!/bin/bash
 
-function showHelp()
-{
-    echo "Usage: ./install_dev.sh [--prefix=absolute_path] [OPTIONS]"
-    echo "Options:"
-    echo -e "\t-h | --help\t\t show this help"
-    echo "if the \"--prefix\" is not specified, default path is \"<PARENT_DIR>/gbc-instance\"."
-}
-
-
 CUR_DIR=$(cd "$(dirname $0)" && pwd)
-PARENT_DIR=$(dirname "$CUR_DIR")
-DEST_DIR="$PARENT_DIR/gbc-instance"
-
-if [ $OSTYPE == "MACOS" ]; then
-    gcc -o $CUR_DIR/shells/getopt_long $CUR_DIR/shells/src/getopt_long.c
-    ARGS=$($CUR_DIR/shells/getopt_long "$@")
-else
-    ARGS=$(getopt -o h --long help,prefix: -n 'Install GameBox Cloud Core' -- "$@")
-fi
-
-eval set -- "$ARGS"
-
-while true ; do
-    case "$1" in
-        --prefix)
-            DEST_DIR=$2
-            shift 2
-            ;;
-
-        -h|--help)
-            showHelp;
-            exit 0
-            ;;
-
-        --)
-            shift;
-            break
-            ;;
-
-        *)
-            echo "invalid option: $1"
-            exit 1
-            ;;
-    esac
-done
+DEST_DIR="$CUR_DIR/devel"
 
 # cleanup
 if [ -d "$DEST_DIR" ]; then
