@@ -119,9 +119,10 @@ function WebSocketInstanceBase:runEventLoop()
         cc.throw(err)
     end
 
+    local event = self._event
     sub:start(function(channel, msg)
         if channel == controlChannel then
-            self:dispatchEvent({
+            event:trigger({
                 name    = _EVENT.CONTROL_MESSAGE,
                 channel = channel,
                 message = msg
@@ -138,7 +139,7 @@ function WebSocketInstanceBase:runEventLoop()
 
     -- connected
     cc.printinfo("[websocket:%s] connected", connectId)
-    self:dispatchEvent(_EVENT.CONNECTED)
+    event:trigger(_EVENT.CONNECTED)
 
     -- event loop
     local frames = {}
@@ -212,7 +213,7 @@ function WebSocketInstanceBase:runEventLoop()
     self._socket = nil
 
     -- disconnected
-    self:dispatchEvent({name = _EVENT.DISCONNECTED, reason = reason})
+    event:trigger({name = _EVENT.DISCONNECTED, reason = reason})
     cc.printinfo("[websocket:%s] disconnected", connectId)
 end
 

@@ -30,8 +30,8 @@ local WebSocketInstance = cc.class("WebSocketInstance", gbc.WebSocketInstanceBas
 
 function WebSocketInstance:ctor(config)
     WebSocketInstance.super.ctor(self, config)
-    self:addEventListener(WebSocketInstance.EVENT.CONNECTED, cc.handler(self, self.onConnected))
-    self:addEventListener(WebSocketInstance.EVENT.DISCONNECTED, cc.handler(self, self.onDisconnected))
+    self._event:bind(WebSocketInstance.EVENT.CONNECTED, cc.handler(self, self.onConnected))
+    self._event:bind(WebSocketInstance.EVENT.DISCONNECTED, cc.handler(self, self.onDisconnected))
 end
 
 function WebSocketInstance:onConnected()

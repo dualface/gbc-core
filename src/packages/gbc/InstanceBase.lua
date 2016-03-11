@@ -79,9 +79,7 @@ function InstanceBase:ctor(config, requestType)
 
     self._requestParameters = nil
     self._modules = {}
-
-    -- enable events
-    cc.bind(self, Event)
+    self._event = cc.addComponent(self, Event)
 end
 
 function InstanceBase:getRequestType()

@@ -25,161 +25,97 @@ THE SOFTWARE.
 local cc           = cc
 local string_upper = string.upper
 local tostring     = tostring
+local type         = type
 
-local function addEventListener(self, event, listener, tag)
-    self._listeners = self._listeners or {}
-    local listeners = self._listeners
+local Event = cc.class("Event")
 
-    self._listenerNextId = self._listenerNextId or 0
-    self._listenerNextId = self._listenerNextId + 1
-    local id = tostring(self._listenerNextId)
+local _newtag = 0
 
-    tag = tag or ""
-    tag = tostring(tag)
-
-    event = string_upper(tostring(event))
-    if not listeners[event] then
-        listeners[event] = {}
-    end
-
-    listeners[event][id] = {listener, tag}
-
-    if DEBUG then
-        cc.printinfo("[Event:%s] add event '%s' listener with id '%s' and tag '%s'", tostring(self), event, id, tag)
-    end
-
-    return id
+function Event:ctor(target)
+    self._target = target
+    self._listeners = {}
 end
 
-local function dispatchEvent(self, event)
-    local DEBUG = cc.DEBUG > cc.DEBUG_WARN
+function Event:bind(name, listener, tag)
+    local listeners = self._listeners
+    name = string_upper(tostring(name))
+    if not listeners[name] then
+        listeners[name] = {}
+    end
 
+    if not tag then
+        _newtag = _newtag + 1
+        tag = "#" .. tostring(_newtag)
+    end
+
+    listeners[name][tag] = listener
+
+    -- cc.printinfo("[Event:%s] bind event '%s' with listener '%s'", tostring(self._target), name, tag)
+
+    return tag
+end
+
+function Event:unbind(tag)
+    local listeners = self._listeners
+    for name, listenersForEvent in pairs(listeners) do
+        for _tag, _ in pairs(listenersForEvent) do
+            if tag == _tag then
+                listenersForEvent[tag] = nil
+                -- cc.printinfo("[Event:%s] unbind event '%s' listener '%s'", tostring(self._target), name, tag)
+                return
+            end
+        end
+    end
+end
+
+function Event:trigger(event)
     if type(event) ~= "table" then
         event = {name = event}
     end
     event.name = string_upper(tostring(event.name))
 
-    if DEBUG then
-        cc.printinfo("[Event:%s] dispatch event '%s'", tostring(self), event.name)
-    end
+    -- cc.printinfo("[Event:%s] dispatch event '%s'", tostring(self), event.name)
 
     local listeners = self._listeners
-    if (not listeners) or (not listeners[event.name]) then
-        return self
+    if not listeners[event.name] then
+        return
     end
 
     event._stop = false
-    event.target = self
+    event.target = self._target
     event.stop = function()
         event._stop = true
     end
 
-    for id, pair in pairs(listeners[event.name]) do
-        if DEBUG then
-            cc.printinfo("[Event:%s] dispatch event '%s' to listener %s", tostring(self), event.name, id)
-        end
-
-        event.tag = pair[2]
-        pair[1](event)
+    for tag, listener in pairs(listeners[event.name]) do
+        -- cc.printinfo("[Event:%s] trigger event '%s' to listener '%s'", tostring(self._target), event.name, tag)
+        listener(event)
         if event._stop then
-            if DEBUG then
-                cc.printinfo("[Event:%s] break dispatching event '%s'", tostring(self), event)
-            end
+            cc.printinfo("[Event:%s] break dispatching event '%s'", tostring(self._target), event.name)
             break
         end
     end
 end
 
-local function removeEventListener(self, removeId)
-    local DEBUG = cc.DEBUG > cc.DEBUG_WARN
-
-    local listeners = self._listeners
-    if not listeners then
-        return self
-    end
-
-    for event, listenersForEvent in pairs(listeners) do
-        for id, _ in pairs(listenersForEvent) do
-            if id == removeId then
-                listenersForEvent[id] = nil
-                if DEBUG then
-                    cc.printinfo("[Event:%s] remove event '%s' listener %s", tostring(self), event, id)
-                end
-                return self
-            end
-        end
-    end
-
-    return self
+function Event:remove(name)
+    name = string_upper(tostring(name))
+    self._listeners[name] = nil
+    -- cc.printinfo("[Event:%s] remove event '%s' all listeners", tostring(self._target), name)
 end
 
-local function removeEventListenersByTag(self, removeTag)
-    local DEBUG = cc.DEBUG > cc.DEBUG_WARN
-
-    local listeners = self._listeners
-    if not listeners then
-        return self
-    end
-
-    for event, listenersForEvent in pairs(listeners) do
-        for id, pair in pairs(listenersForEvent) do
-            if pair[2] == removeTag then
-                listenersForEvent[id] = nil
-                if DEBUG then
-                    cc.printinfo("[Event:%s] remove event '%s' listener %s", tostring(self), event, id)
-                end
-            end
-        end
-    end
-
-    return self
+function Event:removeAll()
+    self._listeners = {}
+    -- cc.printinfo("[Event:%s] remove all listeners", tostring(self._target))
 end
 
-local function removeEventListenersByEvent(self, event)
-    if self._listeners then
-        self._listeners[string_upper(event)] = nil
-        if cc.DEBUG > cc.DEBUG_WARN then
-            cc.printinfo("[Event:%s] remove event '%s' all listeners", tostring(self), event)
-        end
-    end
-    return self
-end
-
-local function removeAllEventListeners(self)
-    self._listeners = nil
-    if cc.DEBUG > cc.DEBUG_WARN then
-        cc.printinfo("[Event:%s] remove all event listener %s", tostring(self))
-    end
-    return self
-end
-
-local function dumpAllEventListeners(self)
-    if not self._listeners then
-        return self
-    end
-
-    cc.printf("[Event:%s] all event listeners", tostring(self))
+function Event:dump()
+    cc.printinfo("[Event:%s] dump all listeners", tostring(self._target))
     for name, listeners in pairs(self._listeners) do
         cc.printf("  event: %s", name)
-        for id, pair in pairs(listeners) do
-            cc.printf("    %s - id: %s, tag: %s", tostring(pair[1]), tostring(id), tostring(pair[2]))
+        for tag, listener in pairs(listeners) do
+            cc.printf("    %s: %s", tag, tostring(listener))
         end
     end
-    return self
-end
-
---
-
-local function Event()
-    return {
-        addEventListener            = addEventListener,
-        dispatchEvent               = dispatchEvent,
-        removeEventListener         = removeEventListener,
-        removeEventListenersByTag   = removeEventListenersByTag,
-        removeEventListenersByEvent = removeEventListenersByEvent,
-        removeAllEventListeners     = removeAllEventListeners,
-        dumpAllEventListeners       = dumpAllEventListeners,
-    }
 end
 
 return Event

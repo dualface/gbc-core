@@ -30,32 +30,7 @@ local setmetatable   = setmetatable
 local string_format  = string.format
 local type           = type
 
-if tolua then
-    local tolua_getpeer  = tolua.getpeer
-    local tolua_iskindof = tolua.iskindof
-    local tolua_setpeer  = tolua.setpeer
-end
-
-local _setmetatableindex, _iskindof, _iskindofinternal
-
-_setmetatableindex = function(target, index)
-    if type(target) == "userdata" then
-        if tolua_getpeer then
-            local peer = tolua_getpeer(target)
-            if not peer then
-                peer = {}
-                tolua_setpeer(t, peer)
-            end
-            _setmetatableindex(peer, index)
-         else
-            _setmetatableindex(target, index)
-         end
-    else
-        setmetatable(target, {__index = index})
-    end
-end
-
-_iskindofinternal = function(mt, classname)
+local _iskindofinternal = function(mt, classname)
     if not mt then return false end
 
     local index = rawget(mt, "__index")
@@ -67,68 +42,36 @@ _iskindofinternal = function(mt, classname)
     return _iskindofinternal(getmetatable(index), classname)
 end
 
-local function _new(cls, ...)
-    local create = cls.__create
-    local instance
-    if create then
-        instance = create(...)
-    else
-        instance = {}
+function cc.iskindof(target, classname)
+    local targetType = type(target)
+    if targetType ~= "table" then
+        return false
     end
-    _setmetatableindex(instance, cls)
+    return _iskindofinternal(getmetatable(target), classname)
+end
+
+local _new = function(cls, ...)
+    local instance = {}
+    setmetatable(instance, {__index = cls})
     instance.class = cls
     instance:ctor(...)
     return instance
 end
 
--- exports
-
-function cc.iskindof(target, classname)
-    local targetType = type(target)
-    if targetType ~= "userdata" and targetType ~= "table" then
-        return false
-    end
-
-    local mt
-    if targetType == "userdata" and tolua_iskindof then
-        if tolua_iskindof(target, classname) then
-            return true
-        end
-        mt = tolua_getpeer(target)
-    else
-        mt = getmetatable(target)
-    end
-    if not mt then
-        return false
-    end
-
-    return _iskindofinternal(mt, classname)
-end
-
 function cc.class(classname, super)
+    assert(type(classname) == "string", string_format("cc.class() - invalid class name \"%s\"", tostring(classname)))
+
     -- create class
     local cls = {__cname = classname, new = _new}
 
     -- set super class
     local superType = type(super)
-    if superType == "function" then
-        assert(cls.__create == nil, string_format("class() - create class \"%s\" with more than one creating function", classname))
-        cls.__create = super
-    elseif superType == "table" then
-        if super[".isclass"] then
-            -- super is native class
-            assert(cls.__create == nil, string_format("class() - create class \"%s\" with more than one creating function or native class", classname))
-            cls.__create = function()
-                return super:create()
-            end
-        else
-            -- super is pure lua class
-            assert(type(super.__cname) == "string", string_format("class() - create class \"%s\" used super class isn't declared by class()", classname))
-            cls.super = super
-            setmetatable(cls, {__index = cls.super})
-        end
+    if superType == "table" then
+        assert(type(super.__cname) == "string", string_format("cc.class() - create class \"%s\" used super class isn't declared by cc.class()", classname))
+        cls.super = super
+        setmetatable(cls, {__index = cls.super})
     elseif superType ~= "nil" then
-        error(string_format("class() - create class \"%s\" with invalid super type \"%s\"", classname, superType))
+        error(string_format("cc.class() - create class \"%s\" with invalid super type \"%s\"", classname, superType))
     end
 
     if not cls.ctor then
@@ -138,28 +81,45 @@ function cc.class(classname, super)
     return cls
 end
 
-function cc.bind(target, extend)
-    local id = tostring(extend)
-    extend = extend()
-    extend.__id = id
-    setmetatable(extend, getmetatable(target))
-    setmetatable(target, {__index = extend})
-    return target
+function cc.addComponent(target, cls)
+    if not target.__components then
+        target.__components = {}
+    end
+    local components = target.__components
+    local name = cls.__cname
+    if not components[name] then
+        components[name] = cls:new(target)
+    end
+    return components[name]
 end
 
-function cc.unbind(target, extend)
-    local id = tostring(extend)
-    local mt = getmetatable(target)
-    while mt do
-        local index = rawget(mt, "__index")
-        if not index then break end
-        if index.__id == id then
-            setmetatable(target, getmetatable(index))
-            break
-        end
-        mt = getmetatable(mt)
+function cc.getComponent(target, name)
+    if type(name) == "table" then
+        name = name.__cname
     end
-    return target
+    if not target.__components then
+        return
+    end
+    return target.__components[name]
+end
+
+-- name is Class name or Class or Component object
+function cc.removeComponent(target, name)
+    if type(name) == "table" then
+        -- name is class or object
+        if name.__cname then
+            name = name.__cname
+        else
+            local mt = getmetatable(name)
+            local __index = rawget(mt, "__index")
+            if __index then
+                name = rawget(__index, "__cname")
+            end
+        end
+    end
+    if target.__components then
+        target.__components[name] = nil
+    end
 end
 
 function cc.handler(target, method)
