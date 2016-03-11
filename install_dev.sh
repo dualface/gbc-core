@@ -54,3 +54,9 @@ rm bin/start_worker.lua
 ln -s "$CUR_DIR/shells/shell_func.sh" bin/shell_func.sh
 ln -s "$CUR_DIR/shells/shell_func.lua" bin/shell_func.lua
 ln -s "$CUR_DIR/shells/start_worker.lua" bin/start_worker.lua
+
+echo ""
+echo "GameBox Cloud install in ./devel"
+echo ""
+echo "./devel/start_server --debug"
+echo ""
