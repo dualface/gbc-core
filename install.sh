@@ -44,7 +44,7 @@ BUILD_DIR=/tmp/install-gbc-core
 DEST_DIR=/opt/gbc-core
 
 # dists
-OPENRESTY_VER=1.9.3.2
+OPENRESTY_VER=1.9.7.3
 REDIS_VER=3.0.5
 BEANSTALKD_VER=1.10
 SUPERVISOR_VER=3.1.3
@@ -148,8 +148,8 @@ mkdir -p $DEST_DIR/db
 # ----
 # install openresty and lua extensions
 cd $BUILD_DIR
-tar zxf ngx_openresty-$OPENRESTY_VER.tar.gz
-cd ngx_openresty-$OPENRESTY_VER
+tar zxf openresty-$OPENRESTY_VER.tar.gz
+cd openresty-$OPENRESTY_VER
 mkdir -p $DEST_BIN_DIR/openresty
 
 echo ./configure $OPENRESETY_CONFIGURE_ARGS \
