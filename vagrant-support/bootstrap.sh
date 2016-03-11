@@ -32,10 +32,29 @@ function setup()
 
     sudo rm -fr /opt/gbc-core/apps
     sudo rm -fr /opt/gbc-core/conf
+    sudo rm -fr /opt/gbc-core/src
+
+    sudo rm -f /opt/gbc-core/start_server
+    sudo rm -f /opt/gbc-core/stop_server
+    sudo rm -f /opt/gbc-core/check_server
+
+    sudo rm -f /opt/gbc-core/bin/start_worker.lua
+    sudo rm -f /opt/gbc-core/bin/shell_func.sh
+    sudo rm -f /opt/gbc-core/bin/shell_func.lua
 
     ln -s /vagrant/apps /opt/gbc-core/apps
     ln -s /vagrant/conf /opt/gbc-core/conf
+    ln -s /vagrant/src  /opt/gbc-core/src
 
+    ln -s /vagrant/shells/start_server /opt/gbc-core/start_server
+    ln -s /vagrant/shells/stop_server  /opt/gbc-core/stop_server
+    ln -s /vagrant/shells/check_server /opt/gbc-core/check_server
+
+    ln -s /vagrant/shells/start_worker.lua /opt/gbc-core/bin/start_worker.lua
+    ln -s /vagrant/shells/shell_func.sh    /opt/gbc-core/bin/shell_func.sh
+    ln -s /vagrant/shells/shell_func.lua   /opt/gbc-core/bin/shell_func.lua
+
+    echo ""
     ls -lh /opt/gbc-core
 
     echo ""
