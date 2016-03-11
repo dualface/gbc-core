@@ -237,6 +237,7 @@ function RedisTestCase:loopAction()
     loop:start(function(channel, msg)
         msgs[#msgs + 1] = {channel, msg}
     end, cmdchannel)
+
     loop:subscribe(channel1, channel2)
 
     -- publish message to channels
@@ -244,14 +245,14 @@ function RedisTestCase:loopAction()
     redis:publish(channel2, "hello2")
 
     loop:unsubscribe(channel2)
-    redis:publish(channel2, "hello2")
+    redis:publish(channel2, "hello2") -- skip
 
     loop:psubscribe("MSG_CHANNEL_*")
     redis:publish(channel2, "hello2")
     redis:publish(channel3, "hello3")
     redis:publish(channel4, "hello4")
 
-    loop:stop()
+    loop:stop() -- read all messages and stop loop
 
     check.equals(msgs, {
         {channel1, "hello1"},

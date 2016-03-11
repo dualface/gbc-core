@@ -22,6 +22,8 @@ THE SOFTWARE.
 
 ]]
 
+local semaphore = require "ngx.semaphore"
+
 local ipairs             = ipairs
 local ngx_thread_kill    = ngx.thread.kill
 local ngx_thread_spawn   = ngx.thread.spawn
@@ -40,7 +42,9 @@ local _loop, _cleanup, _onmessage, _onerror
 function NginxRedisLoop:ctor(redis, subredis, id)
     self._redis = redis
     self._subredis = subredis
-    -- self._subredis:setTimeout(5) -- check client connect abort quickly
+    self._subredis:setTimeout(5) -- check client connect abort quickly
+    self._sema = semaphore.new()
+
     id = id or ""
     self._id = id .. "_" .. string_sub(tostring(self), 10)
 end
@@ -57,7 +61,7 @@ function NginxRedisLoop:start(onmessage, cmdchannel, ...)
     if not res then
         return nil, err
     end
-    cc.printinfo("[RedisSub:%s] %s", self._id, table_concat(res, " "))
+    cc.printinfo("[RedisSub:%s] <loop start> %s", self._id, table_concat(res, " "))
 
     self._thread = ngx_thread_spawn(_loop, self, onmessage, onerror)
     return 1
@@ -65,6 +69,7 @@ end
 
 function NginxRedisLoop:stop()
     self._redis:publish(self._cmdchannel, "!STOP")
+    self._sema:wait(1)
     _cleanup(self)
 end
 
@@ -82,7 +87,10 @@ for _, cmd in ipairs(_COMMANDS) do
             args[#args + 1] = tostring(arg)
         end
         -- cc.printinfo("[RedisSub:%s] CMD: %s", self._id, table_concat(args, " "))
-        return self._redis:publish(self._cmdchannel, table_concat(args, " "))
+        local res, err = self._redis:publish(self._cmdchannel, table_concat(args, " "))
+        -- wait for command completed
+        self._sema:wait(1)
+        return res, err
     end
 end
 
@@ -100,12 +108,15 @@ _loop = function(self, onmessage, onerror)
     local subredis   = self._subredis
     local id         = self._id
     local running    = true
+    local sema       = self._sema
     local DEBUG = cc.DEBUG > cc.DEBUG_WARN
 
     local msgtype, channel, msg, pchannel
 
+    cc.printinfo("[RedisSub:%s] <loop ready>", id)
+
     while running do
-        -- cc.printinfo("[RedisSub:%s] READ REPLY", id)
+        -- cc.printinfo("[RedisSub:%s] <wait read reply>", id)
         local res, err = subredis:readReply()
         if not res then
             if err ~= "timeout" then
@@ -116,15 +127,14 @@ _loop = function(self, onmessage, onerror)
         end
 
         while res do -- process message
+            -- cc.printinfo("[RedisSub:%s] <read reply> %s", id, table_concat(res, " "))
 
             msgtype = res[1]
             channel = res[2]
             msg     = res[3]
 
             if _skipmsgtypes[msgtype] then
-                if DEBUG then
-                    cc.printinfo("[RedisSub:%s] %s", id, table_concat(res, " "))
-                end
+                -- cc.printinfo("[RedisSub:%s] <skip> %s", id, table_concat(res, " "))
                 break -- read reply
             end
 
@@ -162,6 +172,10 @@ _loop = function(self, onmessage, onerror)
                 if not res then
                     cc.printwarn("[RedisSub:%s] redis failed, %s", id, err)
                     break -- read reply
+                else
+                    -- cc.printinfo("[RedisSub:%s] <forward> %s", id, table_concat(parts, " "))
+                    -- cc.printinfo("[RedisSub:%s] <forward-result> %s", id, table_concat(res, " "))
+                    sema:post(1) -- release lock
                 end
             else
                 -- unknown control message
@@ -172,11 +186,12 @@ _loop = function(self, onmessage, onerror)
         end -- read reply
     end -- loop
 
-    cc.printinfo("[RedisSub:%s] STOPPED", id)
+    cc.printinfo("[RedisSub:%s] <loop ended>", id)
 
     subredis:unsubscribe()
     subredis:setKeepAlive()
-    _cleanup(self)
+
+    sema:post(1)
 end
 
 _cleanup = function(self)

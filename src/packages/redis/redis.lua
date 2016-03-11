@@ -219,6 +219,9 @@ end
 function Redis:doCommand(...)
     local args = {...}
     local cmd = args[1] or "<unknown command>"
+
+    -- cc.printinfo("[Redis:%s] %s", string.sub(tostring(self), 8), table.concat(args, " "))
+
     local socket = self._socket
     if not socket then
         return nil, string_format('"%s" failed, not initialized', cmd)
