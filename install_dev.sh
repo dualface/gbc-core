@@ -1,10 +1,5 @@
 #!/bin/bash
 
-if [ $UID -eq 0 ]; then
-    echo "Do not run this script with root user."
-    exit 1
-fi
-
 function showHelp()
 {
     echo "Usage: ./install_dev.sh [--prefix=absolute_path] [OPTIONS]"
@@ -66,11 +61,10 @@ if [ -d "$DEST_DIR" ]; then
 fi
 
 # install
-echo "Maybe need enter your sudo password !"
 echo ""
-echo "sudo $CUR_DIR/install.sh --prefix=$DEST_DIR"
+echo "$CUR_DIR/install.sh --prefix=$DEST_DIR"
 echo ""
-sudo "$CUR_DIR/install.sh" --prefix="$DEST_DIR"
+"$CUR_DIR/install.sh" --prefix="$DEST_DIR"
 
 if [ ! -f "$DEST_DIR/start_server" ]; then
     exit 1
@@ -78,7 +72,6 @@ fi
 
 # make symbol links
 cd "$DEST_DIR"
-sudo chown -R $USER .
 
 rm -fr apps
 ln -s "$CUR_DIR/apps" apps

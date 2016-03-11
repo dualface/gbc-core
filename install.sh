@@ -32,40 +32,34 @@ function checkOSType()
     exit 1
 }
 
-if [ $UID -ne 0 ]; then
-    echo "Superuser privileges are required to run this script."
-    echo "e.g. \"sudo $0\""
-    exit 1
-fi
+# if [ $UID -ne 0 ]; then
+#     echo "Superuser privileges are required to run this script."
+#     echo "e.g. \"sudo $0\""
+#     exit 1
+# fi
 
 OSTYPE=$(checkOSType)
-CUR_DIR=$(cd "$(dirname $0)" && pwd)
-BUILD_DIR=/tmp/install-gbc-core
+SRC_DIR=$(cd "$(dirname $0)" && pwd)
+
+echo "SRC_DIR   = $SRC_DIR"
+
+# default configs
 DEST_DIR=/opt/gbc-core
 
-# dists
-OPENRESTY_VER=1.9.7.3
-REDIS_VER=3.0.5
-BEANSTALKD_VER=1.10
-SUPERVISOR_VER=3.1.3
-
-# https://github.com/diegonehab/luasocket
-LUASOCKET_VER=3.0-rc1
-# https://github.com/cloudwu/lua-bson
-LUABSON_VER=20151114
-# https://github.com/cloudwu/pbc
-LUAPBC_VER=20150714
-# https://github.com/mah0x211/lua-process
-LUAPROCESS_VER=1.5.0
-
 if [ $OSTYPE == "MACOS" ]; then
-    gcc -o $CUR_DIR/shells/getopt_long $CUR_DIR/shells/src/getopt_long.c
-    ARGS=$($CUR_DIR/shells/getopt_long "$@")
+    type "gcc" > /dev/null 2> /dev/null
+    if [ $? -ne 0 ]; then
+        echo "Please install xcode."
+        exit 1
+    fi
+
+    gcc -o $SRC_DIR/shells/getopt_long $SRC_DIR/shells/src/getopt_long.c
+    ARGS=$($SRC_DIR/shells/getopt_long "$@")
 else
     ARGS=$(getopt -o h --long help,prefix: -n 'Install GameBox Cloud Core' -- "$@")
 fi
 
-if [ $? != 0 ] ; then
+if [ $? -ne 0 ] ; then
     echo "Install GameBox Cloud Core Terminating..." >&2;
     exit 1;
 fi
@@ -96,32 +90,69 @@ while true ; do
     esac
 done
 
+mkdir -pv "$DEST_DIR"
+
+if [ $? -ne 0 ]; then
+    echo "DEST_DIR  = $DEST_DIR"
+    echo ""
+    echo "\033[31mCreate install dir failed.\033[0m"
+    exit 1
+fi
+
+cd "$DEST_DIR"
+DEST_DIR=`pwd`
+echo "DEST_DIR  = $DEST_DIR"
+
+BUILD_DIR=$DEST_DIR/tmp/install
+echo "BUILD_DIR = $BUILD_DIR"
+echo ""
+
+# dists
+VIRTUALENV_VER=15.0.0
+SUPERVISOR_VER=3.1.3
+OPENRESTY_VER=1.9.7.3
+REDIS_VER=3.0.5
+BEANSTALKD_VER=1.10
+
+# https://github.com/diegonehab/luasocket
+LUASOCKET_VER=3.0-rc1
+# https://github.com/cloudwu/lua-bson
+LUABSON_VER=20151114
+# https://github.com/cloudwu/pbc
+LUAPBC_VER=20150714
+# https://github.com/mah0x211/lua-process
+LUAPROCESS_VER=1.5.0
+
 DEST_BIN_DIR=$DEST_DIR/bin
 OPENRESETY_CONFIGURE_ARGS=""
 
 if [ $OSTYPE == "UBUNTU" ] ; then
-    apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip supervisor
+    apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip
 elif [ $OSTYPE == "CENTOS" ]; then
     yum groupinstall -y "Development Tools"
-    yum install -y pcre-devel zlib-devel openssl-devel unzip supervisor
+    yum install -y pcre-devel zlib-devel openssl-devel unzip
 elif [ $OSTYPE == "MACOS" ]; then
     type "brew" > /dev/null 2> /dev/null
     if [ $? -ne 0 ]; then
-        echo "Please install brew, with this command:"
-        echo -e "\033[33mruby -e \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\" \033[0m"
+        echo "\033[31mPlease install brew, with this command:\033[0m"
+        echo -e "\033[32mruby -e \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\" \033[0m"
         exit 0
     else
-        sudo -u $SUDO_USER brew install pcre openssl
-        sudo -u $SUDO_USER brew link openssl --force
-    fi
+        echo ""
+        echo "install pcre openssl"
 
-    type "gcc" > /dev/null 2> /dev/null
-    if [ $? -ne 0 ]; then
-        echo "Please install xcode."
-        exit 0
+        if [ $UID -eq 0 ]; then
+            sudo -u $SUDO_USER brew install pcre openssl
+            sudo -u $SUDO_USER brew link openssl --force
+        else
+            brew install pcre openssl
+            brew link openssl --force
+        fi
+
+        echo ""
     fi
 else
-    echo "Unsupport current OS."
+    echo "\033[31mUnsupport current OS.\033[0m"
     exit 1
 fi
 
@@ -135,7 +166,7 @@ set -e
 
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
-cp -f $CUR_DIR/dists/*.tar.gz $BUILD_DIR
+cp -f $SRC_DIR/dists/*.tar.gz $BUILD_DIR
 
 mkdir -p $DEST_DIR
 mkdir -p $DEST_BIN_DIR
@@ -145,8 +176,34 @@ mkdir -p $DEST_DIR/tmp
 mkdir -p $DEST_DIR/conf
 mkdir -p $DEST_DIR/db
 
+cd $BUILD_DIR
+
+# ----
+# install virtualenv and supervisor
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] virtualenv"
+tar xfz $SRC_DIR/dists/virtualenv-$VIRTUALENV_VER.tar.gz
+
+PYTHON_ENV_DIR=$DEST_BIN_DIR/python_env
+rm -fr $PYTHON_ENV_DIR
+mv virtualenv-$VIRTUALENV_VER $PYTHON_ENV_DIR
+cd $PYTHON_ENV_DIR
+python virtualenv.py gbc
+cd gbc
+source bin/activate
+
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] supervisor"
+cd $BUILD_DIR
+tar zxf supervisor-$SUPERVISOR_VER.tar.gz
+cd supervisor-$SUPERVISOR_VER
+python setup.py --quiet install
+
 # ----
 # install openresty and lua extensions
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] openresty"
+
 cd $BUILD_DIR
 tar zxf openresty-$OPENRESTY_VER.tar.gz
 cd openresty-$OPENRESTY_VER
@@ -169,9 +226,15 @@ make && make install
 ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-beta1 $DEST_BIN_DIR/openresty/luajit/bin/lua
 
 # install cjson
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] cjson"
+
 cp -f $DEST_BIN_DIR/openresty/lualib/cjson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
 
 # install luasocket
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] luasocket"
+
 cd $BUILD_DIR
 tar zxf luasocket-$LUASOCKET_VER.tar.gz
 cd luasocket-$LUASOCKET_VER
@@ -190,6 +253,9 @@ make && make install-unix
 cp -f src/serial.so src/unix.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/socket/.
 
 # install luabson
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] luabson"
+
 cd $BUILD_DIR
 tar zxf luabson-$LUABSON_VER.tar.gz
 cd lua-bson
@@ -204,6 +270,9 @@ cp -f bson.so $DEST_BIN_DIR/openresty/lualib
 cp -f bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
 
 #install luapbc
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] luapbc"
+
 cd $BUILD_DIR
 tar zxf luapbc-$LUAPBC_VER.tar.gz
 cd pbc
@@ -223,6 +292,9 @@ cp -f protobuf.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
 cp -f protobuf.lua $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
 
 # install luaprocess
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] luaprocess"
+
 cd $BUILD_DIR
 tar zxf lua-process-$LUAPROCESS_VER.tar.gz
 cd lua-process-$LUAPROCESS_VER
@@ -250,16 +322,10 @@ cp -f process.so $DEST_BIN_DIR/openresty/lualib
 cp -f process.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
 
 # ----
-# install supervisor
-if [ $OSTYPE == "MACOS" ]; then
-    cd $BUILD_DIR
-    tar zxf supervisor-$SUPERVISOR_VER.tar.gz
-    cd supervisor-$SUPERVISOR_VER
-    python setup.py install
-fi
-
-# ----
 #install redis
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] redis"
+
 cd $BUILD_DIR
 tar zxf redis-$REDIS_VER.tar.gz
 cd redis-$REDIS_VER
@@ -275,6 +341,9 @@ cp src/redis-check-dump $DEST_BIN_DIR/redis/bin
 
 # ----
 # install beanstalkd
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] beanstalkd"
+
 cd $BUILD_DIR
 tar zxf beanstalkd-$BEANSTALKD_VER.tar.gz
 cd beanstalkd-$BEANSTALKD_VER
@@ -285,27 +354,27 @@ cp beanstalkd $DEST_BIN_DIR/beanstalkd/bin
 
 # ----
 # install apps
-cp -rf $CUR_DIR/src $DEST_DIR
-cp -rf $CUR_DIR/apps $DEST_DIR
+echo ""
+echo -e "[\033[32mINSTALL\033[0m] apps"
 
-cd $CUR_DIR/shells/
+cp -rf $SRC_DIR/src $DEST_DIR
+cp -rf $SRC_DIR/apps $DEST_DIR
+
+cd $SRC_DIR/shells/
 cp -f start_server stop_server check_server $DEST_DIR
 cp -f shell_func.sh shell_func.lua start_worker.lua $DEST_BIN_DIR
 
 # if it in Mac OS X, getopt_long should be deployed.
 if [ $OSTYPE == "MACOS" ]; then
-    cp -f $CUR_DIR/shells/getopt_long $DEST_DIR/bin
-    rm $CUR_DIR/shells/getopt_long
+    cp -f $SRC_DIR/shells/getopt_long $DEST_DIR/bin
+    rm $SRC_DIR/shells/getopt_long
 fi
 
 # copy all configuration files
-cp -f $CUR_DIR/conf/* $DEST_DIR/conf/
+cp -f $SRC_DIR/conf/* $DEST_DIR/conf/
 
 # done
+rm -rf $BUILD_DIR
 
-echo ""
-echo ""
-echo ""
 echo "DONE!"
-echo ""
 echo ""

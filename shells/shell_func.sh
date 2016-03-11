@@ -41,7 +41,10 @@ function startSupervisord()
 {
     echo "[CMD] supervisord -c $VAR_SUPERVISORD_CONF_PATH"
     echo ""
-    supervisord -c $VAR_SUPERVISORD_CONF_PATH
+    cd $ROOT_DIR/bin/python_env/gbc
+    source bin/activate
+    $ROOT_DIR/bin/python_env/gbc/bin/supervisord -c $VAR_SUPERVISORD_CONF_PATH
+    cd $ROOT_DIR
     echo "Start supervisord DONE"
     echo ""
 }
@@ -50,7 +53,10 @@ function stopSupervisord()
 {
     echo "[CMD] supervisorctl -c $VAR_SUPERVISORD_CONF_PATH shutdown"
     echo ""
-    supervisorctl -c $VAR_SUPERVISORD_CONF_PATH shutdown
+    cd $ROOT_DIR/bin/python_env/gbc
+    source bin/activate
+    $ROOT_DIR/bin/python_env/gbc/bin/supervisorctl -c $VAR_SUPERVISORD_CONF_PATH shutdown
+    cd $ROOT_DIR
     echo ""
 }
 

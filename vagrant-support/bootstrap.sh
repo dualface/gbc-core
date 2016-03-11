@@ -17,6 +17,16 @@ function setup()
     apt-get upgrade -y
     apt-get install -y mysql-server mysql-client
 
+    # fix locale warnings
+    apt-get install -y language-pack-en
+    echo "" >> /home/vagrant/.profile
+    echo "export LC_CTYPE=\"en_US.UTF-8\"" >> /home/vagrant/.profile
+    echo "export LANG=\"en_US.UTF-8\"" >> /home/vagrant/.profile
+    chown vagrant:vagrant /home/vagrant/.profile
+
+    export LC_CTYPE="en_US.UTF-8"
+    export LANG="en_US.UTF-8"
+
     cd /vagrant/
     sudo ./install.sh
 
