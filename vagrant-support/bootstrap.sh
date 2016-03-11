@@ -30,6 +30,15 @@ function setup()
     cd /vagrant/
     sudo ./install.sh
 
+    sudo rm -fr /opt/gbc-core/apps
+    sudo rm -fr /opt/gbc-core/conf
+
+    ln -s /vagrant/apps /opt/gbc-core/apps
+    ln -s /vagrant/conf /opt/gbc-core/conf
+
+    ls -lh /opt/gbc-core
+
+    echo ""
     echo "INSTALL COMPLETED."
     echo ""
     echo ""

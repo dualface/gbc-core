@@ -197,7 +197,7 @@ echo -e "[\033[32mINSTALL\033[0m] supervisor"
 cd $BUILD_DIR
 tar zxf supervisor-$SUPERVISOR_VER.tar.gz
 cd supervisor-$SUPERVISOR_VER
-python setup.py --quiet install
+python setup.py install
 
 # ----
 # install openresty and lua extensions

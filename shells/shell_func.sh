@@ -62,6 +62,9 @@ function stopSupervisord()
 
 function checkStatus()
 {
-    supervisorctl -c $VAR_SUPERVISORD_CONF_PATH status
+    cd $ROOT_DIR/bin/python_env/gbc
+    source bin/activate
+    $ROOT_DIR/bin/python_env/gbc/bin/supervisorctl -c $VAR_SUPERVISORD_CONF_PATH status
+    cd $ROOT_DIR
     echo ""
 }
