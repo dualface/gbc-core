@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# https://pypi.python.org/pypi/virtualenv
+VIRTUALENV_VER=15.0.0
+# https://pypi.python.org/pypi/supervisor
+SUPERVISOR_VER=3.2.2
+# http://openresty.org/
+OPENRESTY_VER=1.9.7.3
+# http://redis.io/
+REDIS_VER=3.0.7
+# http://kr.github.io/beanstalkd/
+BEANSTALKD_VER=1.10
+# https://github.com/diegonehab/luasocket
+LUASOCKET_VER=3.0-rc1
+# https://github.com/cloudwu/lua-bson
+LUABSON_VER=20151114
+# https://github.com/cloudwu/pbc
+LUAPBC_VER=20150714
+# https://github.com/mah0x211/lua-process
+LUAPROCESS_VER=1.5.0
+
 function showHelp()
 {
     echo "Usage: [sudo] ./install.sh [--prefix=absolute_path] [OPTIONS]"
@@ -106,22 +125,6 @@ echo "DEST_DIR  = $DEST_DIR"
 BUILD_DIR=$DEST_DIR/tmp/install
 echo "BUILD_DIR = $BUILD_DIR"
 echo ""
-
-# dists
-VIRTUALENV_VER=15.0.0
-SUPERVISOR_VER=3.1.3
-OPENRESTY_VER=1.9.7.3
-REDIS_VER=3.0.5
-BEANSTALKD_VER=1.10
-
-# https://github.com/diegonehab/luasocket
-LUASOCKET_VER=3.0-rc1
-# https://github.com/cloudwu/lua-bson
-LUABSON_VER=20151114
-# https://github.com/cloudwu/pbc
-LUAPBC_VER=20150714
-# https://github.com/mah0x211/lua-process
-LUAPROCESS_VER=1.5.0
 
 DEST_BIN_DIR=$DEST_DIR/bin
 OPENRESETY_CONFIGURE_ARGS=""
