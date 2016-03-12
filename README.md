@@ -35,10 +35,8 @@ GameBox Cloud Core 为开发者提供一个稳定可靠，可伸缩的服务端�
 
 ### Get Started
 
--   [安装 GameBox Cloud Core](http://gameboxcloud.com/docs/core/install/)
--   [创建 Hello,World 应用程序](http://gameboxcloud.com/docs/core/helloworld/)
--   [更多文档](http://gameboxcloud.com/docs/)
--   [版本日志](http://gameboxcloud.com/docs/core/changelog/)
+-   [快速开始](https://github.com/dualface/gbc-docs/blob/master/src/guide/get-started.md)
+-   [更多文档](https://github.com/dualface/gbc-docs/)
 -   [源代码仓库](https://github.com/dualface/gbc-core)
 -   [项目管理](https://www.pivotaltracker.com/n/projects/1474648)
 -   [Bug 报告](https://github.com/dualface/gbc-core/issues)
