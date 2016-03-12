@@ -71,16 +71,6 @@ local config = {
             host         = "127.0.0.1",
             port         = 11300,
         },
-
-        -- internal monitor
-        monitor = {
-            process = {
-                "nginx",
-                "redis-server",
-                "beanstalkd",
-            },
-            interval = 2,
-        },
     }
 }
 
