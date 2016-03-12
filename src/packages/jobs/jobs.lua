@@ -47,7 +47,7 @@ function Jobs:add(job)
     local action = job.action
     local data   = job.data
     local delay  = job.delay or Jobs.DEFAULT_DELAY
-    local pri    = job.priority or Jobs.DEFAULT_PRIORITY
+    local pri    = job.pri or Jobs.DEFAULT_PRIORITY
     local ttr    = job.ttr or Jobs.DEFAULT_TTR
 
     local job = {
