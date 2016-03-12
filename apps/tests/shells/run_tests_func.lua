@@ -46,7 +46,7 @@ local _testsrv, _testcli
 local _help
 
 function Tests:ctor(appConfig, appRootPath)
-    self._url = string_format("http://localhost:%s/tests/?action=%%s", tostring(appConfig.server.nginx.port))
+    self._url = string_format("http://localhost:%s/tests?action=%%s", tostring(appConfig.server.nginx.port))
     self._config = appConfig
     self._root = appRootPath
 end
