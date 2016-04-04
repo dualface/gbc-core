@@ -25,6 +25,8 @@ THE SOFTWARE.
 local _CUR = ...
 
 local _M = {
+    VERSION                 = "0.8.0",
+
     Constants               = cc.import(".Constants", _CUR),
     Factory                 = cc.import(".Factory", _CUR),
 

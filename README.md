@@ -33,7 +33,7 @@ GameBox Cloud Core 为开发者提供一个稳定可靠，可伸缩的服务端�
     -   [WebSocket](http://zh.wikipedia.org/wiki/WebSocket)
 
 
-### Get Started
+## Get Started
 
 -   [快速开始](https://github.com/dualface/gbc-docs/blob/master/src/guide/get-started.md)
 -   [更多文档](https://github.com/dualface/gbc-docs/)
