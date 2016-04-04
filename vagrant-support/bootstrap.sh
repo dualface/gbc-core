@@ -28,7 +28,7 @@ function setup()
     export LANG="en_US.UTF-8"
 
     cd /vagrant/
-    sudo ./install.sh
+    sudo ./make.sh --prefix=/opt/gbc-core
 
     sudo rm -fr /opt/gbc-core/apps
     sudo rm -fr /opt/gbc-core/conf
