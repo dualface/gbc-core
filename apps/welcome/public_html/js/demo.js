@@ -111,8 +111,8 @@ DemoApp.prototype.signIn = function() {
         return;
     }
 
-    self._httpServerAddr = "http://" + serverAddr + "/" + HTTP_ENTRY;
-    self._websocketServerAddr = "ws://" + serverAddr + "/" + WEBSOCKET_ENTRY;
+    self._httpServerAddr = "http://" + serverAddr + "/" + HTTP_ENTRY + "/";
+    self._websocketServerAddr = "ws://" + serverAddr + "/" + WEBSOCKET_ENTRY + "/";
 
     self._state = State.SIGNIN;
 

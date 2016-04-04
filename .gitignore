@@ -1,5 +1,11 @@
 .*
-apps/taptank/frameworks/
-shells/getopt_long
-devel/
 
+bin/getopt_long
+bin/python_env/
+bin/beanstalkd/
+bin/openresty/
+bin/redis/
+
+tmp/
+logs/
+db/

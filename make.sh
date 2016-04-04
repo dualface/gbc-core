@@ -21,7 +21,7 @@ LUAPROCESS_VER=1.5.0
 
 function showHelp()
 {
-    echo "Usage: [sudo] ./install.sh [--prefix=absolute_path] [OPTIONS]"
+    echo "Usage: [sudo] ./make.sh [--prefix=absolute_path] [OPTIONS]"
     echo "Options:"
     echo -e "\t-h | --help\t\t show this help"
     echo "if the \"--prefix\" is not specified, default path is \"/opt/gbc-core\"."
@@ -63,7 +63,7 @@ SRC_DIR=$(cd "$(dirname $0)" && pwd)
 echo "SRC_DIR   = $SRC_DIR"
 
 # default configs
-DEST_DIR=/opt/gbc-core
+DEST_DIR=$SRC_DIR
 
 if [ $OSTYPE == "MACOS" ]; then
     type "gcc" > /dev/null 2> /dev/null
@@ -72,8 +72,8 @@ if [ $OSTYPE == "MACOS" ]; then
         exit 1
     fi
 
-    gcc -o $SRC_DIR/shells/getopt_long $SRC_DIR/shells/src/getopt_long.c
-    ARGS=$($SRC_DIR/shells/getopt_long "$@")
+    gcc -o $SRC_DIR/bin/getopt_long $SRC_DIR/bin/getopt_long.c
+    ARGS=$($SRC_DIR/bin/getopt_long "$@")
 else
     ARGS=$(getopt -o h --long help,prefix: -n 'Install GameBox Cloud Core' -- "$@")
 fi
@@ -109,7 +109,14 @@ while true ; do
     esac
 done
 
-mkdir -pv "$DEST_DIR"
+NEED_COPY_FILES=1
+if [ "$DEST_DIR" == "$SRC_DIR" ]; then
+    NEED_COPY_FILES=0
+fi
+
+echo "NEED_COPY_FILES = $NEED_COPY_FILES"
+
+mkdir -pv $DEST_DIR
 
 if [ $? -ne 0 ]; then
     echo "DEST_DIR  = $DEST_DIR"
@@ -118,7 +125,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cd "$DEST_DIR"
+cd $DEST_DIR
 DEST_DIR=`pwd`
 echo "DEST_DIR  = $DEST_DIR"
 
@@ -200,6 +207,8 @@ echo -e "[\033[32mINSTALL\033[0m] supervisor"
 cd $BUILD_DIR
 tar zxf supervisor-$SUPERVISOR_VER.tar.gz
 cd supervisor-$SUPERVISOR_VER
+$SED_BIN "/zip_ok = false/a\\
+index-url = http://mirrors.aliyun.com/pypi/simple/" setup.cfg
 python setup.py install
 
 # ----
@@ -360,24 +369,21 @@ cp beanstalkd $DEST_BIN_DIR/beanstalkd/bin
 echo ""
 echo -e "[\033[32mINSTALL\033[0m] apps"
 
-cp -rf $SRC_DIR/src $DEST_DIR
-cp -rf $SRC_DIR/apps $DEST_DIR
+if [ $NEED_COPY_FILES -ne 0 ]; then
+    cp -rf $SRC_DIR/src $DEST_DIR
+    cp -rf $SRC_DIR/apps $DEST_DIR
 
-cd $SRC_DIR/shells/
-cp -f start_server stop_server check_server $DEST_DIR
-cp -f shell_func.sh shell_func.lua start_worker.lua $DEST_BIN_DIR
+    cd $SRC_DIR
+    cp -f start_server stop_server check_server $DEST_DIR
+    cd $SRC_DIR/bin
+    cp -f shell_func.sh shell_func.lua start_worker.lua getopt_long $DEST_BIN_DIR
 
-# if it in Mac OS X, getopt_long should be deployed.
-if [ $OSTYPE == "MACOS" ]; then
-    cp -f $SRC_DIR/shells/getopt_long $DEST_DIR/bin
-    rm $SRC_DIR/shells/getopt_long
+    # copy all configuration files
+    cp -f $SRC_DIR/conf/* $DEST_DIR/conf/
 fi
 
-# copy all configuration files
-cp -f $SRC_DIR/conf/* $DEST_DIR/conf/
-
 # done
-rm -rf $BUILD_DIR
+# rm -rf $BUILD_DIR
 
 echo "DONE!"
 echo ""
