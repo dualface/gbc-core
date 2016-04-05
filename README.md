@@ -13,7 +13,6 @@ GameBox Cloud Core 为开发者提供一个稳定可靠，可伸缩的服务端�
     -   [OpenResty](http://openresty.org)
     -   [LuaJIT](http://luajit.org)
 
-    <br />
 
 -   使用 Lua 脚本语言开发服务端功能
 
@@ -21,7 +20,6 @@ GameBox Cloud Core 为开发者提供一个稳定可靠，可伸缩的服务端�
 
     用 Lua 脚本语言开发服务端功能还有一个巨大的好处，那就是可以和使用 Cocos2d-Lua（quick-cocos2d-x）的客户端共享大量代码。比如数据 Schema 定义、数据对象、游戏逻辑等等，都可以在客户端和服务端之间共享同一份代码。做过网络游戏的同学一定对如何保持客户端和服务端代码在数据接口上的一致头疼过。现在使用 GameBox Cloud Core，这些问题统统消失不见。
 
-    <br />
 
 -   支持短连接和长连接，满足从异步网络到实时网络的各种需求
 
@@ -34,19 +32,12 @@ GameBox Cloud Core 为开发者提供一个稳定可靠，可伸缩的服务端�
     -   [WebSocket RFC 文档](https://tools.ietf.org/html/rfc6455)
     -   [WebSocket](http://zh.wikipedia.org/wiki/WebSocket)
 
-    <br />
 
--   支持插件机制，使用第三方插件加快功能开发
+## Get Started
 
-    GameBox Cloud Core 支持插件机制，开发者可以使用成熟的第三方插件来加快服务端功能开发。未来 GameBox Cloud 团队也将提供插件仓库，让开发者可以分享各种有用的插件。
-
-<br />
-
-### Get Started
-
--   [安装 GameBox Cloud Core](http://gameboxcloud.com/docs/core/install/)
--   [创建 Hello,World 应用程序](http://gameboxcloud.com/docs/core/helloworld/)
--   [更多文档](http://gameboxcloud.com/docs/)
--   [版本日志](http://gameboxcloud.com/docs/core/changelog/)
--   [源代码仓库](https://bitbucket.org/gameboxcloud/gbc-core)
+-   [快速开始](https://github.com/dualface/gbc-docs/blob/master/src/guide/get-started.md)
+-   [更多文档](https://github.com/dualface/gbc-docs/)
+-   [源代码仓库](https://github.com/dualface/gbc-core)
+-   [项目管理](https://www.pivotaltracker.com/n/projects/1474648)
+-   [Bug 报告](https://github.com/dualface/gbc-core/issues)
 -   技术支持: QQ群 <424776815>

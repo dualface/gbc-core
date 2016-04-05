@@ -1,3 +1,11 @@
 .*
-apps/taptank/frameworks/
 
+bin/getopt_long
+bin/python_env/
+bin/beanstalkd/
+bin/openresty/
+bin/redis/
+
+tmp/
+logs/
+db/

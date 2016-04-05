@@ -1,0 +1,62 @@
+#!/bin/bash
+
+function showHelp()
+{
+    echo "Usage: [sudo] ./start_server.sh [OPTIONS]"
+    echo "Options:"
+    echo -e "\t -v , --version \t\t show GameBox Cloud Core version"
+    echo -e "\t -h , --help \t\t show this help"
+    echo -e "\t      --debug \t\t start GameBox Cloud Core in debug mode."
+    echo "In default, GameBox Cloud Core will start in release mode, or else it will start in debug mode when you specified \"--debug\"."
+    echo ""
+}
+
+ROOT_DIR=$(cd "$(dirname $0)" && pwd)
+source $ROOT_DIR/bin/shell_func.sh
+
+if [ $? -ne 0 ] ; then echo "Terminating..." >&2; exit 1; fi
+
+if [ $OS_TYPE == "MACOS" ]; then
+    ARGS=$($ROOT_DIR/bin/getopt_long "$@")
+else
+    ARGS=$(getopt -o vh --long debug,version,help -n 'Start GameBox Cloud Core' -- "$@")
+fi
+
+eval set -- "$ARGS"
+
+declare -i DEBUG=0
+
+while true ; do
+    case "$1" in
+        --debug)
+            DEBUG=1
+            shift
+            ;;
+
+        -v|--version)
+            echo $VERSION
+            echo ""
+            exit 0
+            ;;
+
+        -h|--help)
+            showHelp;
+            echo ""
+            exit 0
+            ;;
+
+        --) shift; break ;;
+
+        *)
+            echo "invalid option. $1"
+            exit 1
+            ;;
+    esac
+done
+
+echo -e "\033[33mStart GameBox Cloud Core $VERSION\033[0m"
+echo ""
+
+updateConfigs
+startSupervisord
+checkStatus

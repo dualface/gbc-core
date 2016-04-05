@@ -1,34 +1,44 @@
 
-local ChatAction = class("ChatAction")
+local gbc = cc.import("#gbc")
+local ChatAction = cc.class("ChatAction", gbc.ActionBase)
 
-function ChatAction:ctor(connect)
-    self.connect = connect
-    self.connects = connect.connects
-end
+ChatAction.ACCEPTED_REQUEST_TYPE = "websocket"
 
 function ChatAction:sendmessageAction(arg)
-    local tag = arg.tag
-    if not tag then
-        throw("not set argument: \"tag\"")
-    end
-    -- get connect id by tag
-    local connectId = self.connects:getIdByTag(tag)
-    if not connectId then
-        throw("not found connect id by tag \"%s\"", tag)
+    local recipient = arg.recipient
+    if not recipient then
+        cc.throw("not set argument: \"recipient\"")
     end
 
     local message = arg.message
     if not message then
-        throw("not set argument: \"message\"")
+        cc.throw("not set argument: \"message\"")
     end
 
-    local session = self.connect:getSession()
-    local data = {
-        src = session:get("tag"),
-        username = session:get("username"),
-        message = message,
-    }
-    self.connect:sendMessageToConnect(connectId, data)
+    -- forward message to other client
+    local instance = self:getInstance()
+    instance:getOnline():sendMessage(recipient, {
+        name      = "MESSAGE",
+        sender    = instance:getUsername(),
+        recipient = recipient,
+        body      = message,
+    })
+end
+
+function ChatAction:sendmessagetoallAction(arg)
+    local message = arg.message
+    if not message then
+        cc.throw("not set argument: \"message\"")
+    end
+
+    -- forward message to all clients
+    local instance = self:getInstance()
+    instance:getOnline():sendMessageToAll({
+        name      = "MESSAGE",
+        sender    = instance:getUsername(),
+        recipient = recipient,
+        body      = message,
+    })
 end
 
 return ChatAction

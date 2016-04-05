@@ -22,60 +22,56 @@ THE SOFTWARE.
 
 ]]
 
-_GAMEBOX_CLOUD_CORE_VERSION = "0.7.0"
-
-_DBG_ERROR = 0
-_DBG_WARN  = 1
-_DBG_INFO  = 2
-_DBG_DEBUG = 3
-
 local config = {
-    -- user app
-    appRootPath = "_GBC_CORE_ROOT_/<USER_APP_ROOT>",
+    DEBUG = cc.DEBUG_VERBOSE,
 
-    numOfWorkers = 4,
-
-    appHttpMessageFormat   = "json",
-    appSocketMessageFormat = "json",
-    appJobMessageFormat    = "json",
-    appSessionExpiredTime  = 60 * 10, -- 10m
-
-    defaultAcceptedRequestType = "http",
-
-    -- GameBox Cloud Core settings
-    serverRootPath = "_GBC_CORE_ROOT_",
-    port = 8088,
-    welcomeEnabled = true,
-    adminEnabled = true,
-    websocketsTimeout = 60 * 1000, -- 60s
-    websocketsMaxPayloadLen = 16 * 1024, -- 16KB
-    maxSubscribeRetryCount = 10,
-
-    -- internal memory database
-    redis = {
-        socket     = "unix:_GBC_CORE_ROOT_/tmp/redis.sock",
-        -- host       = "127.0.0.1",
-        -- port       = 6379,
-        timeout    = 10 * 1000, -- 10 seconds
+    -- all apps
+    apps = {
+        welcome = "_GBC_CORE_ROOT_/apps/welcome",
+        tests   = "_GBC_CORE_ROOT_/apps/tests",
     },
 
-    -- background job server
-    beanstalkd = {
-        host       = "127.0.0.1",
-        port       = 11300,
-        jobTube    = "jobTube",
+    -- default app config
+    app = {
+        messageFormat              = "json",
+        defaultAcceptedRequestType = "http",
+        sessionExpiredTime         = 60 * 10, -- 10m
+
+        httpEnabled                = true,
+        httpMessageFormat          = "json",
+
+        websocketEnabled           = true,
+        websocketMessageFormat     = "json",
+        websocketsTimeout          = 60 * 1000, -- 60s
+        websocketsMaxPayloadLen    = 16 * 1024, -- 16KB
+
+        jobMessageFormat           = "json",
+        numOfJobWorkers            = 2,
+
+        jobWorkerRequests          = 1000,
     },
 
-    -- internal monitor
-    monitor = {
-        process = {
-            "nginx",
-            "redis-server",
-            "beanstalkd",
+    -- server config
+    server = {
+        nginx = {
+            numOfWorkers = 4,
+            port = 8088,
         },
 
-        interval = 2,
-    },
+        -- internal memory database
+        redis = {
+            socket     = "unix:_GBC_CORE_ROOT_/tmp/redis.sock",
+            -- host       = "127.0.0.1",
+            -- port       = 6379,
+            timeout    = 10 * 1000, -- 10 seconds
+        },
+
+        -- background job server
+        beanstalkd = {
+            host         = "127.0.0.1",
+            port         = 11300,
+        },
+    }
 }
 
 return config
