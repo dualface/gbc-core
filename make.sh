@@ -198,6 +198,10 @@ PYTHON_ENV_DIR=$DEST_BIN_DIR/python_env
 rm -fr $PYTHON_ENV_DIR
 mv virtualenv-$VIRTUALENV_VER $PYTHON_ENV_DIR
 cd $PYTHON_ENV_DIR
+echo "" >> setup.cfg
+echo "[easy_install]" >> setup.cfg
+echo "index-url = http://mirrors.aliyun.com/pypi/simple/" >> setup.cfg
+echo "" >> setup.cfg
 python virtualenv.py gbc
 cd gbc
 source bin/activate
@@ -376,7 +380,11 @@ if [ $NEED_COPY_FILES -ne 0 ]; then
     cd $SRC_DIR
     cp -f start_server stop_server check_server $DEST_DIR
     cd $SRC_DIR/bin
-    cp -f shell_func.sh shell_func.lua start_worker.lua getopt_long $DEST_BIN_DIR
+    cp -f shell_func.sh shell_func.lua start_worker.lua $DEST_BIN_DIR
+
+    if [ $OSTYPE == "MACOS" ]; then
+        cp -f getopt_long $DEST_BIN_DIR
+    fi
 
     # copy all configuration files
     cp -f $SRC_DIR/conf/* $DEST_DIR/conf/

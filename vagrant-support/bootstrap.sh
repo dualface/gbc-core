@@ -46,13 +46,13 @@ function setup()
     ln -s /vagrant/conf /opt/gbc-core/conf
     ln -s /vagrant/src  /opt/gbc-core/src
 
-    ln -s /vagrant/shells/start_server /opt/gbc-core/start_server
-    ln -s /vagrant/shells/stop_server  /opt/gbc-core/stop_server
-    ln -s /vagrant/shells/check_server /opt/gbc-core/check_server
+    ln -s /vagrant/start_server /opt/gbc-core/start_server
+    ln -s /vagrant/stop_server  /opt/gbc-core/stop_server
+    ln -s /vagrant/check_server /opt/gbc-core/check_server
 
-    ln -s /vagrant/shells/start_worker.lua /opt/gbc-core/bin/start_worker.lua
-    ln -s /vagrant/shells/shell_func.sh    /opt/gbc-core/bin/shell_func.sh
-    ln -s /vagrant/shells/shell_func.lua   /opt/gbc-core/bin/shell_func.lua
+    ln -s /vagrant/bin/start_worker.lua /opt/gbc-core/bin/start_worker.lua
+    ln -s /vagrant/bin/shell_func.sh    /opt/gbc-core/bin/shell_func.sh
+    ln -s /vagrant/bin/shell_func.lua   /opt/gbc-core/bin/shell_func.lua
 
     echo ""
     ls -lh /opt/gbc-core
