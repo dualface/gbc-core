@@ -26,6 +26,10 @@ function ShopService:getShopUpdateKey()
     return self._ShopName..":UP:"..self._Key
 end
 
+function ShopService:getBuyTimesKey()
+    return self._ShopName..":BT:"..self._Key
+end
+
 function ShopService:resetShopTimes()
     self._Redis:del(self:getShopTimesKey())
 end
@@ -34,8 +38,16 @@ function ShopService:increaseShopTimes()
     self._Redis:incr(self:getShopTimesKey())
 end
 
+function ShopService:increaseBuyTimes()
+    self._Redis:incr(self:getBuyTimesKey())
+end
+
 function ShopService:getShopTimes()
     return tonumber(self._Redis:get(self:getShopTimesKey())) or 0
+end
+
+function ShopService:getBuyTimes()
+    return tonumber(self._Redis:get(self:getBuyTimesKey())) or 0
 end
 
 function ShopService:canShopUpdate()

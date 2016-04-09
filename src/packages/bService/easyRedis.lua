@@ -19,16 +19,17 @@ function easyRedis:hmget(redis, key, tdata)
         result[k] = index
         index = index + 1
     end
-    local ret = redis:commitPipeline()    
+    local ret = redis:commitPipeline()
     for k, idx in pairs(result) do
         local v = ret[idx]
-        if v and type(tdata[k]) == "number" then
+        local default = tdata[k]
+        if v and type(default) == "number" then
             result[k] = cc.checknumber(v)
         else
             if v ~= ngx.null then
                 result[k] = v
             else
-                result[k] = nil
+                result[k] = default
             end
         end
     end
