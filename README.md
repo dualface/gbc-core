@@ -32,6 +32,10 @@ GameBox Cloud Core 为开发者提供一个稳定可靠，可伸缩的服务端�
     -   [WebSocket RFC 文档](https://tools.ietf.org/html/rfc6455)
     -   [WebSocket](http://zh.wikipedia.org/wiki/WebSocket)
 
+## 下载 GameBox Cloud Core
+
+-   下载页面： [https://github.com/dualface/gbc-core/releases](https://github.com/dualface/gbc-core/releases)
+
 
 ## Get Started
 
