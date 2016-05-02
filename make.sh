@@ -198,11 +198,7 @@ PYTHON_ENV_DIR=$DEST_BIN_DIR/python_env
 rm -fr $PYTHON_ENV_DIR
 mv virtualenv-$VIRTUALENV_VER $PYTHON_ENV_DIR
 cd $PYTHON_ENV_DIR
-echo "" >> setup.cfg
-echo "[easy_install]" >> setup.cfg
-echo "index-url = http://mirrors.aliyun.com/pypi/simple/" >> setup.cfg
-echo "" >> setup.cfg
-python virtualenv.py gbc
+python virtualenv.py --no-download gbc
 cd gbc
 source bin/activate
 
