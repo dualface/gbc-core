@@ -15,7 +15,7 @@ function setup()
 
     apt-get update -y
     apt-get upgrade -y
-    apt-get install -y mysql-server mysql-client
+    apt-get install -y mysql-server mysql-client python-minimal
 
     # fix locale warnings
     apt-get install -y language-pack-en
