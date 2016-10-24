@@ -194,11 +194,12 @@ _gensid = function(secret)
 
     local random = math.random() * 100000000000000
     local now
+    local addr
     if ngx then
-        local addr = ngx.var.remote_addr
+        addr = ngx.var.remote_addr
         now = ngx.now()
     else
-        local addr = "127.0.0.1"
+        addr = "127.0.0.1"
         now = os.time()
     end
 
