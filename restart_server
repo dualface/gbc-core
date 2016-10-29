@@ -1,0 +1,16 @@
+#!/bin/bash
+
+ROOT_DIR=$(cd "$(dirname $0)" && pwd)
+source $ROOT_DIR/bin/shell_func.sh
+
+echo -e "\033[33mRestart GameBox Cloud Core $VERSION\033[0m"
+echo ""
+
+stopSupervisord
+sleep 3s
+
+startSupervisord
+sleep 3s
+
+checkStatus
+
