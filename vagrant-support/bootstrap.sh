@@ -28,19 +28,20 @@ function setup()
     export LANG="en_US.UTF-8"
 
     cd /vagrant/
-    sudo ./make.sh --prefix=/opt/gbc-core
+    ./make.sh --prefix=/opt/gbc-core
 
-    sudo rm -fr /opt/gbc-core/apps
-    sudo rm -fr /opt/gbc-core/conf
-    sudo rm -fr /opt/gbc-core/src
+    rm -fr /opt/gbc-core/apps
+    rm -fr /opt/gbc-core/conf
+    rm -fr /opt/gbc-core/src
 
-    sudo rm -f /opt/gbc-core/start_server
-    sudo rm -f /opt/gbc-core/stop_server
-    sudo rm -f /opt/gbc-core/check_server
+    rm -f /opt/gbc-core/start_server
+    rm -f /opt/gbc-core/stop_server
+    rm -f /opt/gbc-core/check_server
+    rm -f /opt/gbc-core/restart_server
 
-    sudo rm -f /opt/gbc-core/bin/start_worker.lua
-    sudo rm -f /opt/gbc-core/bin/shell_func.sh
-    sudo rm -f /opt/gbc-core/bin/shell_func.lua
+    rm -f /opt/gbc-core/bin/start_worker.lua
+    rm -f /opt/gbc-core/bin/shell_func.sh
+    rm -f /opt/gbc-core/bin/shell_func.lua
 
     ln -s /vagrant/apps /opt/gbc-core/apps
     ln -s /vagrant/conf /opt/gbc-core/conf
@@ -49,6 +50,7 @@ function setup()
     ln -s /vagrant/start_server /opt/gbc-core/start_server
     ln -s /vagrant/stop_server  /opt/gbc-core/stop_server
     ln -s /vagrant/check_server /opt/gbc-core/check_server
+    ln -s /vagrant/restart_server /opt/gbc-core/restart_server
 
     ln -s /vagrant/bin/start_worker.lua /opt/gbc-core/bin/start_worker.lua
     ln -s /vagrant/bin/shell_func.sh    /opt/gbc-core/bin/shell_func.sh
@@ -69,14 +71,9 @@ fi
 
 # done
 /opt/gbc-core/start_server --debug
-echo ""
-echo "waiting 5 seconds..."
-sleep 5
-echo ""
-echo ""
-/opt/gbc-core/check_server
 
 echo ""
 echo ""
 echo ALL DONE. please use browser open http://localhost:8088/
 echo ""
+
