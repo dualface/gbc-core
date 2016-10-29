@@ -1,23 +1,23 @@
 #!/bin/bash
 
 # https://pypi.python.org/pypi/virtualenv
-VIRTUALENV_VER=15.0.0
+VIRTUALENV_VER=15.0.3
 # https://pypi.python.org/pypi/supervisor
-SUPERVISOR_VER=3.2.2
+SUPERVISOR_VER=3.3.1
 # http://openresty.org/
-OPENRESTY_VER=1.9.7.3
+OPENRESTY_VER=1.11.2.1
 # http://redis.io/
-REDIS_VER=3.0.7
+REDIS_VER=3.2.5
 # http://kr.github.io/beanstalkd/
 BEANSTALKD_VER=1.10
 # https://github.com/diegonehab/luasocket
 LUASOCKET_VER=3.0-rc1
 # https://github.com/cloudwu/lua-bson
-LUABSON_VER=20151114
+LUABSON_VER=20160519
 # https://github.com/cloudwu/pbc
-LUAPBC_VER=20150714
+LUAPBC_VER=20160531
 # https://github.com/mah0x211/lua-process
-LUAPROCESS_VER=1.5.0
+LUAPROCESS_VER=1.6.0
 
 function showHelp()
 {
@@ -235,7 +235,7 @@ echo ./configure $OPENRESETY_CONFIGURE_ARGS \
     --with-cc-opt="-I/usr/local/include" \
     --with-ld-opt="-L/usr/local/lib"
 make && make install
-ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-beta1 $DEST_BIN_DIR/openresty/luajit/bin/lua
+ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-beta2 $DEST_BIN_DIR/openresty/luajit/bin/lua
 
 # install cjson
 echo ""
@@ -265,43 +265,43 @@ make && make install-unix
 cp -f src/serial.so src/unix.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1/socket/.
 
 # install luabson
-echo ""
-echo -e "[\033[32mINSTALL\033[0m] luabson"
+# echo ""
+# echo -e "[\033[32mINSTALL\033[0m] luabson"
 
-cd $BUILD_DIR
-tar zxf luabson-$LUABSON_VER.tar.gz
-cd lua-bson
-if [ $OSTYPE == "MACOS" ]; then
-    $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" Makefile
-else
-    $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib#g" Makefile
-fi
-make linux
+# cd $BUILD_DIR
+# tar zxf luabson-$LUABSON_VER.tar.gz
+# cd lua-bson
+# if [ $OSTYPE == "MACOS" ]; then
+#     $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" Makefile
+# else
+#     $SED_BIN "s#-I/usr/local/include -L/usr/local/bin -llua53#-I$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib#g" Makefile
+# fi
+# make linux
 
-cp -f bson.so $DEST_BIN_DIR/openresty/lualib
-cp -f bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
+# cp -f bson.so $DEST_BIN_DIR/openresty/lualib
+# cp -f bson.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
 
 #install luapbc
-echo ""
-echo -e "[\033[32mINSTALL\033[0m] luapbc"
+# echo ""
+# echo -e "[\033[32mINSTALL\033[0m] luapbc"
 
-cd $BUILD_DIR
-tar zxf luapbc-$LUAPBC_VER.tar.gz
-cd pbc
-make lib
-cd binding/lua
-if [ $OSTYPE == "MACOS" ]; then
-    $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" Makefile
-else
-    $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1#g" Makefile
-fi
-make
+# cd $BUILD_DIR
+# tar zxf luapbc-$LUAPBC_VER.tar.gz
+# cd pbc
+# make lib
+# cd binding/lua
+# if [ $OSTYPE == "MACOS" ]; then
+#     $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1 -L$DEST_BIN_DIR/openresty/luajit/lib -lluajit-5.1#g" Makefile
+# else
+#     $SED_BIN "s#/usr/local/include#$DEST_BIN_DIR/openresty/luajit/include/luajit-2.1#g" Makefile
+# fi
+# make
 
-cp -f protobuf.so $DEST_BIN_DIR/openresty/lualib
-cp -f protobuf.lua $DEST_BIN_DIR/openresty/lualib
+# cp -f protobuf.so $DEST_BIN_DIR/openresty/lualib
+# cp -f protobuf.lua $DEST_BIN_DIR/openresty/lualib
 
-cp -f protobuf.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
-cp -f protobuf.lua $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
+# cp -f protobuf.so $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
+# cp -f protobuf.lua $DEST_BIN_DIR/openresty/luajit/lib/lua/5.1
 
 # install luaprocess
 echo ""
@@ -349,7 +349,6 @@ cp src/redis-cli $DEST_BIN_DIR/redis/bin
 cp src/redis-sentinel $DEST_BIN_DIR/redis/bin
 cp src/redis-benchmark $DEST_BIN_DIR/redis/bin
 cp src/redis-check-aof $DEST_BIN_DIR/redis/bin
-cp src/redis-check-dump $DEST_BIN_DIR/redis/bin
 
 # ----
 # install beanstalkd
