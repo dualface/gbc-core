@@ -373,7 +373,7 @@ if [ $NEED_COPY_FILES -ne 0 ]; then
     cp -rf $SRC_DIR/apps $DEST_DIR
 
     cd $SRC_DIR
-    cp -f start_server stop_server check_server $DEST_DIR
+    cp -f start_server stop_server check_server restart_server $DEST_DIR
     cd $SRC_DIR/bin
     cp -f shell_func.sh shell_func.lua start_worker.lua $DEST_BIN_DIR
 
