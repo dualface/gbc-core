@@ -225,15 +225,15 @@ echo ./configure $OPENRESETY_CONFIGURE_ARGS \
     --prefix=$DEST_BIN_DIR/openresty \
     --with-luajit \
     --with-http_stub_status_module \
-    --with-cc-opt="-I/usr/local/include" \
-    --with-ld-opt="-L/usr/local/lib"
+    --with-cc-opt="-I/usr/local/include -I/usr/local/opt/openssl/include" \
+    --with-ld-opt="-L/usr/local/lib -L/usr/local/opt/openssl/lib"
 
 ./configure $OPENRESETY_CONFIGURE_ARGS \
     --prefix=$DEST_BIN_DIR/openresty \
     --with-luajit \
     --with-http_stub_status_module \
-    --with-cc-opt="-I/usr/local/include" \
-    --with-ld-opt="-L/usr/local/lib"
+    --with-cc-opt="-I/usr/local/include -I/usr/local/opt/openssl/include" \
+    --with-ld-opt="-L/usr/local/lib -L/usr/local/opt/openssl/lib"
 make && make install
 ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-beta2 $DEST_BIN_DIR/openresty/luajit/bin/lua
 
