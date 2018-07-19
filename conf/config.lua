@@ -25,11 +25,21 @@ THE SOFTWARE.
 local config = {
     DEBUG = cc.DEBUG_VERBOSE,
 
-    -- all apps
-    apps = {
-        welcome = "_GBC_CORE_ROOT_/apps/welcome",
-        tests   = "_GBC_CORE_ROOT_/apps/tests",
+    -- all sites
+    sites  = {
+       sample = {
+          server = {
+             nginx = {
+                port = 8088
+             }
+          },
+          apps = {
+             welcome = "_GBC_CORE_ROOT_/apps/welcome",
+             tests   = "_GBC_CORE_ROOT_/apps/tests",
+          }
+       }
     },
+ 
 
     -- default app config
     app = {
@@ -55,7 +65,7 @@ local config = {
     server = {
         nginx = {
             numOfWorkers = 4,
-            port = 8088,
+            --port = 8088,
         },
 
         -- internal memory database
@@ -68,7 +78,8 @@ local config = {
 
         -- background job server
         beanstalkd = {
-            host         = "127.0.0.1",
+            -- host         = "127.0.0.1",
+            host = "unix:_GBC_CORE_ROOT_/tmp/beanstalkd.sock",
             port         = 11300,
         },
     }
