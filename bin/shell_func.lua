@@ -38,6 +38,7 @@ DB_DIR                    = ROOT_DIR .. "/db"
 
 CONF_PATH                 = CONF_DIR .. "/config.lua"
 NGINX_CONF_PATH           = CONF_DIR .. "/nginx.conf"
+NGINX_SERVER_CONF_PATH    = CONF_DIR .. "/server.conf"
 REDIS_CONF_PATH           = CONF_DIR .. "/redis.conf"
 SUPERVISORD_CONF_PATH     = CONF_DIR .. "/supervisord.conf"
 
@@ -128,19 +129,21 @@ _updateCoreConfig = function()
 
     -- update all apps key and index
     local config = _checkVarConfig()
-    local apps = _getValue(config, "apps")
-
+    local sites = _getValue(config, "sites")
     local names = {}
-    for name, _ in pairs(apps) do
-        names[#names + 1] = name
-    end
-    table.sort(names)
-
     local contents = {"", "local keys = {}"}
-    for index, name in ipairs(names) do
-        local path = apps[name]
-        contents[#contents + 1] = string.format('keys["%s"] = {name = "%s", index = %d, key = "%s"}', path, name, index, luamd5.sumhexa(path))
+    for site_name, opt in pairs(sites) do
+       local apps = _getValue(opt, "apps")
+       for name, _ in pairs(apps) do
+          names[#names + 1] = name
+       end
+       table.sort(names)
+       for index, name in ipairs(names) do
+          local path = apps[name]
+          contents[#contents + 1] = string.format('keys["%s"] = {name = "%s", index = %d, key = "%s"}', path, site_name .. "_" .. name, index, luamd5.sumhexa(path))
+       end
     end
+
     contents[#contents + 1] = "return keys"
     contents[#contents + 1] = ""
 
@@ -152,7 +155,7 @@ _updateNginxConfig = function()
 
     local contents = io.readfile(NGINX_CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
-    contents = string.gsub(contents, "listen[ \t]+[0-9]+", string.format("listen %d", _getValue(config, "server.nginx.port", 8088)))
+    --contents = string.gsub(contents, "listen[ \t]+[0-9]+", string.format("listen %d", _getValue(config, "server.nginx.port", 8088)))
     contents = string.gsub(contents, "worker_processes[ \t]+[0-9]+", string.format("worker_processes %d", _getValue(config, "server.nginx.numOfWorkers", 4)))
 
     if DEBUG then
@@ -166,23 +169,40 @@ _updateNginxConfig = function()
     end
 
     -- copy app_entry.conf to tmp/
-    local apps = _getValue(config, "apps")
-    local includes = {}
-    for name, path in pairs(apps) do
-        local entryPath = string.format("%s/conf/app_entry.conf", path)
-        local varEntryPath = string.format("%s/app_%s_entry.conf", TMP_DIR, name)
-        if io.exists(entryPath) then
-            local entry = io.readfile(entryPath)
-            entry = string.gsub(entry, "_GBC_CORE_ROOT_", ROOT_DIR)
-            entry = string.gsub(entry, "_APP_ROOT_", path)
-            io.writefile(varEntryPath, entry)
-            includes[#includes + 1] = string.format("        include %s;", varEntryPath)
-        end
-    end
-    includes = "\n" .. table.concat(includes, "\n")
-    contents = string.gsub(contents, "\n[ \t]*#[ \t]*_INCLUDE_APPS_ENTRY_", includes)
+    local sites = _getValue(config, "sites")
+    local includes_site = {}
+    for site_name, opt in pairs(sites) do
+       local varSitePath = string.format("%s/site_%s.conf", TMP_DIR, site_name)
+       includes_site[#includes_site + 1] = string.format("        include %s;", varSitePath)
+       local sites = _getValue(opt, "sites")
+       local contents_app = io.readfile(NGINX_SERVER_CONF_PATH)
+       contents_app = string.gsub(contents_app, "listen[ \t]+[0-9]+", string.format("listen %d", _getValue(opt, "server.nginx.port", 8088)))
 
+       local apps = _getValue(opt, "apps")
+       local includes = {}
+       for name, path in pairs(apps) do
+
+          local entryPath = string.format("%s/conf/app_entry.conf", path)
+          local varEntryPath = string.format("%s/app_%s_entry.conf", TMP_DIR, site_name .. "_" .. name)
+          if io.exists(entryPath) then
+             local entry = io.readfile(entryPath)
+             entry = string.gsub(entry, "_GBC_CORE_ROOT_", ROOT_DIR)
+             entry = string.gsub(entry, "_APP_ROOT_", path)
+             io.writefile(varEntryPath, entry)
+             includes[#includes + 1] = string.format("        include %s;", varEntryPath)
+          end
+
+       end
+       includes = "\n" .. table.concat(includes, "\n")
+       contents_app = string.gsub(contents_app, "\n[ \t]*#[ \t]*_INCLUDE_APPS_ENTRY_", includes)
+       
+       io.writefile(TMP_DIR .. "/site_" .. site_name .. ".conf", contents_app)
+    end
+    includes_site = "\n" .. table.concat(includes_site, "\n")
+    contents = string.gsub(contents, "\n[ \t]*#[ \t]*_INCLUDE_SITES_ENTRY_", includes_site)
     io.writefile(VAR_NGINX_CONF_PATH, contents)
+    
+
 end
 
 _updateRedisConfig = function()
@@ -234,17 +254,20 @@ _updateSupervisordConfig = function()
     contents = string.gsub(contents, "_BEANSTALKD_HOST_", beanhost)
 
     local workers = {}
-    local apps = _getValue(config, "apps")
-    for name, path in pairs(apps) do
-        local prog = string.gsub(_SUPERVISOR_WORKER_PROG_TMPL, "_GBC_CORE_ROOT_", ROOT_DIR)
-        prog = string.gsub(prog, "_APP_ROOT_PATH_", path)
-        prog = string.gsub(prog, "_APP_NAME_", name)
+    local sites = _getValue(config, "sites")
+    for site_name, opt in pairs(sites) do
+       local apps = _getValue(opt, "apps")
+       for name, path in pairs(apps) do
+          local prog = string.gsub(_SUPERVISOR_WORKER_PROG_TMPL, "_GBC_CORE_ROOT_", ROOT_DIR)
+          prog = string.gsub(prog, "_APP_ROOT_PATH_", path)
+          prog = string.gsub(prog, "_APP_NAME_", site_name .. "-" .. name)
 
-        -- get numOfJobWorkers
-        local appConfig = appConfigs[path]
-        prog = string.gsub(prog, "_NUM_PROCESS_", appConfig.app.numOfJobWorkers)
+          -- get numOfJobWorkers
+          local appConfig = appConfigs[path]
+          prog = string.gsub(prog, "_NUM_PROCESS_", appConfig.app.numOfJobWorkers)
 
-        workers[#workers + 1] = prog
+          workers[#workers + 1] = prog
+       end
     end
 
     contents = string.gsub(contents, ";_WORKERS_", table.concat(workers, "\n"))
