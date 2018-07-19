@@ -226,10 +226,12 @@ _updateSupervisordConfig = function()
     local appkeys = _checkAppKeys()
     local appConfigs = Factory.makeAppConfigs(appkeys, config, package.path)
     local beanport = _getValue(config, "server.beanstalkd.port")
+    local beanhost = _getValue(config, "server.beanstalkd.host")
 
     local contents = io.readfile(SUPERVISORD_CONF_PATH)
     contents = string.gsub(contents, "_GBC_CORE_ROOT_", ROOT_DIR)
     contents = string.gsub(contents, "_BEANSTALKD_PORT_", beanport)
+    contents = string.gsub(contents, "_BEANSTALKD_HOST_", beanhost)
 
     local workers = {}
     local apps = _getValue(config, "apps")
