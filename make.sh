@@ -3,13 +3,13 @@
 # https://pypi.python.org/pypi/virtualenv
 VIRTUALENV_VER=15.0.3
 # https://pypi.python.org/pypi/supervisor
-SUPERVISOR_VER=3.3.1
+SUPERVISOR_VER=3.3.4
 # http://openresty.org/
-OPENRESTY_VER=1.11.2.1
+OPENRESTY_VER=1.13.6.2 
 # http://redis.io/
-REDIS_VER=3.2.5
+REDIS_VER=4.0.8
 # http://kr.github.io/beanstalkd/
-BEANSTALKD_VER=1.10
+BEANSTALKD_VER=1.10.1
 # https://github.com/diegonehab/luasocket
 LUASOCKET_VER=3.0-rc1
 # https://github.com/cloudwu/lua-bson
@@ -137,7 +137,7 @@ DEST_BIN_DIR=$DEST_DIR/bin
 OPENRESETY_CONFIGURE_ARGS=""
 
 if [ $OSTYPE == "UBUNTU" ] ; then
-    apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip
+    apt-get install -y build-essential libpcre3-dev libssl-dev git-core unzip python make
 elif [ $OSTYPE == "CENTOS" ]; then
     yum groupinstall -y "Development Tools"
     yum install -y pcre-devel zlib-devel openssl-devel unzip
@@ -235,7 +235,7 @@ echo ./configure $OPENRESETY_CONFIGURE_ARGS \
     --with-cc-opt="-I/usr/local/include -I/usr/local/opt/openssl/include" \
     --with-ld-opt="-L/usr/local/lib -L/usr/local/opt/openssl/lib"
 make && make install
-ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit-2.1.0-beta2 $DEST_BIN_DIR/openresty/luajit/bin/lua
+ln -f -s $DEST_BIN_DIR/openresty/luajit/bin/luajit $DEST_BIN_DIR/openresty/luajit/bin/lua
 
 # install cjson
 echo ""
@@ -326,7 +326,7 @@ cat Makefile_ >> Makefile
 rm Makefile_
 
 $SED_BIN "s#_GBC_CORE_ROOT_#$DEST_DIR#g" Makefile
-$SED_BIN "s#lua ./codegen.lua#$DEST_BIN_DIR/openresty/luajit/bin/lua ./codegen.lua#g" Makefile
+$SED_BIN "s#lua ./codegen.lua#$DEST_BIN_DIR/openresty/luajit/bin/luajit ./codegen.lua#g" Makefile
 
 make
 

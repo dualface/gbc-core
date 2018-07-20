@@ -22,13 +22,14 @@ THE SOFTWARE.
 
 ]]
 
-local _tcp, _TIME_MULTIPLY
+local _tcp, _unix_socket, _TIME_MULTIPLY
 if ngx and ngx.socket then
     _tcp = ngx.socket.tcp
     _TIME_MULTIPLY = 1000
 else
     local socket = require("socket")
     _tcp = socket.tcp
+    _unix_socket = require("socket.unix")
     _TIME_MULTIPLY = 1
 end
 
@@ -69,13 +70,26 @@ local _req, _reqstate, _reqvalue, _reqyml
 local _readreply, _getvalue, _getjob, _getyml
 
 function Beanstalkd:connect(host, port)
-    local socket = _tcp()
-    local ok, err = socket:connect(host or DEFAULT_HOST, port or DEFAULT_PORT)
-    if not ok then
-        return nil, err
-    end
-    self._socket = socket
-    return 1
+   local socket_file, socket, ok, err
+   host = host or DEFAULT_HOST
+   if string_sub(host, 1, 5) == "unix:" then
+      socket_file = host
+      if _unix_socket then
+         socket_file = string_sub(host, 6)
+         socket = _unix_socket()
+      else
+         socket = _tcp()
+      end
+      ok, err = socket:connect(socket_file)
+   else
+      socket = _tcp()
+      ok, err = socket:connect(host, port or DEFAULT_PORT)
+   end
+   if not ok then
+      return nil, err
+   end
+   self._socket = socket
+   return 1
 end
 
 function Beanstalkd:setTimeout(timeout)
