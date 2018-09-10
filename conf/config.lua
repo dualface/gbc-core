@@ -34,8 +34,8 @@ local config = {
              }
           },
           apps = {
-             welcome = "_GBC_CORE_ROOT_/apps/welcome",
-             tests   = "_GBC_CORE_ROOT_/apps/tests",
+             welcome = "_GBC_CORE_ROOT_/sites/welcome",
+             tests   = "_GBC_CORE_ROOT_/sites/tests",
           }
        }
     },
