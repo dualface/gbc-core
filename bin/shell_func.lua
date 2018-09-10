@@ -130,10 +130,10 @@ _updateCoreConfig = function()
     -- update all apps key and index
     local config = _checkVarConfig()
     local sites = _getValue(config, "sites")
-    local names = {}
     local contents = {"", "local keys = {}"}
     for site_name, opt in pairs(sites) do
        local apps = _getValue(opt, "apps")
+       local names = {}
        for name, _ in pairs(apps) do
           names[#names + 1] = name
        end
